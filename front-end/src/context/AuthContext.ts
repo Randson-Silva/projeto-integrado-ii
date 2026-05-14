@@ -6,6 +6,8 @@ export interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   setAuthData: (token: string, user: AuthUser) => void;
+  setAuthToken: (token: string) => void;
+  setAuthUser: (user: AuthUser) => void;
   logout: () => void;
 }
 

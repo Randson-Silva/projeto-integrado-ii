@@ -10,10 +10,14 @@ import {
 } from '@mui/material';
 import { useRef, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { associateInsertToken } from '../services/auth/authService';
 
 const TOKEN_LENGTH = 6;
 
 const TokenForm = () => {
+  const { user, setAuthToken } = useAuth();
+
   const [digits, setDigits] = useState<string[]>(Array(TOKEN_LENGTH).fill(''));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -58,17 +62,28 @@ const TokenForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const token = digits.join('');
     if (token.length < TOKEN_LENGTH) {
       setError('Preencha todos os campos do token.');
       return;
     }
+
     setLoading(true);
     try {
-      // TODO: integrar com API de validação de token
-      console.log('Token:', token);
+      if (!user) {
+        return;
+      }
+
+      const { email } = user;
+
+      const { token: authToken } = await associateInsertToken({ email, token });
+
+      setAuthToken(authToken);
+
       navigate('/dashboard');
-    } catch {
+    } catch (error) {
+      console.error(error);
       setError('Token inválido ou expirado. Tente novamente.');
       setDigits(Array(TOKEN_LENGTH).fill(''));
       focusAt(0);
@@ -77,6 +92,7 @@ const TokenForm = () => {
     }
   };
 
+  // ! adicionar handling de contagem do reenvio mesmo com atualização da página
   const handleResend = () => {
     if (resendCooldown > 0) return;
     console.log('Reenviar token');
