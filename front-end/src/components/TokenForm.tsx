@@ -11,7 +11,10 @@ import {
 import { useRef, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { associateInsertToken } from '../services/auth/authService';
+import {
+  associateInsertToken,
+  associateSendToken,
+} from '../services/auth/authService';
 
 const TOKEN_LENGTH = 6;
 
@@ -82,8 +85,7 @@ const TokenForm = () => {
       setAuthToken(authToken);
 
       navigate('/dashboard');
-    } catch (error) {
-      console.error(error);
+    } catch {
       setError('Token inválido ou expirado. Tente novamente.');
       setDigits(Array(TOKEN_LENGTH).fill(''));
       focusAt(0);
@@ -92,10 +94,15 @@ const TokenForm = () => {
     }
   };
 
-  // ! adicionar handling de contagem do reenvio mesmo com atualização da página
-  const handleResend = () => {
+  const handleResend = async () => {
+    if (!user) return;
+
+    const { email } = user;
+
     if (resendCooldown > 0) return;
-    console.log('Reenviar token');
+
+    await associateSendToken({ email });
+
     setResendCooldown(60);
     const interval = setInterval(() => {
       setResendCooldown((prev) => {
