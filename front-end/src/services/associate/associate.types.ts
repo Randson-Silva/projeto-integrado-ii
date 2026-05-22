@@ -1,29 +1,45 @@
-export type AssociateStatus = 'ATIVO' | 'INATIVO' | 'INATIVADO' | 'PENDENTE';
+export type AssociateStatus = 'ATIVO' | 'PENDENTE' | 'INATIVADO' | 'INATIVO';
 
 export interface Associate {
   id: string;
-  fullName: string;
   cpf: string;
-  email?: string;
-  phone?: string;
   birthDate?: string;
-  category?: string;
-  status: AssociateStatus;
-  // Endereço
-  addressStreet?: string;
-  addressNumber?: string;
-  addressComplement?: string;
-  addressNeighborhood?: string;
-  addressZipCode?: string;
-  addressCity?: string;
-  addressState?: string;
-  // Institucional
-  institutionName?: string;
-  institutionRole?: string;
-  // Socioeconômico
-  registrationDate?: string;
-  validity?: string;
-  monthlyFee?: string;
+  workCategory?: string;
+  phone?: string;
+  legalGuardianName?: string;
+
+  user: {
+    id: string;
+    name: string;
+    email?: string;
+    cpf?: string;
+    phone?: string;
+    role?: string;
+    enabled?: boolean;
+    active?: boolean;
+  };
+
+  address?: {
+    id?: string;
+    postalCode?: string;
+    street?: string;
+    number?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+  };
+
+  selfDeclaration?: {
+    id?: string;
+    race?: string;
+    gender?: string;
+    sexualOrientation?: string;
+    education?: string;
+    income?: string;
+    disability?: string;
+  };
+
+  status?: AssociateStatus;
 }
 
 export interface AssociatePageable {
