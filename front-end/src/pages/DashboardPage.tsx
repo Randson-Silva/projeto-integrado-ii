@@ -8,9 +8,16 @@ import { consultantItems } from '../config/sidebarItems/consultantItems';
 import { superAdminItems } from '../config/sidebarItems/superAdminItems';
 
 import MainLayout from '../layouts/MainLayout';
+import { decodeJwt } from '../services/auth/jwt.config';
 
 const DashboardPage = () => {
-  const { user } = useAuth();
+  const { token } = useAuth();
+
+  if (!token) {
+    return null;
+  }
+
+  const user = decodeJwt(token);
 
   if (!user) {
     return null;
@@ -27,10 +34,6 @@ const DashboardPage = () => {
 
   return (
     <MainLayout menuItems={menuItems}>
-      <Typography variant="h4" sx={{ fontWeight: 700 }}>
-        Bem-vindo, {user.name}
-      </Typography>
-
       <Typography sx={{ mt: 2 }}>Perfil atual: {user.role}</Typography>
     </MainLayout>
   );

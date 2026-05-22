@@ -1,7 +1,87 @@
 import api from '../api';
 import type { AuthUser } from './auth.types';
-import { decodeJwt } from './jwt.config';
 import type { Role } from './roles';
+
+interface GetProfileRequest {
+  token: string;
+}
+
+export async function authGetProfile({
+  token,
+}: GetProfileRequest): Promise<AuthUser> {
+  const res = await api.get('/auth/password/validate', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return res.data;
+}
+
+interface PasswordValidateRequest {
+  token: string;
+}
+
+interface PasswordValidateResponse {
+  message: string;
+  valid: true;
+  resetToken: string;
+}
+
+export async function authPasswordValidate({
+  token,
+}: PasswordValidateRequest): Promise<PasswordValidateResponse> {
+  const res = await api.post('/auth/password/validate', { token });
+
+  return res.data;
+}
+
+interface PasswordResetRequest {
+  newPassword: string;
+  confirmPassword: string;
+  bearerToken: string;
+}
+
+interface PasswordResetResponse {
+  message: string;
+}
+
+export async function authPasswordReset({
+  newPassword,
+  confirmPassword,
+  bearerToken,
+}: PasswordResetRequest): Promise<PasswordResetResponse> {
+  const res = await api.post(
+    '/auth/password/reset',
+    {
+      newPassword,
+      confirmPassword,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+      },
+    }
+  );
+
+  return res.data;
+}
+
+interface PasswordForgotRequest {
+  email: string;
+}
+
+interface PasswordForgotResponse {
+  message: string;
+}
+
+export async function authPasswordForgot({
+  email,
+}: PasswordForgotRequest): Promise<PasswordForgotResponse> {
+  const res = await api.post('/auth/password/forgot', {
+    email,
+  });
+
+  return res.data;
+}
 
 interface LoginRequest {
   email: string;
@@ -10,10 +90,9 @@ interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  user: AuthUser;
 }
 
-export async function login({
+export async function authLogin({
   email,
   password,
 }: LoginRequest): Promise<LoginResponse> {
@@ -31,7 +110,6 @@ interface AccessControlLoginRequest {
 
 export interface AccessControlLoginResponse {
   token: string;
-  user: AuthUser;
 }
 
 export async function accessControlLogin({
@@ -42,26 +120,6 @@ export async function accessControlLogin({
   });
 
   return res.data;
-}
-
-// export async function getMe(): Promise<AuthUser> {
-//   // const res = await api.get('/auth/me');
-//   // return res.data;
-
-//   return {
-//     id: '1',
-//     name: 'Super Administrador',
-//     email: 'admin@email.com',
-//     role: 'SUPER_ADMIN',
-//   };
-// }
-
-export function getAuthUserNoAPI(token: string): AuthUser {
-  const tokenDecoded = decodeJwt(token);
-
-  const { sub: email, role: role } = tokenDecoded;
-
-  return { email, role };
 }
 
 interface AccessControlCreateRequest {
@@ -93,32 +151,31 @@ export async function accessControlCreate({
   return res.data;
 }
 
-export interface AssociateSendTokenRequest {
+export interface SendTokenRequest {
   email: string;
 }
 
-
-export async function associateSendToken({ email }: AssociateSendTokenRequest) {
+export async function authSendToken({ email }: SendTokenRequest) {
   const res = await api.post('/auth/magic-link/request', { email });
-  
+
   console.log(res.data);
   return res.data;
 }
 
-export interface AssociateInsertTokenRequest {
+export interface InsertTokenRequest {
   email: string;
   token: string;
 }
 
-export interface AssociateInsertTokenResponse {
+export interface InsertTokenResponse {
   message: string;
   token: string;
 }
 
-export async function associateInsertToken({
+export async function authInsertToken({
   token,
   email,
-}: AssociateInsertTokenRequest): Promise<AssociateInsertTokenResponse> {
+}: InsertTokenRequest): Promise<InsertTokenResponse> {
   const res = await api.post('/auth/magic-link/login', { email, token });
 
   return res.data;

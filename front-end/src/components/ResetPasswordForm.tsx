@@ -7,14 +7,23 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import {
+  authGetProfile,
+  authPasswordReset,
+} from '../services/auth/authService';
 import PasswordField from './PasswordField';
 
 const ResetPasswordForm = () => {
   const [loading, setLoading] = useState(false);
   const [confirmError, setConfirmError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const navigate = useNavigate();
+
+  const { token } = useAuth();
+
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setConfirmError('');
 
@@ -34,10 +43,32 @@ const ResetPasswordForm = () => {
 
     setLoading(true);
     try {
-      // TODO: integrar com API de redefinição
-      console.log('Nova senha definida');
+      if (!token) {
+        return;
+      }
+
+      console.log(JSON.parse(token));
+
+      await authPasswordReset({
+        newPassword: password,
+        confirmPassword: confirm,
+        bearerToken: token,
+      });
+
+      const user = await authGetProfile({ token });
+
+      const newToken = JSON.parse(token);
+
+      newToken['role'] = user.role;
+
+      console.log(newToken);
+    } catch {
+      setConfirmError(
+        'Falha ao atualizar senhas, verifique os campos e tente novamente'
+      );
     } finally {
       setLoading(false);
+      // navigate('/dashboard');
     }
   };
 

@@ -34,6 +34,7 @@ function App() {
           <Route path="/validate" element={<LandingValidatePage />} />
 
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/insert-token" element={<AdminTokenResetPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 

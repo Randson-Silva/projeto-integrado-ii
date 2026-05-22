@@ -10,14 +10,13 @@ import {
 import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { associateSendToken } from '../services/auth/authService';
-// import { login } from '../services/auth/authService';
+import { authSendToken } from '../services/auth/authService';
 
 const AssociateLoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const navigate = useNavigate();
-  const { setAuthData } = useAuth();
+  const { setAuthUser } = useAuth();
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -30,9 +29,9 @@ const AssociateLoginForm = () => {
     setLoading(true);
 
     try {
-      await associateSendToken({ email });
+      await authSendToken({ email });
 
-      setAuthData('', { email, role: 'ASSOCIATE' });
+      setAuthUser({ email, role: 'ASSOCIATE' });
 
       navigate('/token-associado');
     } catch {
