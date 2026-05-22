@@ -5,8 +5,14 @@ import AccessControlLoginPage from './pages/AccessControlLoginPage';
 import AccessControlProfilePage from './pages/AccessControlProfilePage';
 import AccessControlSelectedUserPage from './pages/AccessControlSelectedUserPage';
 import { default as AccessControlTablePage } from './pages/AccessControlTablePage';
+import AdminProfilePage from './pages/AdminProfilePage';
+import AdminTokenResetPage from './pages/AdminTokenResetPage';
+import AssociateCreatePage from './pages/AssociateCreatePage';
 import AssociateLoginPage from './pages/AssociateLoginPage';
+import AssociateProfilePage from './pages/AssociateProfilePage';
+import AssociatesTablePage from './pages/AssociatesTablePage';
 import ComingSoonPage from './pages/ComingSoonPage';
+import CommunicationPage from './pages/CommunicationPage';
 import DashboardPage from './pages/DashboardPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import LandingPage from './pages/LandingPage';
@@ -14,6 +20,7 @@ import LandingValidatePage from './pages/LandingValidatePage';
 import LoginPage from './pages/LoginPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import SettingsPage from './pages/SettingsPage';
 import TokenPage from './pages/TokenPage';
 import PrivateRoute from './routes/PrivateRoute';
 
@@ -37,6 +44,7 @@ function App() {
 
           <Route path="/dashboard" element={<DashboardPage />} />
 
+          {/* Controle de acesso */}
           <Route
             path="/controle-de-acesso"
             element={<AccessControlTablePage />}
@@ -45,14 +53,28 @@ function App() {
             path="/controle-de-acesso/novo"
             element={<AccessControlCreatePage />}
           />
-          <Route // pagina para usuario selecionado na tabela
+          <Route
             path="/controle-de-acesso/:id"
             element={<AccessControlSelectedUserPage />}
           />
-          <Route // pagina para gerenciar proprio perfil
-            path="controle-de-acesso/meu-perfil"
+          <Route
+            path="/controle-de-acesso/meu-perfil"
             element={<AccessControlProfilePage />}
           />
+
+          {/* Associados */}
+          <Route path="/associados" element={<AssociatesTablePage />} />
+          <Route path="/associados/novo" element={<AssociateCreatePage />} />
+          <Route path="/associados/:id" element={<AssociateProfilePage />} />
+
+          {/* Comunicação */}
+          <Route path="/comunicacao" element={<CommunicationPage />} />
+
+          {/* Configurações */}
+          <Route path="/configuracoes" element={<SettingsPage />} />
+
+          {/* Meu Perfil (admin) */}
+          <Route path="/meu-perfil" element={<AdminProfilePage />} />
 
           {/* Privadas */}
           <Route element={<PrivateRoute />}>

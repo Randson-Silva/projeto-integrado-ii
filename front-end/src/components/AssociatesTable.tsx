@@ -1,0 +1,501 @@
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
+import PersonIcon from '@mui/icons-material/Person';
+import SearchIcon from '@mui/icons-material/Search';
+import {
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  FormControl,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Popover,
+  Select,
+  Skeleton,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import type {
+  Associate,
+  AssociateStatus,
+} from '../services/associate/associate.types';
+
+type ChipColor = 'success' | 'warning' | 'default' | 'error';
+const STATUS_MAP: Record<AssociateStatus, { label: string; color: ChipColor }> =
+  {
+    ATIVO: { label: 'Ativo', color: 'success' },
+    PENDENTE: { label: 'Pendente', color: 'warning' },
+    INATIVADO: { label: 'Inativado', color: 'default' },
+    INATIVO: { label: 'Inativo', color: 'default' },
+  };
+
+const MOCK: Associate[] = [
+  {
+    id: '1',
+    fullName: 'João da Silva',
+    cpf: '000.000.000-00',
+    category: 'Sócio',
+    status: 'ATIVO',
+  },
+  {
+    id: '2',
+    fullName: 'Maria Lopes Braga',
+    cpf: '111.111.111-11',
+    category: 'Colaborador',
+    status: 'PENDENTE',
+  },
+  {
+    id: '3',
+    fullName: 'Ana de Souza',
+    cpf: '222.222.222-22',
+    category: 'Sócio',
+    status: 'INATIVADO',
+  },
+  {
+    id: '4',
+    fullName: 'Caio Rodrigues',
+    cpf: '333.333.333-33',
+    category: 'Colaborador',
+    status: 'ATIVO',
+  },
+];
+
+const ROWS_PER_PAGE = 10;
+
+interface FilterState {
+  nome: string;
+  cpf: string;
+  funcao: string;
+  tipo: string;
+}
+const EMPTY_FILTER: FilterState = { nome: '', cpf: '', funcao: '', tipo: '' };
+
+interface FilterPopoverProps {
+  anchor: HTMLElement | null;
+  onClose: () => void;
+  onApply: (f: FilterState) => void;
+}
+const FilterPopover = ({ anchor, onClose, onApply }: FilterPopoverProps) => {
+  const [local, setLocal] = useState<FilterState>(EMPTY_FILTER);
+  const set = (k: keyof FilterState, v: string) =>
+    setLocal((p) => ({ ...p, [k]: v }));
+  return (
+    <Popover
+      open={Boolean(anchor)}
+      anchorEl={anchor}
+      onClose={onClose}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      slotProps={{
+        paper: { sx: { borderRadius: 3, p: 2.5, width: 260, mt: 0.5 } },
+      }}
+    >
+      <Stack spacing={2}>
+        <Stack
+          direction="row"
+          sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+        >
+          <Typography sx={{ fontWeight: 700 }} variant="subtitle1">
+            Filtros
+          </Typography>
+          <IconButton size="small" onClick={onClose}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Stack>
+        <TextField
+          label="Nome"
+          value={local.nome}
+          onChange={(e) => set('nome', e.target.value)}
+          size="small"
+          fullWidth
+        />
+        <TextField
+          label="CPF"
+          value={local.cpf}
+          onChange={(e) => set('cpf', e.target.value)}
+          size="small"
+          fullWidth
+        />
+        <TextField
+          label="Função"
+          value={local.funcao}
+          onChange={(e) => set('funcao', e.target.value)}
+          size="small"
+          fullWidth
+        />
+        <FormControl size="small" fullWidth>
+          <InputLabel>Tipo</InputLabel>
+          <Select
+            value={local.tipo}
+            label="Tipo"
+            onChange={(e) => set('tipo', e.target.value)}
+          >
+            <MenuItem value="">Todos</MenuItem>
+            <MenuItem value="Sócio">Sócio</MenuItem>
+            <MenuItem value="Colaborador">Colaborador</MenuItem>
+          </Select>
+        </FormControl>
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          onClick={() => {
+            onApply(local);
+            onClose();
+          }}
+          sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 700 }}
+        >
+          Filtrar
+        </Button>
+      </Stack>
+    </Popover>
+  );
+};
+
+const AssociatesTable = () => {
+  const navigate = useNavigate();
+  const filterBtnRef = useRef<HTMLButtonElement>(null);
+  const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
+  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTER);
+  const [page, setPage] = useState(1);
+  const [loading] = useState(false);
+  const [users] = useState<Associate[]>(MOCK);
+
+  const filtered = users.filter((u) => {
+    const name = u.fullName.toLowerCase();
+    const matchSearch =
+      name.includes(search.toLowerCase()) || u.cpf.includes(search);
+    const matchNome =
+      !filters.nome || name.includes(filters.nome.toLowerCase());
+    const matchCpf = !filters.cpf || u.cpf.includes(filters.cpf);
+    const matchTipo = !filters.tipo || u.category === filters.tipo;
+    return matchSearch && matchNome && matchCpf && matchTipo;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice(
+    (safePage - 1) * ROWS_PER_PAGE,
+    safePage * ROWS_PER_PAGE
+  );
+  const displayFrom =
+    filtered.length === 0 ? 0 : (safePage - 1) * ROWS_PER_PAGE + 1;
+  const displayTo = Math.min(safePage * ROWS_PER_PAGE, filtered.length);
+  const hasFilters = Object.values(filters).some(Boolean);
+
+  const pageItems = (): (number | '...')[] => {
+    if (totalPages <= 5)
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (safePage <= 3) return [1, 2, 3, '...', totalPages];
+    if (safePage >= totalPages - 2)
+      return [1, '...', totalPages - 2, totalPages - 1, totalPages];
+    return [1, '...', safePage - 1, safePage, safePage + 1, '...', totalPages];
+  };
+
+  return (
+    <Stack spacing={2.5}>
+      {/* Breadcrumb */}
+      <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
+        <GroupOutlinedIcon sx={{ color: 'primary.main', fontSize: 18 }} />
+        <Typography
+          variant="body2"
+          color="primary.main"
+          sx={{ fontWeight: 600 }}
+        >
+          Associados
+        </Typography>
+      </Stack>
+
+      {/* Actions row */}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={1.5}
+        sx={{ justifyContent: 'flex-end' }}
+      >
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={() => navigate('/associados/novo')}
+          sx={{
+            fontWeight: 600,
+            borderRadius: 10,
+            textTransform: 'none',
+            px: 3,
+          }}
+        >
+          Gerenciar Associado
+        </Button>
+        <Button
+          ref={filterBtnRef}
+          variant="outlined"
+          startIcon={<FilterListIcon />}
+          onClick={(e) => setFilterAnchor(e.currentTarget)}
+          sx={{
+            fontWeight: 600,
+            borderRadius: 10,
+            textTransform: 'none',
+            px: 3,
+            borderColor: hasFilters ? 'primary.main' : 'text.secondary',
+            color: hasFilters ? 'primary.main' : 'text.secondary',
+          }}
+        >
+          {hasFilters ? 'Filtros ativos' : 'Adicionar Filtros'}
+        </Button>
+      </Stack>
+
+      {/* Search */}
+      <TextField
+        placeholder="Pesquise um associado"
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setPage(1);
+        }}
+        size="small"
+        fullWidth
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: 'text.disabled', fontSize: 20 }} />
+              </InputAdornment>
+            ),
+          },
+        }}
+        sx={{ bgcolor: 'background.paper' }}
+      />
+
+      {/* Table */}
+      <Paper
+        elevation={0}
+        sx={{
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 2,
+          overflow: 'hidden',
+        }}
+      >
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'background.paper' }}>
+                {['NOME', 'CPF', 'CATEGORIA', 'STATUS'].map((h) => (
+                  <TableCell
+                    key={h}
+                    sx={{
+                      fontWeight: 700,
+                      color: 'text.secondary',
+                      fontSize: 12,
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {h}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <TableRow
+                    key={i}
+                    sx={{
+                      bgcolor: i % 2 === 1 ? 'grey.100' : 'background.paper',
+                    }}
+                  >
+                    <TableCell sx={{ py: 2 }}>
+                      <Stack
+                        direction="row"
+                        sx={{ alignItems: 'center' }}
+                        spacing={2}
+                      >
+                        <Skeleton variant="circular" width={52} height={52} />
+                        <Skeleton width={160} />
+                      </Stack>
+                    </TableCell>
+                    {[120, 100, 80].map((w, j) => (
+                      <TableCell key={j}>
+                        <Skeleton width={w} />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : paginated.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    align="center"
+                    sx={{ py: 5, color: 'text.disabled' }}
+                  >
+                    Nenhum associado encontrado.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginated.map((u, idx) => {
+                  const st = STATUS_MAP[u.status] ?? {
+                    label: u.status,
+                    color: 'default' as ChipColor,
+                  };
+                  return (
+                    <TableRow
+                      key={u.id}
+                      hover
+                      onClick={() => navigate(`/associados/${u.id}`)}
+                      sx={{
+                        cursor: 'pointer',
+                        bgcolor:
+                          idx % 2 === 1 ? 'grey.100' : 'background.paper',
+                        '&:hover': { bgcolor: 'custom.orange.light30' },
+                        '&:last-child td': { border: 0 },
+                      }}
+                    >
+                      <TableCell sx={{ py: 2 }}>
+                        <Stack
+                          direction="row"
+                          sx={{ alignItems: 'center' }}
+                          spacing={2}
+                        >
+                          <Avatar
+                            sx={{ width: 52, height: 52, bgcolor: 'grey.500' }}
+                          >
+                            <PersonIcon sx={{ color: '#fff', fontSize: 34 }} />
+                          </Avatar>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {u.fullName}
+                          </Typography>
+                        </Stack>
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          {u.cpf}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          {u.category ?? '—'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ py: 2 }}>
+                        <Chip
+                          label={st.label}
+                          size="small"
+                          color={st.color}
+                          variant="filled"
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: 11,
+                            borderRadius: 1,
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* Paginação */}
+        <Stack
+          direction="row"
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 2,
+            py: 1.5,
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            flexWrap: 'wrap',
+            gap: 1,
+          }}
+        >
+          <Typography variant="caption" color="text.secondary">
+            Exibindo {displayFrom} - {displayTo} de {filtered.length} associados
+          </Typography>
+          <Stack direction="row" sx={{ alignItems: 'center' }} spacing={0.5}>
+            <IconButton
+              size="small"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+            >
+              <Box component="span" sx={{ fontSize: 18, lineHeight: 1 }}>
+                ‹
+              </Box>
+            </IconButton>
+            {pageItems().map((item, i) =>
+              item === '...' ? (
+                <Typography
+                  key={`e-${i}`}
+                  variant="body2"
+                  sx={{ px: 0.5, color: 'text.disabled' }}
+                >
+                  ...
+                </Typography>
+              ) : (
+                <Box
+                  key={item}
+                  onClick={() => setPage(item as number)}
+                  sx={{
+                    px: 0.75,
+                    py: 0.25,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    color:
+                      safePage === item ? 'primary.main' : 'text.secondary',
+                    fontWeight: safePage === item ? 700 : 400,
+                    borderBottom:
+                      safePage === item ? '2px solid' : '2px solid transparent',
+                    borderColor:
+                      safePage === item ? 'primary.main' : 'transparent',
+                    '&:hover': { color: 'primary.main' },
+                  }}
+                >
+                  {item}
+                </Box>
+              )
+            )}
+            <IconButton
+              size="small"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+            >
+              <Box component="span" sx={{ fontSize: 18, lineHeight: 1 }}>
+                ›
+              </Box>
+            </IconButton>
+          </Stack>
+        </Stack>
+      </Paper>
+
+      {/* Filter Popover */}
+      <FilterPopover
+        anchor={filterAnchor}
+        onClose={() => setFilterAnchor(null)}
+        onApply={(f) => {
+          setFilters(f);
+          setPage(1);
+        }}
+      />
+    </Stack>
+  );
+};
+
+export default AssociatesTable;
