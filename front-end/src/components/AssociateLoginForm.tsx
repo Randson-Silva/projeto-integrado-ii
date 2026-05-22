@@ -9,28 +9,31 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-// import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
+import { associateSendToken } from '../services/auth/authService';
 // import { login } from '../services/auth/authService';
 
 const AssociateLoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const navigate = useNavigate();
-  //   const { setAuthToken } = useAuth();
+  const { setAuthData } = useAuth();
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setEmailError('');
 
-    // const data = new FormData(e.currentTarget);
-    // const email = data.get('email') as string;
+    const data = new FormData(e.currentTarget);
+    const email = data.get('email') as string;
 
     setLoading(true);
 
     try {
-      //   const { token } = await login({ email, password });
-      //   setAuthToken(token);
+      await associateSendToken({ email });
+
+      setAuthData('', { email, role: 'ASSOCIATE' });
+
       navigate('/token-associado');
     } catch {
       setEmailError('Credenciais inválidas. Verifique e tente novamente.');

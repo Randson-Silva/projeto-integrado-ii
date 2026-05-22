@@ -92,3 +92,34 @@ export async function accessControlCreate({
 
   return res.data;
 }
+
+export interface AssociateSendTokenRequest {
+  email: string;
+}
+
+
+export async function associateSendToken({ email }: AssociateSendTokenRequest) {
+  const res = await api.post('/auth/magic-link/request', { email });
+  
+  console.log(res.data);
+  return res.data;
+}
+
+export interface AssociateInsertTokenRequest {
+  email: string;
+  token: string;
+}
+
+export interface AssociateInsertTokenResponse {
+  message: string;
+  token: string;
+}
+
+export async function associateInsertToken({
+  token,
+  email,
+}: AssociateInsertTokenRequest): Promise<AssociateInsertTokenResponse> {
+  const res = await api.post('/auth/magic-link/login', { email, token });
+
+  return res.data;
+}

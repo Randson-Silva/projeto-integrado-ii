@@ -19,10 +19,17 @@ export const AuthProvider = ({ children }: React.PropsWithChildren) => {
   });
 
   const setAuthData = (token: string, user: AuthUser) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
+    setAuthToken(token);
+    setAuthUser(user);
+  };
 
+  const setAuthToken = (token: string) => {
+    localStorage.setItem('token', token);
     setToken(token);
+  };
+
+  const setAuthUser = (user: AuthUser) => {
+    localStorage.setItem('user', JSON.stringify(user));
     setUser(user);
   };
 
@@ -40,9 +47,11 @@ export const AuthProvider = ({ children }: React.PropsWithChildren) => {
       user,
       isAuthenticated: !!token,
       setAuthData,
+      setAuthToken,
+      setAuthUser,
       logout,
     }),
-    [token, user]
+    [setAuthData, token, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
