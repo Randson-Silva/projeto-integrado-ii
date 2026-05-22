@@ -2,6 +2,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import MenuIcon from '@mui/icons-material/Menu';
 import {
   AppBar,
+  Avatar,
   Box,
   Drawer,
   IconButton,
@@ -12,62 +13,89 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar, { type SidebarItem } from '../components/Sidebar';
+import { useAuth } from '../hooks/useAuth';
 
 const DRAWER_WIDTH = 224;
 
-// Mock — substituir por contexto de autenticação
-const ASSOCIATIONS = ['com Dom Maurício', 'Outra Associação'];
-
-const AssociationMenu = () => {
+const UserMenu = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
-  const [selected, setSelected] = useState(ASSOCIATIONS[0]);
+
+  const displayName =
+    (user as unknown as { fullName?: string; name?: string })?.fullName ??
+    (user as unknown as { name?: string })?.name ??
+    'Usuário';
+  const role = (user as unknown as { role?: string })?.role ?? '';
+  const initial = displayName.charAt(0).toUpperCase();
+
+  const handleLogout = () => {
+    setAnchor(null);
+    logout();
+    navigate('/login');
+  };
 
   return (
     <>
       <Stack
+        direction="row"
+        spacing={1.5}
         onClick={(e) => setAnchor(e.currentTarget)}
-        sx={{ cursor: 'pointer', userSelect: 'none', alignItems: 'flex-end' }}
+        sx={{ cursor: 'pointer', userSelect: 'none', alignItems: 'center' }}
       >
-        <Stack direction="row" sx={{ alignItems: 'center' }} spacing={0.5}>
+        <Avatar
+          sx={{
+            width: 38,
+            height: 38,
+            bgcolor: 'primary.main',
+            fontWeight: 700,
+            fontSize: 16,
+          }}
+        >
+          {initial}
+        </Avatar>
+        <Stack sx={{ display: { xs: 'none', sm: 'flex' } }}>
+          <Typography
+            variant="body2"
+            color="text.primary"
+            sx={{ fontWeight: 700, lineHeight: 1.2 }}
+          >
+            {displayName}
+          </Typography>
           <Typography
             variant="caption"
             color="text.secondary"
-            sx={{ fontWeight: 600, lineHeight: 1 }}
+            sx={{ lineHeight: 1.2 }}
           >
-            Associação
+            {role}
           </Typography>
-          <KeyboardArrowDownIcon
-            sx={{ fontSize: 16, color: 'text.secondary' }}
-          />
         </Stack>
-        <Typography
-          variant="body2"
-          color="text.primary"
-          sx={{ fontWeight: 700, lineHeight: 1.4 }}
-        >
-          {selected}
-        </Typography>
+        <KeyboardArrowDownIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
       </Stack>
+
       <Menu
         anchorEl={anchor}
         open={Boolean(anchor)}
         onClose={() => setAnchor(null)}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        slotProps={{
+          paper: { sx: { borderRadius: 2, minWidth: 160, mt: 0.5 } },
+        }}
       >
-        {ASSOCIATIONS.map((a) => (
-          <MenuItem
-            key={a}
-            selected={a === selected}
-            onClick={() => {
-              setSelected(a);
-              setAnchor(null);
-            }}
-          >
-            {a}
-          </MenuItem>
-        ))}
+        <MenuItem
+          onClick={() => {
+            setAnchor(null);
+            navigate('/meu-perfil');
+          }}
+        >
+          Meu Perfil
+        </MenuItem>
+        <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+          Sair
+        </MenuItem>
       </Menu>
     </>
   );
@@ -105,7 +133,7 @@ const MainLayout = ({ children, menuItems, pageTitle }: MainLayoutProps) => {
               {pageTitle}
             </Typography>
           )}
-          <AssociationMenu />
+          <UserMenu />
         </Toolbar>
       </AppBar>
 
@@ -165,7 +193,6 @@ const MainLayout = ({ children, menuItems, pageTitle }: MainLayoutProps) => {
             bgcolor: 'background.paper',
           }}
         >
-          {/* Título da página no topbar */}
           {pageTitle ? (
             <Typography
               variant="h5"
@@ -177,7 +204,7 @@ const MainLayout = ({ children, menuItems, pageTitle }: MainLayoutProps) => {
           ) : (
             <Box />
           )}
-          <AssociationMenu />
+          <UserMenu />
         </Box>
 
         <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 } }}>{children}</Box>
