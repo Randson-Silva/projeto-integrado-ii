@@ -1,64 +1,143 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
+import DownloadIcon from '@mui/icons-material/Download';
 import EditIcon from '@mui/icons-material/Edit';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
-import MessageOutlinedIcon from '@mui/icons-material/MessageOutlined';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
+import PersonIcon from '@mui/icons-material/Person';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import SendIcon from '@mui/icons-material/Send';
+
 import {
   Alert,
   Avatar,
   Button,
+  Chip,
   CircularProgress,
   Divider,
+  FormControl,
   Grid,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
   Snackbar,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+
+import { useEffect, useState } from 'react';
+
 import { useNavigate, useParams } from 'react-router-dom';
-import type { Associate } from '../services/associate/associate.types';
-import { default as DeleteConfirmDialog } from './DeleteConfirmDialog';
+
+import { useAuth } from '../hooks/useAuth';
+
+import {
+  mapAssociateResponseToForm,
+  mapFormToUpdatePayload,
+} from '../services/associate/associate.mappers';
+
+import type { AssociateProfileForm } from '../services/associate/associate.types';
+
+import {
+  deleteAssociate,
+  getAssociateById,
+  updateAssociate,
+} from '../services/associate/associateService';
+
+import DeleteConfirmDialog from './DeleteConfirmDialog';
 import InactivateAssociateDialog from './InactivateAssociateDialog';
 
-const MOCK: Associate = {
-  id: '1',
-  fullName: 'João da Silva',
-  cpf: '000.000.000-00',
-  email: 'joao@email.com',
-  phone: '(88) 9 0000-0000',
-  birthDate: '01/01/1990',
-  category: 'Sócio',
-  status: 'ATIVO',
-  addressStreet: 'Rua Exemplo',
-  addressNumber: '123',
-  addressComplement: 'Apto 01',
-  addressNeighborhood: 'Centro',
-  addressZipCode: '63900-000',
-  addressCity: 'Quixadá',
-  addressState: 'CE',
-  institutionName: 'Escola Municipal',
-  institutionRole: 'Professor',
-  registrationDate: '01/01/2024',
-  validity: '31/12/2025',
-  monthlyFee: 'R$ 50,00',
+const BR_STATES = [
+  'AC',
+  'AL',
+  'AP',
+  'AM',
+  'BA',
+  'CE',
+  'DF',
+  'ES',
+  'GO',
+  'MA',
+  'MT',
+  'MS',
+  'MG',
+  'PA',
+  'PB',
+  'PR',
+  'PE',
+  'PI',
+  'RJ',
+  'RN',
+  'RS',
+  'RO',
+  'RR',
+  'SC',
+  'SP',
+  'SE',
+  'TO',
+];
+
+const DARK_BTN = {
+  bgcolor: '#5F5E5E',
+  color: '#fff',
+  borderRadius: 10,
+  textTransform: 'none',
+  fontWeight: 600,
+  px: 2.5,
+  '&:hover': {
+    bgcolor: '#3E3D3D',
+  },
+} as const;
+
+type Snack = {
+  open: boolean;
+  severity: 'success' | 'error';
+  msg: string;
 };
 
-type Snack = { open: boolean; severity: 'success' | 'error'; msg: string };
+const EMPTY: AssociateProfileForm = {
+  id: '',
+  fullName: '',
+  cpf: '',
+  email: '',
+  phone: '',
+  birthDate: '',
+  category: '',
+  addressZipCode: '',
+  addressState: '',
+  addressCity: '',
+  addressNeighborhood: '',
+  addressStreet: '',
+  addressNumber: '',
+  race: '',
+  gender: '',
+  sexualOrientation: '',
+  education: '',
+  income: '',
+  disability: '',
+};
 
 const AssociateProfile = () => {
+  const { token } = useAuth();
+
   const { id } = useParams<{ id: string }>();
+
   const navigate = useNavigate();
 
-  const [form, setForm] = useState<Associate>({ ...MOCK, id: id ?? MOCK.id });
+  const [loading, setLoading] = useState(true);
+
   const [editing, setEditing] = useState(false);
+
   const [saving, setSaving] = useState(false);
+
+  const [form, setForm] = useState<AssociateProfileForm>(EMPTY);
+
   const [inactivateOpen, setInactivateOpen] = useState(false);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
+
   const [snack, setSnack] = useState<Snack>({
     open: false,
     severity: 'success',
@@ -66,41 +145,143 @@ const AssociateProfile = () => {
   });
 
   const toast = (severity: 'success' | 'error', msg: string) =>
-    setSnack({ open: true, severity, msg });
+    setSnack({
+      open: true,
+      severity,
+      msg,
+    });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        if (!token || !id) return;
+
+        const res = await getAssociateById(token, id);
+
+        setForm(mapAssociateResponseToForm(res));
+      } catch {
+        toast('error', 'Erro ao carregar associado.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [id, token]);
 
   const handleSave = async () => {
-    setSaving(true);
     try {
-      console.log('Save associate:', form);
+      if (!token || !id) return;
+
+      setSaving(true);
+
+      await updateAssociate(
+        token,
+        id,
+        mapFormToUpdatePayload({
+          ...form,
+
+          cpf: form.cpf.replace(/\D/g, ''),
+
+          phone: form.phone.replace(/\D/g, ''),
+
+          addressZipCode: form.addressZipCode.replace(/\D/g, ''),
+        })
+      );
+
       setEditing(false);
+
       toast('success', 'Alterações salvas com sucesso!');
     } catch {
-      toast('error', 'Erro ao salvar o perfil.');
+      toast('error', 'Erro ao salvar alterações.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleInactivate = async (reason: string) => {
-    console.log('Inactivate:', id, reason);
-    toast('success', 'Vínculo inativado com sucesso!');
-  };
-
   const handleDelete = async () => {
-    console.log('Delete:', id);
-    navigate('/associados');
+    try {
+      if (!token || !id) return;
+
+      await deleteAssociate(token, id);
+
+      navigate('/associados');
+    } catch {
+      toast('error', 'Erro ao excluir associado.');
+    }
   };
 
-  const f = (label: string, key: keyof Associate, disabled = false) => (
+  const tf = (
+    label: string,
+    key: keyof AssociateProfileForm,
+    type = 'text'
+  ) => (
     <TextField
       label={label}
-      value={(form[key] as string) ?? ''}
-      onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
-      disabled={disabled || !editing}
+      value={String(form[key] ?? '')}
+      onChange={(e) =>
+        setForm((p) => ({
+          ...p,
+          [key]: e.target.value,
+        }))
+      }
+      disabled={!editing}
+      type={type}
       size="small"
       fullWidth
+      slotProps={{
+        inputLabel: {
+          shrink: true,
+        },
+      }}
     />
   );
+
+  const sf = (
+    label: string,
+    key: keyof AssociateProfileForm,
+    options: {
+      value: string;
+      label: string;
+    }[]
+  ) => (
+    <FormControl size="small" fullWidth>
+      <InputLabel shrink>{label}</InputLabel>
+
+      <Select
+        value={String(form[key] ?? '')}
+        label={label}
+        notched
+        disabled={!editing}
+        onChange={(e) =>
+          setForm((p) => ({
+            ...p,
+            [key]: e.target.value,
+          }))
+        }
+      >
+        {options.map((o) => (
+          <MenuItem key={o.value} value={o.value}>
+            {o.label}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
+
+  if (loading) {
+    return (
+      <Stack
+        sx={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 10,
+        }}
+      >
+        <CircularProgress />
+      </Stack>
+    );
+  }
 
   return (
     <>
@@ -114,7 +295,10 @@ const AssociateProfile = () => {
             fontWeight: 600,
             textTransform: 'none',
             p: 0,
-            '&:hover': { bgcolor: 'transparent', color: 'primary.main' },
+            '&:hover': {
+              bgcolor: 'transparent',
+              color: 'primary.main',
+            },
           }}
         >
           Voltar
@@ -126,147 +310,201 @@ const AssociateProfile = () => {
             border: '1px solid',
             borderColor: 'divider',
             borderRadius: 2,
-            p: { xs: 2, sm: 3 },
+            p: {
+              xs: 2,
+              sm: 3,
+            },
           }}
         >
-          {/* Avatar + Editar */}
           <Stack
-            direction={{ xs: 'column', sm: 'row' }}
             sx={{
-              mb: 3,
+              flexDirection: 'row',
               justifyContent: 'space-between',
-              alignItems: { xs: 'center', sm: 'flex-start' },
+              alignItems: 'flex-start',
+              mb: 3,
             }}
-            spacing={2}
           >
-            <Stack sx={{ alignItems: 'center' }} spacing={1}>
-              <Avatar sx={{ width: 80, height: 80, bgcolor: 'grey.400' }}>
-                <PersonOutlineIcon sx={{ fontSize: 50, color: 'grey.100' }} />
-              </Avatar>
-              <Typography variant="body2" color="text.secondary">
-                {form.category}
-              </Typography>
-            </Stack>
-            {!editing && (
-              <Button
-                startIcon={<EditIcon sx={{ fontSize: 16 }} />}
-                variant="contained"
-                color="primary"
-                onClick={() => setEditing(true)}
+            <Stack
+              sx={{
+                width: 120,
+              }}
+            />
+
+            <Stack
+              sx={{
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <Avatar
                 sx={{
-                  borderRadius: 10,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 3,
-                  width: { xs: '100%', sm: 'auto' },
+                  width: {
+                    xs: 100,
+                    sm: 140,
+                  },
+                  height: {
+                    xs: 100,
+                    sm: 140,
+                  },
+                  bgcolor: 'grey.500',
                 }}
               >
-                Editar Perfil
-              </Button>
-            )}
+                <PersonIcon
+                  sx={{
+                    fontSize: {
+                      xs: 64,
+                      sm: 90,
+                    },
+                    color: 'grey.300',
+                  }}
+                />
+              </Avatar>
+
+              <Chip
+                label="Ativo"
+                size="small"
+                color="success"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: 12,
+                  borderRadius: 1,
+                }}
+              />
+            </Stack>
+
+            <Stack
+              sx={{
+                width: 120,
+                alignItems: 'flex-end',
+              }}
+            >
+              {!editing && (
+                <Button
+                  startIcon={<EditIcon sx={{ fontSize: 16 }} />}
+                  variant="contained"
+                  color="primary"
+                  onClick={() => setEditing(true)}
+                  sx={{
+                    borderRadius: 10,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    px: 2.5,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Editar Perfil
+                </Button>
+              )}
+            </Stack>
           </Stack>
 
           {!editing && (
             <>
-              {/* Gerenciar Associado */}
-              <Divider sx={{ mb: 2 }} />
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 700, mb: 1.5 }}
-                color="text.secondary"
+                sx={{
+                  fontWeight: 700,
+                  mb: 1.5,
+                  color: 'text.secondary',
+                }}
               >
                 Gerenciar Associado
               </Typography>
+
               <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={1.5}
-                sx={{ mb: 3, flexWrap: 'wrap' }}
+                sx={{
+                  flexDirection: {
+                    xs: 'column',
+                    sm: 'row',
+                  },
+                  gap: 1.5,
+                  mb: 3,
+                  flexWrap: 'wrap',
+                }}
               >
-                <Button
-                  startIcon={<MessageOutlinedIcon sx={{ fontSize: 16 }} />}
-                  variant="contained"
-                  onClick={() => navigate('/comunicacao')}
-                  sx={{
-                    bgcolor: 'grey.500',
-                    color: '#fff',
-                    borderRadius: 10,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    '&:hover': { bgcolor: 'grey.700' },
-                  }}
-                >
-                  Enviar Mensagem
-                </Button>
-                <Button
-                  startIcon={<LinkOffIcon sx={{ fontSize: 16 }} />}
-                  variant="contained"
-                  color="primary"
-                  onClick={() => setInactivateOpen(true)}
-                  sx={{
-                    borderRadius: 10,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                  }}
-                >
-                  Inativar Vínculo
-                </Button>
                 <Button
                   startIcon={<DeleteOutlineIcon sx={{ fontSize: 16 }} />}
                   variant="contained"
                   onClick={() => setDeleteOpen(true)}
-                  sx={{
-                    bgcolor: 'grey.500',
-                    color: '#fff',
-                    borderRadius: 10,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    '&:hover': { bgcolor: 'grey.700' },
-                  }}
+                  sx={DARK_BTN}
                 >
                   Excluir Associado
                 </Button>
+
+                <Button
+                  startIcon={<LinkOffIcon sx={{ fontSize: 16 }} />}
+                  variant="contained"
+                  onClick={() => setInactivateOpen(true)}
+                  sx={DARK_BTN}
+                >
+                  Inativar Vínculo
+                </Button>
+
+                <Button
+                  startIcon={<DownloadIcon sx={{ fontSize: 16 }} />}
+                  variant="contained"
+                  color="primary"
+                  sx={{
+                    borderRadius: 10,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    px: 2.5,
+                  }}
+                >
+                  Baixar Ficha Cadastral
+                </Button>
               </Stack>
 
-              {/* Gerenciar Carteirinha */}
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: 700, mb: 1.5 }}
-                color="text.secondary"
+                sx={{
+                  fontWeight: 700,
+                  mb: 1.5,
+                  color: 'text.secondary',
+                }}
               >
                 Gerenciar Carteirinha
               </Typography>
+
               <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={1.5}
-                sx={{ mb: 3 }}
+                sx={{
+                  flexDirection: {
+                    xs: 'column',
+                    sm: 'row',
+                  },
+                  gap: 1.5,
+                  mb: 3,
+                  flexWrap: 'wrap',
+                }}
               >
                 <Button
-                  startIcon={<CreditCardOutlinedIcon sx={{ fontSize: 16 }} />}
+                  startIcon={<RefreshIcon sx={{ fontSize: 16 }} />}
                   variant="contained"
-                  sx={{
-                    bgcolor: 'grey.500',
-                    color: '#fff',
-                    borderRadius: 10,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    '&:hover': { bgcolor: 'grey.700' },
-                  }}
+                  sx={DARK_BTN}
                 >
-                  Emitir Carteirinha
+                  Renovar Carteirinha
                 </Button>
+
                 <Button
                   startIcon={<SendIcon sx={{ fontSize: 16 }} />}
                   variant="contained"
+                  sx={DARK_BTN}
+                >
+                  Enviar Carteirinha
+                </Button>
+
+                <Button
+                  startIcon={<CreditCardOutlinedIcon sx={{ fontSize: 16 }} />}
+                  variant="contained"
+                  color="primary"
                   sx={{
-                    bgcolor: 'grey.500',
-                    color: '#fff',
                     borderRadius: 10,
                     textTransform: 'none',
                     fontWeight: 600,
-                    '&:hover': { bgcolor: 'grey.700' },
+                    px: 2.5,
                   }}
                 >
-                  Solicitar Aprovação
+                  Baixar Carteirinha
                 </Button>
               </Stack>
             </>
@@ -274,119 +512,308 @@ const AssociateProfile = () => {
 
           <Divider sx={{ mb: 3 }} />
 
-          {/* Dados Pessoais */}
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              mb: 2,
+            }}
+          >
             Dados Pessoais
           </Typography>
-          <Grid container sx={{ spacing: 2, mb: 3 }}>
-            <Grid size={{ xs: 12 }}>{f('Nome Completo', 'fullName')}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              {f('Data de Nascimento', 'birthDate')}
+
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12, sm: 5 }}>
+              {tf('Nome Completo', 'fullName')}
             </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{f('CPF', 'cpf')}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{f('Telefone', 'phone')}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{f('E-mail', 'email')}</Grid>
+
+            <Grid size={{ xs: 12, sm: 4 }}>{tf('CPF', 'cpf')}</Grid>
+
+            <Grid size={{ xs: 12, sm: 3 }}>
+              {tf('Data de Nascimento', 'birthDate', 'date')}
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 8 }}>
+              {tf('E-mail', 'email', 'email')}
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 4 }}>{tf('Telefone', 'phone')}</Grid>
           </Grid>
 
-          {/* Dados de Endereço */}
           <Divider sx={{ mb: 3 }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
+
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              mb: 2,
+            }}
+          >
             Dados de Endereço
           </Typography>
-          <Grid container sx={{ spacing: 2, mb: 3 }}>
+
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12, sm: 2 }}>{tf('CEP', 'addressZipCode')}</Grid>
+
+            <Grid size={{ xs: 12, sm: 3 }}>
+              {sf(
+                'Estado',
+                'addressState',
+                BR_STATES.map((s) => ({
+                  value: s,
+                  label: s,
+                }))
+              )}
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 3 }}>{tf('Cidade', 'addressCity')}</Grid>
+
+            <Grid size={{ xs: 12, sm: 4 }}>
+              {tf('Bairro', 'addressNeighborhood')}
+            </Grid>
+
             <Grid size={{ xs: 12, sm: 6 }}>
-              {f('Logradouro', 'addressStreet')}
+              {tf('Logradouro', 'addressStreet')}
             </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>{f('Número', 'addressNumber')}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              {f('Complemento', 'addressComplement')}
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              {tf('Complemento', 'addressNumber')}
             </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              {f('Bairro', 'addressNeighborhood')}
-            </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>{f('CEP', 'addressZipCode')}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{f('Cidade', 'addressCity')}</Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>{f('Estado', 'addressState')}</Grid>
           </Grid>
 
-          {/* Dados Institucionais */}
           <Divider sx={{ mb: 3 }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
+
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              mb: 2,
+            }}
+          >
             Dados Institucionais
           </Typography>
-          <Grid container sx={{ spacing: 2, mb: 3 }}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              {f('Instituição', 'institutionName')}
+
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              {sf('Disponibilidade de Horário', 'disability', [
+                {
+                  value: 'MANHA',
+                  label: 'Matutino',
+                },
+                {
+                  value: 'TARDE',
+                  label: 'Vespertino',
+                },
+                {
+                  value: 'NOITE',
+                  label: 'Noturno',
+                },
+                {
+                  value: 'FLEXIVEL',
+                  label: 'Flexível',
+                },
+              ])}
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              {f('Função', 'institutionRole')}
+
+            <Grid size={{ xs: 12, sm: 3 }}>
+              {sf('Categoria', 'category', [
+                {
+                  value: 'ARTISTA',
+                  label: 'Artista',
+                },
+                {
+                  value: 'PRODUTOR',
+                  label: 'Produtor',
+                },
+                {
+                  value: 'TECNICO',
+                  label: 'Técnico',
+                },
+                {
+                  value: 'OUTRO',
+                  label: 'Outro',
+                },
+              ])}
             </Grid>
           </Grid>
 
-          {/* Dados Socioeconômicos */}
           <Divider sx={{ mb: 3 }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-            Dados Socioeconômicos
+
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              mb: 2,
+            }}
+          >
+            Dados Autodeclaratórios
           </Typography>
-          <Grid container sx={{ spacing: 2, mb: editing ? 3 : 0 }}>
+
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              mb: editing ? 0 : 1,
+            }}
+          >
             <Grid size={{ xs: 12, sm: 3 }}>
-              {f('Data de Cadastro', 'registrationDate', true)}
+              {sf('Escolaridade', 'education', [
+                {
+                  value: 'FUNDAMENTAL',
+                  label: 'Fundamental',
+                },
+                {
+                  value: 'MEDIO',
+                  label: 'Ensino Médio',
+                },
+                {
+                  value: 'SUPERIOR',
+                  label: 'Superior',
+                },
+                {
+                  value: 'POS',
+                  label: 'Pós-graduação',
+                },
+              ])}
             </Grid>
+
             <Grid size={{ xs: 12, sm: 3 }}>
-              {f('Validade', 'validity', true)}
+              {sf('Renda Pessoal', 'income', [
+                { value: 'BAIXA', label: 'Baixa' },
+                { value: 'MEDIA', label: 'Média' },
+                { value: 'ALTA', label: 'Alta' },
+              ])}
             </Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>
-              {f('Mensalidade', 'monthlyFee', !editing)}
+
+            <Grid size={{ xs: 12, sm: 2 }}>
+              {sf('Etnia', 'race', [
+                {
+                  value: 'BRANCO',
+                  label: 'Branco (a)',
+                },
+                {
+                  value: 'PARDO',
+                  label: 'Pardo (a)',
+                },
+                {
+                  value: 'PRETO',
+                  label: 'Preto (a)',
+                },
+                {
+                  value: 'AMARELO',
+                  label: 'Amarelo (a)',
+                },
+                {
+                  value: 'INDIGENA',
+                  label: 'Indígena',
+                },
+              ])}
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 2 }}>
+              {sf('Identidade de Gênero', 'gender', [
+                {
+                  value: 'MASCULINO',
+                  label: 'Masculino',
+                },
+                {
+                  value: 'FEMININO',
+                  label: 'Feminino',
+                },
+                {
+                  value: 'NAO_BINARIO',
+                  label: 'Não-binário',
+                },
+                {
+                  value: 'OUTRO',
+                  label: 'Outro',
+                },
+              ])}
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 2 }}>
+              {sf('Orientação Sexual', 'sexualOrientation', [
+                {
+                  value: 'HETEROSSEXUAL',
+                  label: 'Heterosexual',
+                },
+                {
+                  value: 'HOMOSSEXUAL',
+                  label: 'Homossexual',
+                },
+                {
+                  value: 'BISSEXUAL',
+                  label: 'Bissexual',
+                },
+                {
+                  value: 'OUTRO',
+                  label: 'Outro',
+                },
+              ])}
             </Grid>
           </Grid>
 
-          {/* Botões edição */}
           {editing && (
-            <>
-              <Divider sx={{ my: 3 }} />
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={2}
-                sx={{ justifyContent: 'flex-end' }}
+            <Stack
+              sx={{
+                flexDirection: {
+                  xs: 'column',
+                  sm: 'row',
+                },
+                gap: 2,
+                justifyContent: 'flex-end',
+                mt: 4,
+              }}
+            >
+              <Button
+                variant="contained"
+                onClick={() => setEditing(false)}
+                sx={{
+                  bgcolor: 'grey.300',
+                  color: 'text.primary',
+                  fontWeight: 700,
+                  borderRadius: 10,
+                  textTransform: 'none',
+                  px: 4,
+                  py: 1.5,
+                  boxShadow: 'none',
+                  width: {
+                    xs: '100%',
+                    sm: 'auto',
+                  },
+                  '&:hover': {
+                    bgcolor: 'grey.400',
+                    boxShadow: 'none',
+                  },
+                }}
               >
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    setEditing(false);
-                    setForm({ ...MOCK, id: id ?? MOCK.id });
-                  }}
-                  sx={{
-                    borderRadius: 10,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    borderColor: 'text.secondary',
-                    color: 'text.secondary',
-                    width: { xs: '100%', sm: 'auto' },
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSave}
-                  disabled={saving}
-                  sx={{
-                    borderRadius: 10,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    px: 3,
-                    width: { xs: '100%', sm: 'auto' },
-                  }}
-                >
-                  {saving ? (
-                    <CircularProgress size={20} color="inherit" />
-                  ) : (
-                    'Salvar Alterações'
-                  )}
-                </Button>
-              </Stack>
-            </>
+                Cancelar
+              </Button>
+
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSave}
+                disabled={saving}
+                sx={{
+                  fontWeight: 700,
+                  borderRadius: 10,
+                  textTransform: 'none',
+                  px: 4,
+                  py: 1.5,
+                  width: {
+                    xs: '100%',
+                    sm: 'auto',
+                  },
+                }}
+              >
+                {saving ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  'Salvar Alterações'
+                )}
+              </Button>
+            </Stack>
           )}
         </Paper>
       </Stack>
@@ -394,7 +821,7 @@ const AssociateProfile = () => {
       <InactivateAssociateDialog
         open={inactivateOpen}
         onClose={() => setInactivateOpen(false)}
-        onConfirm={handleInactivate}
+        onConfirm={async () => {}}
         associateName={form.fullName}
       />
 
@@ -410,13 +837,24 @@ const AssociateProfile = () => {
       <Snackbar
         open={snack.open}
         autoHideDuration={4000}
-        onClose={() => setSnack((s) => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={() =>
+          setSnack((p) => ({
+            ...p,
+            open: false,
+          }))
+        }
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
       >
         <Alert
           severity={snack.severity}
           variant="filled"
-          sx={{ borderRadius: 2, fontWeight: 600 }}
+          sx={{
+            borderRadius: 2,
+            fontWeight: 600,
+          }}
         >
           {snack.msg}
         </Alert>

@@ -18,11 +18,6 @@ export const AuthProvider = ({ children }: React.PropsWithChildren) => {
     return JSON.parse(stored);
   });
 
-  const setAuthData = (token: string, user: AuthUser) => {
-    setAuthToken(token);
-    setAuthUser(user);
-  };
-
   const setAuthToken = (token: string) => {
     localStorage.setItem('token', token);
     setToken(token);
@@ -33,12 +28,21 @@ export const AuthProvider = ({ children }: React.PropsWithChildren) => {
     setUser(user);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  const removeAuthUser = () => {
     localStorage.removeItem('user');
-
-    setToken(null);
     setUser(null);
+  };
+
+  const removeAuthToken = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    setUser(null);
+    setToken(null);
   };
 
   const value = useMemo(
@@ -46,12 +50,13 @@ export const AuthProvider = ({ children }: React.PropsWithChildren) => {
       token,
       user,
       isAuthenticated: !!token,
-      setAuthData,
       setAuthToken,
       setAuthUser,
+      removeAuthToken,
+      removeAuthUser,
       logout,
     }),
-    [setAuthData, token, user]
+    [token, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

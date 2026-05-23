@@ -12,7 +12,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
   accessControlLogin,
-  getAuthUserNoAPI,
+  authGetProfile,
 } from '../services/auth/authService';
 
 const AccessControlLoginForm = () => {
@@ -22,7 +22,7 @@ const AccessControlLoginForm = () => {
 
   const navigate = useNavigate();
 
-  const { setAuthData } = useAuth();
+  const { setAuthToken } = useAuth();
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,17 +35,17 @@ const AccessControlLoginForm = () => {
     setLoading(true);
 
     try {
-      const { token, user } = await accessControlLogin({ accessKey });
+      const { token } = await accessControlLogin({ accessKey });
 
-      const fakeUser = getAuthUserNoAPI(token);
-      setAuthData(token, fakeUser);
+      const user = await authGetProfile({ token });
 
-      console.log({ 'chave de acesso: ': accessKey });
-      console.log({ 'token: ': token });
-      console.log({ 'user: ': user });
-      console.log({ 'fake-user: ': fakeUser });
+      if (!user) {
+        return;
+      }
+      setAuthToken(token);
+
       navigate('/controle-de-acesso');
-    } catch (error) {
+    } catch {
       setKeyError('Chave inválida! Tente novamente.');
     } finally {
       setLoading(false);

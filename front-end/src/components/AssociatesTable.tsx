@@ -28,14 +28,17 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+import { adminFetchAssociates } from '../services/admin/adminService';
 import type {
   Associate,
   AssociateStatus,
 } from '../services/associate/associate.types';
 
 type ChipColor = 'success' | 'warning' | 'default' | 'error';
+
 const STATUS_MAP: Record<AssociateStatus, { label: string; color: ChipColor }> =
   {
     ATIVO: { label: 'Ativo', color: 'success' },
@@ -43,37 +46,6 @@ const STATUS_MAP: Record<AssociateStatus, { label: string; color: ChipColor }> =
     INATIVADO: { label: 'Inativado', color: 'default' },
     INATIVO: { label: 'Inativo', color: 'default' },
   };
-
-const MOCK: Associate[] = [
-  {
-    id: '1',
-    fullName: 'João da Silva',
-    cpf: '000.000.000-00',
-    category: 'Sócio',
-    status: 'ATIVO',
-  },
-  {
-    id: '2',
-    fullName: 'Maria Lopes Braga',
-    cpf: '111.111.111-11',
-    category: 'Colaborador',
-    status: 'PENDENTE',
-  },
-  {
-    id: '3',
-    fullName: 'Ana de Souza',
-    cpf: '222.222.222-22',
-    category: 'Sócio',
-    status: 'INATIVADO',
-  },
-  {
-    id: '4',
-    fullName: 'Caio Rodrigues',
-    cpf: '333.333.333-33',
-    category: 'Colaborador',
-    status: 'ATIVO',
-  },
-];
 
 const ROWS_PER_PAGE = 10;
 
@@ -83,17 +55,26 @@ interface FilterState {
   funcao: string;
   tipo: string;
 }
-const EMPTY_FILTER: FilterState = { nome: '', cpf: '', funcao: '', tipo: '' };
+
+const EMPTY_FILTER: FilterState = {
+  nome: '',
+  cpf: '',
+  funcao: '',
+  tipo: '',
+};
 
 interface FilterPopoverProps {
   anchor: HTMLElement | null;
   onClose: () => void;
   onApply: (f: FilterState) => void;
 }
+
 const FilterPopover = ({ anchor, onClose, onApply }: FilterPopoverProps) => {
   const [local, setLocal] = useState<FilterState>(EMPTY_FILTER);
+
   const set = (k: keyof FilterState, v: string) =>
     setLocal((p) => ({ ...p, [k]: v }));
+
   return (
     <Popover
       open={Boolean(anchor)}
@@ -113,10 +94,12 @@ const FilterPopover = ({ anchor, onClose, onApply }: FilterPopoverProps) => {
           <Typography sx={{ fontWeight: 700 }} variant="subtitle1">
             Filtros
           </Typography>
+
           <IconButton size="small" onClick={onClose}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </Stack>
+
         <TextField
           label="Nome"
           value={local.nome}
@@ -124,6 +107,7 @@ const FilterPopover = ({ anchor, onClose, onApply }: FilterPopoverProps) => {
           size="small"
           fullWidth
         />
+
         <TextField
           label="CPF"
           value={local.cpf}
@@ -131,6 +115,7 @@ const FilterPopover = ({ anchor, onClose, onApply }: FilterPopoverProps) => {
           size="small"
           fullWidth
         />
+
         <TextField
           label="Função"
           value={local.funcao}
@@ -138,18 +123,23 @@ const FilterPopover = ({ anchor, onClose, onApply }: FilterPopoverProps) => {
           size="small"
           fullWidth
         />
+
         <FormControl size="small" fullWidth>
           <InputLabel>Tipo</InputLabel>
+
           <Select
             value={local.tipo}
             label="Tipo"
             onChange={(e) => set('tipo', e.target.value)}
           >
             <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="Sócio">Sócio</MenuItem>
-            <MenuItem value="Colaborador">Colaborador</MenuItem>
+            <MenuItem value="ARTISTA">Artista</MenuItem>
+            <MenuItem value="PRODUTOR">Produtor</MenuItem>
+            <MenuItem value="TECNICO">Técnico</MenuItem>
+            <MenuItem value="OUTRO">Outro</MenuItem>
           </Select>
         </FormControl>
+
         <Button
           variant="contained"
           color="primary"
@@ -169,42 +159,88 @@ const FilterPopover = ({ anchor, onClose, onApply }: FilterPopoverProps) => {
 
 const AssociatesTable = () => {
   const navigate = useNavigate();
+
   const filterBtnRef = useRef<HTMLButtonElement>(null);
+
   const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
+
   const [search, setSearch] = useState('');
+
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTER);
+
   const [page, setPage] = useState(1);
-  const [loading] = useState(false);
-  const [users] = useState<Associate[]>(MOCK);
+
+  const [loading, setLoading] = useState(false);
+
+  const [users, setUsers] = useState<Associate[]>([]);
+
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    const fetchAssociates = async () => {
+      try {
+        setLoading(true);
+
+        const token = localStorage.getItem('token');
+
+        if (!token) return;
+
+        const data = await adminFetchAssociates({
+          bearerToken: token,
+        });
+
+        setUsers(data);
+
+        console.log(data);
+
+        setTotalPages(Math.max(1, Math.ceil(data.length / ROWS_PER_PAGE)));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssociates();
+  }, []);
 
   const filtered = users.filter((u) => {
-    const name = u.fullName.toLowerCase();
+    const name = u.user.name.toLowerCase();
+
     const matchSearch =
       name.includes(search.toLowerCase()) || u.cpf.includes(search);
+
     const matchNome =
       !filters.nome || name.includes(filters.nome.toLowerCase());
+
     const matchCpf = !filters.cpf || u.cpf.includes(filters.cpf);
-    const matchTipo = !filters.tipo || u.category === filters.tipo;
+
+    const matchTipo = !filters.tipo || u.workCategory === filters.tipo;
+
     return matchSearch && matchNome && matchCpf && matchTipo;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
   const safePage = Math.min(page, totalPages);
+
   const paginated = filtered.slice(
     (safePage - 1) * ROWS_PER_PAGE,
     safePage * ROWS_PER_PAGE
   );
+
   const displayFrom =
     filtered.length === 0 ? 0 : (safePage - 1) * ROWS_PER_PAGE + 1;
+
   const displayTo = Math.min(safePage * ROWS_PER_PAGE, filtered.length);
+
   const hasFilters = Object.values(filters).some(Boolean);
 
   const pageItems = (): (number | '...')[] => {
     if (totalPages <= 5)
       return Array.from({ length: totalPages }, (_, i) => i + 1);
+
     if (safePage <= 3) return [1, 2, 3, '...', totalPages];
+
     if (safePage >= totalPages - 2)
       return [1, '...', totalPages - 2, totalPages - 1, totalPages];
+
     return [1, '...', safePage - 1, safePage, safePage + 1, '...', totalPages];
   };
 
@@ -213,6 +249,7 @@ const AssociatesTable = () => {
       {/* Breadcrumb */}
       <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
         <GroupOutlinedIcon sx={{ color: 'primary.main', fontSize: 18 }} />
+
         <Typography
           variant="body2"
           color="primary.main"
@@ -242,6 +279,7 @@ const AssociatesTable = () => {
         >
           Gerenciar Associado
         </Button>
+
         <Button
           ref={filterBtnRef}
           variant="outlined"
@@ -311,6 +349,7 @@ const AssociatesTable = () => {
                 ))}
               </TableRow>
             </TableHead>
+
             <TableBody>
               {loading ? (
                 Array.from({ length: 4 }).map((_, i) => (
@@ -327,9 +366,11 @@ const AssociatesTable = () => {
                         spacing={2}
                       >
                         <Skeleton variant="circular" width={52} height={52} />
+
                         <Skeleton width={160} />
                       </Stack>
                     </TableCell>
+
                     {[120, 100, 80].map((w, j) => (
                       <TableCell key={j}>
                         <Skeleton width={w} />
@@ -349,10 +390,11 @@ const AssociatesTable = () => {
                 </TableRow>
               ) : (
                 paginated.map((u, idx) => {
-                  const st = STATUS_MAP[u.status] ?? {
-                    label: u.status,
+                  const st = STATUS_MAP[u.status ?? 'INATIVO'] ?? {
+                    label: 'Inativo',
                     color: 'default' as ChipColor,
                   };
+
                   return (
                     <TableRow
                       key={u.id}
@@ -377,21 +419,25 @@ const AssociatesTable = () => {
                           >
                             <PersonIcon sx={{ color: '#fff', fontSize: 34 }} />
                           </Avatar>
+
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {u.fullName}
+                            {u.user.name}
                           </Typography>
                         </Stack>
                       </TableCell>
+
                       <TableCell sx={{ py: 2 }}>
                         <Typography variant="body2" color="text.secondary">
                           {u.cpf}
                         </Typography>
                       </TableCell>
+
                       <TableCell sx={{ py: 2 }}>
                         <Typography variant="body2" color="text.secondary">
-                          {u.category ?? '—'}
+                          {u.workCategory ?? '—'}
                         </Typography>
                       </TableCell>
+
                       <TableCell sx={{ py: 2 }}>
                         <Chip
                           label={st.label}
@@ -430,6 +476,7 @@ const AssociatesTable = () => {
           <Typography variant="caption" color="text.secondary">
             Exibindo {displayFrom} - {displayTo} de {filtered.length} associados
           </Typography>
+
           <Stack direction="row" sx={{ alignItems: 'center' }} spacing={0.5}>
             <IconButton
               size="small"
@@ -440,6 +487,7 @@ const AssociatesTable = () => {
                 ‹
               </Box>
             </IconButton>
+
             {pageItems().map((item, i) =>
               item === '...' ? (
                 <Typography
@@ -472,6 +520,7 @@ const AssociatesTable = () => {
                 </Box>
               )
             )}
+
             <IconButton
               size="small"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}

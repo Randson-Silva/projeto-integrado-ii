@@ -12,8 +12,12 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { authPasswordForgot } from '../services/auth/authService';
 
 const ForgotPasswordForm = () => {
+  const { setAuthUser } = useAuth();
+
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const navigate = useNavigate();
@@ -25,9 +29,13 @@ const ForgotPasswordForm = () => {
 
     setLoading(true);
     try {
-      // TODO: integrar com API de envio de e-mail
-      console.log('Enviar redefinição para:', email);
+      await authPasswordForgot({ email });
+
       setSent(true);
+
+      setAuthUser({ email, role: 'CONSULTANT' });
+    } catch {
+      return;
     } finally {
       setLoading(false);
     }
@@ -35,7 +43,7 @@ const ForgotPasswordForm = () => {
 
   useEffect(() => {
     if (!sent) return;
-    const timer = setTimeout(() => navigate('/reset-password'), 5000);
+    const timer = setTimeout(() => navigate('/insert-token'), 5000);
     return () => clearTimeout(timer);
   }, [sent, navigate]);
 

@@ -11,12 +11,15 @@ import {
 import { useRef, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { authInsertToken, authSendToken } from '../services/auth/authService';
+import {
+  authPasswordForgot,
+  authPasswordValidate,
+} from '../services/auth/authService';
 
 const TOKEN_LENGTH = 6;
 
-const TokenForm = () => {
-  const { user, setAuthToken } = useAuth();
+const AdminTokenResetForm = () => {
+  const { user, setAuthToken, removeAuthUser } = useAuth();
 
   const [digits, setDigits] = useState<string[]>(Array(TOKEN_LENGTH).fill(''));
   const [loading, setLoading] = useState(false);
@@ -60,7 +63,7 @@ const TokenForm = () => {
     focusAt(Math.min(pasted.length, TOKEN_LENGTH - 1));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
 
     const token = digits.join('');
@@ -75,14 +78,21 @@ const TokenForm = () => {
         return;
       }
 
-      const { email } = user;
+      const { resetToken, valid } = await authPasswordValidate({
+        token,
+      });
 
-      const { token: authToken } = await authInsertToken({ email, token });
+      if (!valid) {
+        setError('Token não é válido');
+      }
 
-      setAuthToken(authToken);
+      setAuthToken(resetToken);
 
-      navigate('/dashboard');
-    } catch {
+      removeAuthUser();
+
+      navigate('/reset-password');
+    } catch (error) {
+      console.log(error);
       setError('Token inválido ou expirado. Tente novamente.');
       setDigits(Array(TOKEN_LENGTH).fill(''));
       focusAt(0);
@@ -98,7 +108,7 @@ const TokenForm = () => {
 
     if (resendCooldown > 0) return;
 
-    await authSendToken({ email });
+    await authPasswordForgot({ email });
 
     setResendCooldown(60);
     const interval = setInterval(() => {
@@ -270,4 +280,4 @@ const TokenForm = () => {
   );
 };
 
-export default TokenForm;
+export default AdminTokenResetForm;

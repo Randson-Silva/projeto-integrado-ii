@@ -10,7 +10,7 @@ import {
 import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { login } from '../services/auth/authService';
+import { authLogin } from '../services/auth/authService';
 import PasswordField from './PasswordField';
 
 const LoginForm = () => {
@@ -20,7 +20,7 @@ const LoginForm = () => {
 
   const navigate = useNavigate();
 
-  const { setAuthData } = useAuth();
+  const { setAuthToken } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,12 +36,12 @@ const LoginForm = () => {
     setLoading(true);
 
     try {
-      const { token, user } = await login({
+      const { token } = await authLogin({
         email,
         password,
       });
 
-      setAuthData(token, user);
+      setAuthToken(token);
 
       navigate('/dashboard');
     } catch {
