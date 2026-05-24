@@ -286,7 +286,7 @@ const AssociatesTable = () => {
             px: 3,
           }}
         >
-          Gerenciar Associado
+          Adicionar Associado
         </Button>
 
         <Button
@@ -348,8 +348,8 @@ const AssociatesTable = () => {
                     key={h}
                     sx={{
                       fontWeight: 700,
-                      color: 'text.secondary',
-                      fontSize: 12,
+                      color: 'text.primary',
+                      fontSize: 16,
                       letterSpacing: 0.5,
                     }}
                   >
