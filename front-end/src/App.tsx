@@ -43,42 +43,43 @@ function App() {
 
           <Route path="/login-controle" element={<AccessControlLoginPage />} />
 
-          <Route path="/dashboard" element={<DashboardPage />} />
-
-          {/* Controle de acesso */}
-          <Route
-            path="/controle-de-acesso"
-            element={<AccessControlTablePage />}
-          />
-          <Route
-            path="/controle-de-acesso/novo"
-            element={<AccessControlCreatePage />}
-          />
-          <Route
-            path="/controle-de-acesso/:id"
-            element={<AccessControlSelectedUserPage />}
-          />
-          <Route
-            path="/controle-de-acesso/meu-perfil"
-            element={<AccessControlProfilePage />}
-          />
-
-          {/* Associados */}
-          <Route path="/associados" element={<AssociatesTablePage />} />
-          <Route path="/associados/novo" element={<AssociateCreatePage />} />
-          <Route path="/associados/:id" element={<AssociateProfilePage />} />
-
-          {/* Comunicação */}
-          <Route path="/comunicacao" element={<CommunicationPage />} />
-
-          {/* Configurações */}
-          <Route path="/configuracoes" element={<SettingsPage />} />
-
-          {/* Meu Perfil (admin) */}
-          <Route path="/meu-perfil" element={<AdminProfilePage />} />
-
           {/* Privadas */}
           <Route element={<PrivateRoute />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+
+            {/* Controle de acesso */}
+            <Route
+              path="/controle-de-acesso"
+              element={<AccessControlTablePage />}
+            />
+            <Route
+              path="/controle-de-acesso/novo"
+              element={<AccessControlCreatePage />}
+            />
+            <Route
+              path="/controle-de-acesso/:id"
+              element={<AccessControlSelectedUserPage />}
+            />
+            <Route
+              path="/controle-de-acesso/meu-perfil"
+              element={<AccessControlProfilePage />}
+            />
+
+            {/* Associados */}
+            <Route path="/associados" element={<AssociatesTablePage />} />
+            <Route path="/associados/novo" element={<AssociateCreatePage />} />
+            <Route path="/associados/:id" element={<AssociateProfilePage />} />
+
+            {/* Comunicação */}
+            <Route path="/comunicacao" element={<CommunicationPage />} />
+
+            {/* Configurações */}
+            <Route path="/configuracoes" element={<SettingsPage />} />
+
+            {/* Meu Perfil (admin) */}
+            <Route path="/meu-perfil" element={<AdminProfilePage />} />
+
+            {/* Placeholders */}
             <Route path="/settings" element={<ComingSoonPage />} />
             <Route path="/reports" element={<ComingSoonPage />} />
             <Route path="/users" element={<ComingSoonPage />} />

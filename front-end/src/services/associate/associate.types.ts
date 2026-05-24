@@ -4,99 +4,85 @@ export type AssociateCategory = 'ARTISTA' | 'PRODUTOR' | 'TECNICO' | 'OUTRO';
 
 export type AssociateIncome = 'BAIXA' | 'MEDIA' | 'ALTA';
 
+export type AssociateEducation =
+  | 'FUNDAMENTAL'
+  | 'MEDIO'
+  | 'SUPERIOR'
+  | 'POS_GRADUACAO'
+  | 'MESTRADO'
+  | 'DOUTORADO';
+
 export interface AssociateProfileForm {
   id: string;
-
   fullName: string;
   cpf: string;
   email: string;
   phone: string;
-
   birthDate: string;
-
   category: AssociateCategory | '';
-
   addressZipCode: string;
   addressState: string;
   addressCity: string;
   addressNeighborhood: string;
   addressStreet: string;
-
   addressNumber: string;
-
   race: string;
   gender: string;
   sexualOrientation: string;
-  education: string;
+  education: AssociateEducation | '';
   income: AssociateIncome | '';
   disability: string;
 }
 
 export interface AssociateResponse {
   id: string;
-
   cpf: string;
-
   birthDate?: string;
-
   workCategory?: AssociateCategory;
-
   phone?: string;
-
   legalGuardianName?: string;
-
   user: {
     id: string;
-
     name: string;
-
     email?: string;
+    password?: string;
     cpf?: string;
     phone?: string;
-
     role?: string;
-
+    accessKeyHash?: string;
+    createdAt?: string;
+    updatedAt?: string;
     enabled?: boolean;
     active?: boolean;
+    username?: string;
+    authorities?: { authority: string }[];
+    accountNonExpired?: boolean;
+    accountNonLocked?: boolean;
+    credentialsNonExpired?: boolean;
   };
-
   address?: {
     id?: string;
-
     postalCode?: string;
-
     street?: string;
     number?: string;
-
     neighborhood?: string;
-
     city?: string;
-
     state?: string;
   };
-
   selfDeclaration?: {
     id?: string;
-
     race?: string;
-
     gender?: string;
-
     sexualOrientation?: string;
-
-    education?: string;
-
+    education?: AssociateEducation;
     income?: AssociateIncome;
-
     disability?: string;
   };
-
   status?: AssociateStatus;
 }
 
 export interface AssociatePageableResponse {
   content: AssociateResponse[];
-
   totalElements: number;
   totalPages: number;
 
@@ -114,86 +100,49 @@ export interface CreateAssociatePayload {
   baseData: {
     email: string;
     password: string;
-
     fullName: string;
-
     cpf: string;
-
     phone: string;
   };
-
   socialName?: string;
-
   artisticName?: string;
-
   birthDate: string;
-
   workCategory: AssociateCategory;
-
   availableHours?: string;
-
   postalCode: string;
   street: string;
   number: string;
-
   neighborhood: string;
-
   city: string;
-
   state: string;
-
   race?: string;
-
   gender?: string;
-
   sexualOrientation?: string;
-
-  education?: string;
-
+  education?: AssociateEducation;
   income?: AssociateIncome;
-
   disability?: string;
-
   additionalInfo?: string;
-
   legalGuardianName?: string;
 }
 
 export interface UpdateAssociatePayload {
   cpf?: string;
-
   birthDate?: string;
-
   phone?: string;
-
   workCategory?: AssociateCategory;
-
   fullName?: string;
-
   email?: string;
-
   postalCode?: string;
-
   street?: string;
-
   number?: string;
-
   neighborhood?: string;
-
   city?: string;
-
   state?: string;
-
   race?: string;
-
   gender?: string;
-
   sexualOrientation?: string;
-
-  education?: string;
-
+  education?: AssociateEducation;
   income?: AssociateIncome;
-
   disability?: string;
 }
 
@@ -215,6 +164,38 @@ export const normalizeCategoryView = (category?: AssociateCategory) => {
     case 'OUTRO':
       return 'Outro';
 
+    default:
+      return '-';
+  }
+};
+
+export const normalizeIncomeView = (income?: AssociateIncome) => {
+  switch (income) {
+    case 'BAIXA':
+      return 'Baixa';
+    case 'MEDIA':
+      return 'Média';
+    case 'ALTA':
+      return 'Alta';
+    default:
+      return '-';
+  }
+};
+
+export const normalizeEducationView = (education?: AssociateEducation) => {
+  switch (education) {
+    case 'FUNDAMENTAL':
+      return 'Fundamental';
+    case 'MEDIO':
+      return 'Médio';
+    case 'SUPERIOR':
+      return 'Superior';
+    case 'POS_GRADUACAO':
+      return 'Pós-graduação';
+    case 'MESTRADO':
+      return 'Mestrado';
+    case 'DOUTORADO':
+      return 'Doutorado';
     default:
       return '-';
   }

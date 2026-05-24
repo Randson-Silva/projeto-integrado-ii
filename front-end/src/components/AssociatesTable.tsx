@@ -32,35 +32,26 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { adminFetchAssociates } from '../services/admin/adminService';
+
 import type {
   Associate,
-  AssociateStatus,
+  AssociateCategory,
 } from '../services/associate/associate.types';
 
-type ChipColor = 'success' | 'warning' | 'default' | 'error';
+import { normalizeCategoryView } from '../services/associate/associate.types';
 
-const STATUS_MAP: Record<AssociateStatus, { label: string; color: ChipColor }> =
-  {
-    ATIVO: { label: 'Ativo', color: 'success' },
-    PENDENTE: { label: 'Pendente', color: 'warning' },
-    INATIVADO: { label: 'Inativado', color: 'default' },
-    INATIVO: { label: 'Inativo', color: 'default' },
-  };
+type ChipColor = 'success' | 'warning' | 'default' | 'error';
 
 const ROWS_PER_PAGE = 10;
 
 interface FilterState {
-  nome: string;
-  cpf: string;
-  funcao: string;
-  tipo: string;
+  status: 'Ativo' | 'Inativo' | 'Todos';
+  categoria: 'Todas' | AssociateCategory;
 }
 
 const EMPTY_FILTER: FilterState = {
-  nome: '',
-  cpf: '',
-  funcao: '',
-  tipo: '',
+  status: 'Todos',
+  categoria: 'Todas',
 };
 
 interface FilterPopoverProps {
@@ -72,8 +63,9 @@ interface FilterPopoverProps {
 const FilterPopover = ({ anchor, onClose, onApply }: FilterPopoverProps) => {
   const [local, setLocal] = useState<FilterState>(EMPTY_FILTER);
 
-  const set = (k: keyof FilterState, v: string) =>
+  const set = <K extends keyof FilterState>(k: K, v: FilterState[K]) => {
     setLocal((p) => ({ ...p, [k]: v }));
+  };
 
   return (
     <Popover
@@ -100,39 +92,33 @@ const FilterPopover = ({ anchor, onClose, onApply }: FilterPopoverProps) => {
           </IconButton>
         </Stack>
 
-        <TextField
-          label="Nome"
-          value={local.nome}
-          onChange={(e) => set('nome', e.target.value)}
-          size="small"
-          fullWidth
-        />
-
-        <TextField
-          label="CPF"
-          value={local.cpf}
-          onChange={(e) => set('cpf', e.target.value)}
-          size="small"
-          fullWidth
-        />
-
-        <TextField
-          label="Função"
-          value={local.funcao}
-          onChange={(e) => set('funcao', e.target.value)}
-          size="small"
-          fullWidth
-        />
-
         <FormControl size="small" fullWidth>
-          <InputLabel>Tipo</InputLabel>
+          <InputLabel>Status</InputLabel>
 
           <Select
-            value={local.tipo}
-            label="Tipo"
-            onChange={(e) => set('tipo', e.target.value)}
+            value={local.status}
+            label="Status"
+            onChange={(e) =>
+              set('status', e.target.value as FilterState['status'])
+            }
           >
-            <MenuItem value="">Todos</MenuItem>
+            <MenuItem value="Todos">Todos</MenuItem>
+            <MenuItem value="Ativo">Ativo</MenuItem>
+            <MenuItem value="Inativo">Inativo</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl size="small" fullWidth>
+          <InputLabel>Categoria</InputLabel>
+
+          <Select
+            value={local.categoria}
+            label="Categoria"
+            onChange={(e) =>
+              set('categoria', e.target.value as FilterState['categoria'])
+            }
+          >
+            <MenuItem value="Todas">Todas</MenuItem>
             <MenuItem value="ARTISTA">Artista</MenuItem>
             <MenuItem value="PRODUTOR">Produtor</MenuItem>
             <MenuItem value="TECNICO">Técnico</MenuItem>
@@ -174,7 +160,7 @@ const AssociatesTable = () => {
 
   const [users, setUsers] = useState<Associate[]>([]);
 
-  const [totalPages, setTotalPages] = useState(1);
+  const [, setTotalPages] = useState(1);
 
   useEffect(() => {
     const fetchAssociates = async () => {
@@ -191,9 +177,9 @@ const AssociatesTable = () => {
 
         setUsers(data);
 
-        console.log(data);
-
         setTotalPages(Math.max(1, Math.ceil(data.length / ROWS_PER_PAGE)));
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -203,22 +189,31 @@ const AssociatesTable = () => {
   }, []);
 
   const filtered = users.filter((u) => {
-    const name = u.user.name.toLowerCase();
+    const name = (u.user?.name ?? '').toLowerCase();
+
+    const cpf = u.cpf ?? '';
+
+    const workCategory = u.workCategory ?? '';
+
+    const status = u.user.active ? 'Ativo' : 'Inativo';
 
     const matchSearch =
-      name.includes(search.toLowerCase()) || u.cpf.includes(search);
+      name.includes(search.toLowerCase()) || cpf.includes(search);
 
-    const matchNome =
-      !filters.nome || name.includes(filters.nome.toLowerCase());
+    const matchStatus = filters.status === 'Todos' || status === filters.status;
 
-    const matchCpf = !filters.cpf || u.cpf.includes(filters.cpf);
+    const matchCategoria =
+      filters.categoria === 'Todas' || workCategory === filters.categoria;
 
-    const matchTipo = !filters.tipo || u.workCategory === filters.tipo;
-
-    return matchSearch && matchNome && matchCpf && matchTipo;
+    return matchSearch && matchStatus && matchCategoria;
   });
 
-  const safePage = Math.min(page, totalPages);
+  const calculatedTotalPages = Math.max(
+    1,
+    Math.ceil(filtered.length / ROWS_PER_PAGE)
+  );
+
+  const safePage = Math.min(page, calculatedTotalPages);
 
   const paginated = filtered.slice(
     (safePage - 1) * ROWS_PER_PAGE,
@@ -233,15 +228,29 @@ const AssociatesTable = () => {
   const hasFilters = Object.values(filters).some(Boolean);
 
   const pageItems = (): (number | '...')[] => {
-    if (totalPages <= 5)
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (calculatedTotalPages <= 5)
+      return Array.from({ length: calculatedTotalPages }, (_, i) => i + 1);
 
-    if (safePage <= 3) return [1, 2, 3, '...', totalPages];
+    if (safePage <= 3) return [1, 2, 3, '...', calculatedTotalPages];
 
-    if (safePage >= totalPages - 2)
-      return [1, '...', totalPages - 2, totalPages - 1, totalPages];
+    if (safePage >= calculatedTotalPages - 2)
+      return [
+        1,
+        '...',
+        calculatedTotalPages - 2,
+        calculatedTotalPages - 1,
+        calculatedTotalPages,
+      ];
 
-    return [1, '...', safePage - 1, safePage, safePage + 1, '...', totalPages];
+    return [
+      1,
+      '...',
+      safePage - 1,
+      safePage,
+      safePage + 1,
+      '...',
+      calculatedTotalPages,
+    ];
   };
 
   return (
@@ -277,7 +286,7 @@ const AssociatesTable = () => {
             px: 3,
           }}
         >
-          Gerenciar Associado
+          Adicionar Associado
         </Button>
 
         <Button
@@ -339,8 +348,8 @@ const AssociatesTable = () => {
                     key={h}
                     sx={{
                       fontWeight: 700,
-                      color: 'text.secondary',
-                      fontSize: 12,
+                      color: 'text.primary',
+                      fontSize: 16,
                       letterSpacing: 0.5,
                     }}
                   >
@@ -390,10 +399,15 @@ const AssociatesTable = () => {
                 </TableRow>
               ) : (
                 paginated.map((u, idx) => {
-                  const st = STATUS_MAP[u.status ?? 'INATIVO'] ?? {
-                    label: 'Inativo',
-                    color: 'default' as ChipColor,
-                  };
+                  const st = u.user.active
+                    ? {
+                        label: 'Ativo',
+                        color: 'success' as ChipColor,
+                      }
+                    : {
+                        label: 'Inativo',
+                        color: 'default' as ChipColor,
+                      };
 
                   return (
                     <TableRow
@@ -421,20 +435,20 @@ const AssociatesTable = () => {
                           </Avatar>
 
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {u.user.name}
+                            {u.user.name ?? '-'}
                           </Typography>
                         </Stack>
                       </TableCell>
 
                       <TableCell sx={{ py: 2 }}>
                         <Typography variant="body2" color="text.secondary">
-                          {u.cpf}
+                          {u.cpf ?? '-'}
                         </Typography>
                       </TableCell>
 
                       <TableCell sx={{ py: 2 }}>
                         <Typography variant="body2" color="text.secondary">
-                          {u.workCategory ?? '—'}
+                          {normalizeCategoryView(u.workCategory)}
                         </Typography>
                       </TableCell>
 
@@ -523,8 +537,10 @@ const AssociatesTable = () => {
 
             <IconButton
               size="small"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safePage === totalPages}
+              onClick={() =>
+                setPage((p) => Math.min(calculatedTotalPages, p + 1))
+              }
+              disabled={safePage === calculatedTotalPages}
             >
               <Box component="span" sx={{ fontSize: 18, lineHeight: 1 }}>
                 ›
