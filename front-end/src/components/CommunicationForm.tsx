@@ -1,160 +1,82 @@
-import FormatBoldIcon from '@mui/icons-material/FormatBold';
-import FormatItalicIcon from '@mui/icons-material/FormatItalicOutlined';
-import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
-import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
-import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
-import InsertLinkIcon from '@mui/icons-material/InsertLink';
-import MessageOutlinedIcon from '@mui/icons-material/MessageOutlined';
+import birthdayBg from '../assets/bg fundo.svg';
 import SendIcon from '@mui/icons-material/Send';
 import {
   Alert,
+  Avatar,
   Box,
   Button,
   CircularProgress,
-  Divider,
-  IconButton,
+  FormControlLabel,
   Paper,
+  Radio,
+  RadioGroup,
   Snackbar,
   Stack,
   Tab,
   Tabs,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
-
-const RichToolbar = () => (
-  <Stack
-    direction="row"
-    spacing={0.5}
-    sx={{
-      px: 1,
-      py: 0.5,
-      borderBottom: '1px solid',
-      borderColor: 'divider',
-      alignItems: 'center',
-    }}
-  >
-    {[
-      { icon: <FormatBoldIcon fontSize="small" />, title: 'Negrito' },
-      { icon: <FormatItalicIcon fontSize="small" />, title: 'Itálico' },
-      { icon: <FormatUnderlinedIcon fontSize="small" />, title: 'Sublinhado' },
-    ].map(({ icon, title }) => (
-      <Tooltip key={title} title={title}>
-        <IconButton size="small">{icon}</IconButton>
-      </Tooltip>
-    ))}
-    <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
-    {[
-      { icon: <FormatListBulletedIcon fontSize="small" />, title: 'Lista' },
-      {
-        icon: <FormatListNumberedIcon fontSize="small" />,
-        title: 'Lista numerada',
-      },
-      { icon: <InsertLinkIcon fontSize="small" />, title: 'Link' },
-    ].map(({ icon, title }) => (
-      <Tooltip key={title} title={title}>
-        <IconButton size="small">{icon}</IconButton>
-      </Tooltip>
-    ))}
-  </Stack>
-);
+import { useEffect, useRef, useState } from 'react';
+import TextEditor from './TextEditor';
 
 type Snack = { open: boolean; severity: 'success' | 'error'; msg: string };
 
+/* ── aba "Enviar Mensagem" ─────────────────────────────────────────── */
+
 const SendMessageTab = () => {
-  const [recipient, setRecipient] = useState('');
-  const [body, setBody] = useState('');
+  const [subject, setSubject] = useState('');
+  const [audience, setAudience] = useState('todos');
   const [sending, setSending] = useState(false);
-  const [snack, setSnack] = useState<Snack>({
-    open: false,
-    severity: 'success',
-    msg: '',
-  });
+  const [snack, setSnack] = useState<Snack>({ open: false, severity: 'success', msg: '' });
+  const editorRef = useRef<HTMLDivElement>(null);
 
   const handleSend = async () => {
     setSending(true);
     try {
+      // TODO: endpoint POST /communication/send — manda subject, body (HTML) e audience
       await new Promise((r) => setTimeout(r, 1000));
-      setSnack({
-        open: true,
-        severity: 'success',
-        msg: 'Mensagem enviada com Sucesso!',
-      });
-      setRecipient('');
-      setBody('');
+      setSnack({ open: true, severity: 'success', msg: 'Mensagem enviada com sucesso!' });
+      setSubject('');
+      if (editorRef.current) editorRef.current.innerHTML = '';
     } catch {
-      setSnack({
-        open: true,
-        severity: 'error',
-        msg: 'Erro ao tentar enviar mensagem!',
-      });
+      setSnack({ open: true, severity: 'error', msg: 'Erro ao tentar enviar mensagem!' });
     } finally {
       setSending(false);
     }
   };
 
+  const hasBody = editorRef.current?.textContent?.trim();
+
   return (
     <>
       <Stack spacing={2}>
         <TextField
-          label="Para"
-          placeholder="Nome ou e-mail do destinatário"
-          value={recipient}
-          onChange={(e) => setRecipient(e.target.value)}
+          label="Assunto do e-mail"
+          placeholder="Digite o assunto da mensagem"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
           size="small"
           fullWidth
         />
 
-        <Paper
-          variant="outlined"
-          sx={{ borderRadius: 1.5, overflow: 'hidden' }}
-        >
-          <RichToolbar />
-          <Box
-            component="textarea"
-            value={body}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-              setBody(e.target.value)
-            }
-            placeholder="Digite sua mensagem aqui..."
-            sx={{
-              width: '100%',
-              minHeight: 160,
-              border: 'none',
-              outline: 'none',
-              resize: 'vertical',
-              p: 1.5,
-              fontFamily: 'inherit',
-              fontSize: 14,
-              color: 'text.primary',
-              bgcolor: 'background.paper',
-              boxSizing: 'border-box',
-              display: 'block',
-            }}
-          />
-        </Paper>
+        <TextEditor editorRef={editorRef} />
 
-        <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+          <RadioGroup row value={audience} onChange={(e) => setAudience(e.target.value)}>
+            <FormControlLabel value="todos" control={<Radio size="small" />} label="Todos" />
+            <FormControlLabel value="associados" control={<Radio size="small" />} label="Associados" />
+            <FormControlLabel value="gerenciadores" control={<Radio size="small" />} label="Administradores e Consultores" />
+          </RadioGroup>
           <Button
             variant="contained"
             color="primary"
             startIcon={sending ? undefined : <SendIcon sx={{ fontSize: 16 }} />}
             onClick={handleSend}
-            disabled={sending || !recipient || !body}
-            sx={{
-              borderRadius: 10,
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 3,
-            }}
+            disabled={sending || !subject || !hasBody}
+            sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 600, px: 3 }}
           >
-            {sending ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : (
-              'Enviar Mensagem'
-            )}
+            {sending ? <CircularProgress size={20} color="inherit" /> : 'Enviar Mensagem'}
           </Button>
         </Stack>
       </Stack>
@@ -165,11 +87,7 @@ const SendMessageTab = () => {
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert
-          severity={snack.severity}
-          variant="filled"
-          sx={{ borderRadius: 2, fontWeight: 600 }}
-        >
+        <Alert severity={snack.severity} variant="filled" sx={{ borderRadius: 2, fontWeight: 600 }}>
           {snack.msg}
         </Alert>
       </Snackbar>
@@ -177,32 +95,44 @@ const SendMessageTab = () => {
   );
 };
 
-const TemplateTab = () => {
-  const [templateBody, setTemplateBody] = useState(
-    'Olá {nome_associado},\n\nVim informar que sua mensalidade está disponível para pagamento.\n\nValor: {valor_mensalidade}\nVencimento: {data_vencimento}\n\nAtenciosamente,\nEquipe de Gestão'
-  );
+/* ── aba "Mensagem de Aniversário" ─────────────────────────────────── */
+
+const BirthdayTemplateTab = () => {
+  const [subject, setSubject] = useState('Feliz Aniversário! 🎂');
   const [saving, setSaving] = useState(false);
-  const [snack, setSnack] = useState<Snack>({
-    open: false,
-    severity: 'success',
-    msg: '',
-  });
+  const [snack, setSnack] = useState<Snack>({ open: false, severity: 'success', msg: '' });
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [previewHtml, setPreviewHtml] = useState('');
+
+  // TODO: buscar do banco — GET /communication/birthday-template — e jogar no editor
+  const initialHtml =
+    '<p style="text-align:center"><b style="color:#E36D3B">Feliz Aniversário! 🎂</b></p>' +
+    '<p style="text-align:center">Olá {Nome},</p>' +
+    '<p style="text-align:center">Parabéns pelo seu aniversário!<br>' +
+    'O Grupo Cultural Dom Mauricio deseja a você um dia incrível e cheio de alegria!</p>' +
+    '<p style="text-align:center"><em>Grupo Cultural de Dom Mauricio</em></p>';
+
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = initialHtml;
+      setPreviewHtml(initialHtml);
+    }
+  }, []);
+
+  const handleInput = () => {
+    setPreviewHtml(editorRef.current?.innerHTML ?? '');
+  };
+
+  const previewHtmlWithName = previewHtml.replace(/\{Nome\}/g, 'Maria Silva');
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      // TODO: endpoint PUT /communication/birthday-template — manda subject e body (HTML)
       await new Promise((r) => setTimeout(r, 800));
-      setSnack({
-        open: true,
-        severity: 'success',
-        msg: 'Template salvo com sucesso!',
-      });
+      setSnack({ open: true, severity: 'success', msg: 'Mensagem de aniversário salva com sucesso!' });
     } catch {
-      setSnack({
-        open: true,
-        severity: 'error',
-        msg: 'Erro ao salvar template.',
-      });
+      setSnack({ open: true, severity: 'error', msg: 'Erro ao salvar mensagem de aniversário.' });
     } finally {
       setSaving(false);
     }
@@ -211,55 +141,31 @@ const TemplateTab = () => {
   return (
     <>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
-        {/* Editor */}
         <Stack spacing={2} sx={{ flex: 1 }}>
-          <Typography
-            variant="subtitle2"
-            sx={{ fontWeight: 700 }}
-            color="text.secondary"
-          >
-            Configurar Mensagem Padrão de Associativo
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }} color="text.secondary">
+            Configurar Mensagem Padrão de Aniversário
           </Typography>
-          <Paper
-            variant="outlined"
-            sx={{ borderRadius: 1.5, overflow: 'hidden' }}
-          >
-            <RichToolbar />
-            <Box
-              component="textarea"
-              value={templateBody}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setTemplateBody(e.target.value)
-              }
-              sx={{
-                width: '100%',
-                minHeight: 220,
-                border: 'none',
-                outline: 'none',
-                resize: 'vertical',
-                p: 1.5,
-                fontFamily: 'inherit',
-                fontSize: 13,
-                color: 'text.primary',
-                bgcolor: 'background.paper',
-                boxSizing: 'border-box',
-                display: 'block',
-              }}
-            />
-          </Paper>
-          <Stack
-            direction="row"
-            spacing={1.5}
-            sx={{ justifyContent: 'flex-end' }}
-          >
+
+          <TextField
+            label="Assunto do e-mail"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            size="small"
+            fullWidth
+          />
+
+          <TextEditor
+            editorRef={editorRef}
+            placeholder="Digite a mensagem aqui..."
+            onInput={handleInput}
+          />
+
+          <Stack direction="row" spacing={1.5} sx={{ justifyContent: 'flex-end' }}>
             <Button
               variant="outlined"
               sx={{
-                borderRadius: 10,
-                textTransform: 'none',
-                fontWeight: 600,
-                borderColor: 'text.secondary',
-                color: 'text.secondary',
+                borderRadius: 10, textTransform: 'none', fontWeight: 600,
+                borderColor: 'text.secondary', color: 'text.secondary',
               }}
             >
               Cancelar
@@ -269,46 +175,59 @@ const TemplateTab = () => {
               color="primary"
               onClick={handleSave}
               disabled={saving}
-              sx={{
-                borderRadius: 10,
-                textTransform: 'none',
-                fontWeight: 600,
-                px: 3,
-              }}
+              sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 600, px: 3 }}
             >
-              {saving ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                'Salvar Mensagem'
-              )}
+              {saving ? <CircularProgress size={20} color="inherit" /> : 'Salvar Alterações'}
             </Button>
           </Stack>
         </Stack>
 
-        {/* Preview */}
-        <Stack spacing={1} sx={{ minWidth: { md: 260 } }}>
-          <Typography
-            variant="subtitle2"
-            sx={{ fontWeight: 700 }}
-            color="text.secondary"
-          >
+        <Stack spacing={1} sx={{ minWidth: { md: 300 } }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }} color="text.secondary">
             Pré Visualização
           </Typography>
-          <Paper
-            variant="outlined"
+
+          <Box
             sx={{
-              borderRadius: 2,
-              p: 2,
-              flex: 1,
-              bgcolor: 'primary.main',
-              color: '#fff',
-              fontSize: 13,
-              lineHeight: 1.7,
-              whiteSpace: 'pre-wrap',
+              borderRadius: 3, border: '1px solid', borderColor: 'divider',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.12)', overflow: 'hidden',
+              backgroundImage: `url(${birthdayBg})`,
+              backgroundSize: '100% 100%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
+              aspectRatio: '1 / 1', width: '100%', position: 'relative',
             }}
           >
-            {templateBody}
-          </Paper>
+            <Box
+              sx={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                p: 3, gap: 1.5, textAlign: 'center', overflow: 'hidden',
+              }}
+            >
+              <Avatar
+                sx={{
+                  width: 100, height: 100, bgcolor: 'primary.main',
+                  color: '#fff', fontWeight: 800, fontSize: 32,
+                }}
+              >
+                M
+              </Avatar>
+
+              <Box
+                sx={{
+                  maxWidth: '72%', textAlign: 'center', fontSize: 14, lineHeight: 1.8,
+                  fontFamily: '"Open Sans", Arial, sans-serif',
+                  wordBreak: 'break-word', overflow: 'hidden',
+                  '& p': { margin: '0 0 6px 0' },
+                  '& b, & strong': { fontWeight: 700 },
+                }}
+                dangerouslySetInnerHTML={{ __html: previewHtmlWithName }}
+              />
+            </Box>
+          </Box>
+
+          <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
+            A foto de perfil do associado será exibida automaticamente no lugar do avatar.
+          </Typography>
         </Stack>
       </Stack>
 
@@ -318,11 +237,7 @@ const TemplateTab = () => {
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert
-          severity={snack.severity}
-          variant="filled"
-          sx={{ borderRadius: 2, fontWeight: 600 }}
-        >
+        <Alert severity={snack.severity} variant="filled" sx={{ borderRadius: 2, fontWeight: 600 }}>
           {snack.msg}
         </Alert>
       </Snackbar>
@@ -330,23 +245,13 @@ const TemplateTab = () => {
   );
 };
 
+/* ── componente principal ──────────────────────────────────────────── */
+
 const CommunicationForm = () => {
   const [tab, setTab] = useState(0);
 
   return (
     <Stack spacing={2.5}>
-      {/* Breadcrumb */}
-      <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
-        <MessageOutlinedIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-        <Typography
-          variant="body2"
-          color="primary.main"
-          sx={{ fontWeight: 600 }}
-        >
-          Comunicação
-        </Typography>
-      </Stack>
-
       <Paper
         elevation={0}
         sx={{
@@ -371,11 +276,11 @@ const CommunicationForm = () => {
           }}
         >
           <Tab label="Enviar Mensagem" />
-          <Tab label="Definir Mensagem padrão de Associativo" />
+          <Tab label="Definir mensagem padrão de aniversário" />
         </Tabs>
 
         <Box sx={{ p: { xs: 2, sm: 3 } }}>
-          {tab === 0 ? <SendMessageTab /> : <TemplateTab />}
+          {tab === 0 ? <SendMessageTab /> : <BirthdayTemplateTab />}
         </Box>
       </Paper>
     </Stack>
