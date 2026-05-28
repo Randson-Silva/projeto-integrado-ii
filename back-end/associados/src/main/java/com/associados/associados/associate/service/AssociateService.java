@@ -5,7 +5,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.associados.associados.associate.dtos.request.UpdateAssociateDto;
+import com.associados.associados.associate.dtos.request.UpdateSelfDeclarationDto;
 import com.associados.associados.associate.dtos.response.AssociateResponseDto;
+import com.associados.associados.associate.dtos.response.SelfDeclarationResponseDto;
 import com.associados.associados.associate.entity.Address;
 import com.associados.associados.associate.entity.Associate;
 import com.associados.associados.associate.entity.SelfDeclaration;
@@ -188,6 +190,45 @@ public class AssociateService {
         }
 
         return new AssociateResponseDto(associateRepository.save(associate));
+    }
+
+    @Transactional
+    public SelfDeclarationResponseDto updateSelfDeclaration(java.util.UUID userId, UpdateSelfDeclarationDto data) {
+        Associate associate = associateRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException("Associate not found"));
+
+        SelfDeclaration declaration = associate.getSelfDeclaration();
+        if (declaration == null) {
+            declaration = new SelfDeclaration();
+            associate.setSelfDeclaration(declaration);
+        }
+
+        if (data.race() != null) {
+            declaration.setRace(data.race());
+        }
+
+        if (data.gender() != null) {
+            declaration.setGender(data.gender());
+        }
+
+        if (data.sexualOrientation() != null) {
+            declaration.setSexualOrientation(data.sexualOrientation());
+        }
+
+        if (data.education() != null) {
+            declaration.setEducation(data.education());
+        }
+
+        if (data.income() != null) {
+            declaration.setIncome(data.income());
+        }
+
+        if (data.disability() != null) {
+            declaration.setDisability(data.disability());
+        }
+
+        Associate savedAssociate = associateRepository.save(associate);
+        return new SelfDeclarationResponseDto(savedAssociate.getSelfDeclaration());
     }
 
     @Transactional

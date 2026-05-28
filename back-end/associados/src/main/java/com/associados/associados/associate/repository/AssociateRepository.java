@@ -12,6 +12,8 @@ import com.associados.associados.associate.entity.Associate;
 @Repository
 public interface AssociateRepository extends JpaRepository<Associate, UUID> {
     Optional<Associate> findByCpf(String cpf);
+
+    Optional<Associate> findByUserId(UUID userId);
     
     boolean existsByCpf(String cpf);
 

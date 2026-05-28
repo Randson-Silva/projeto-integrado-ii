@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -18,10 +19,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.associados.associados.associate.dtos.request.UpdateAssociateDto;
+import com.associados.associados.associate.dtos.request.UpdateSelfDeclarationDto;
 import com.associados.associados.associate.dtos.response.AssociateResponseDto;
+import com.associados.associados.associate.dtos.response.SelfDeclarationResponseDto;
 import com.associados.associados.associate.service.AssociateService;
 import com.associados.associados.auth.dtos.request.RegisterAssociateDto;
 import com.associados.associados.auth.dtos.response.MessageResponseDto;
+import com.associados.associados.user.entity.User;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -93,6 +97,21 @@ public class AssociateController {
             @PathVariable UUID id,
             @RequestBody @Valid UpdateAssociateDto data) {
         AssociateResponseDto updated = associateService.updateAssociate(id, data);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PatchMapping("/me/self-declaration")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Update own self declaration", description = "Updates one or more self-declared identity fields for the authenticated associate.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Self declaration updated successfully"),
+        @ApiResponse(responseCode = "404", description = "Associate not found"),
+        @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
+    public ResponseEntity<SelfDeclarationResponseDto> updateOwnSelfDeclaration(
+            @RequestBody @Valid UpdateSelfDeclarationDto data) {
+        User authenticatedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        SelfDeclarationResponseDto updated = associateService.updateSelfDeclaration(authenticatedUser.getId(), data);
         return ResponseEntity.ok(updated);
     }
 
