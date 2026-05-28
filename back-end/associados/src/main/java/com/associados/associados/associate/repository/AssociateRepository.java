@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.associados.associados.associate.entity.Associate;
@@ -17,4 +19,7 @@ public interface AssociateRepository extends JpaRepository<Associate, UUID> {
 
     @Override
     List<Associate> findAll();
+
+    @Query("SELECT a FROM Associate a WHERE MONTH(a.birthDate) = :month AND DAY(a.birthDate) = :day")
+    List<Associate> findByBirthdayMonthAndDay(@Param("month") int month, @Param("day") int day);
 }
