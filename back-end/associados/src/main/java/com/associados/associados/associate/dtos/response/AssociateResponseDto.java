@@ -15,6 +15,7 @@ public record AssociateResponseDto(
         LocalDate birthDate,
         String phone,
         CategoriaEnum workCategory,
+        boolean isActive,
         UserResponseDto user,
         Address address,
         SelfDeclaration selfDeclaration
@@ -26,6 +27,7 @@ public record AssociateResponseDto(
                 associate.getBirthDate(),
                 associate.getPhone(),
                 associate.getWorkCategory(),
+                associate.getUser().isActive(),
                 new UserResponseDto(associate.getUser()),
                 associate.getAddress(),
                 associate.getSelfDeclaration()

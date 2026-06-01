@@ -104,6 +104,12 @@ public class AssociateService {
         return new AssociateResponseDto(associate);
     }
 
+    public AssociateResponseDto getAssociateByUserId(java.util.UUID userId) {
+        Associate associate = associateRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException("Associate not found"));
+        return new AssociateResponseDto(associate);
+    }
+
     @Transactional
     public AssociateResponseDto updateAssociate(java.util.UUID id, UpdateAssociateDto data) {
         Associate associate = findAssociateOrThrow(id);
