@@ -1,17 +1,27 @@
 package com.associados.associados.auth.service;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.associados.associados.auth.infra.exceptions.BusinessException;
+import com.associados.associados.associate.entity.Associate;
+import com.associados.associados.associate.repository.AssociateRepository;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 
 @Service
 public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
+
+    @Autowired
+    private AssociateRepository associateRepository;
 
     public void sendPasswordResetEmail(String to, String token) {
         String subject = "Password Recovery - Associates System";
@@ -26,16 +36,105 @@ public class EmailService {
         sendEmail(email, subject, body);
     }
 
-    private void sendEmail(String to, String subject, String body) {
+    public void sendEmail(String to, String subject, String body) {
         try {
-            SimpleMailMessage email = new SimpleMailMessage();
-            email.setTo(to);
-            email.setSubject(subject);
-            email.setText(body);
-            mailSender.send(email);
-        } catch (MailException e) {
-            System.err.println("Error sending email: " + e.getMessage());
-            throw new BusinessException("We could not send the email. Please try again later.");
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(body, true);
+            
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            System.out.println("Erro ao enviar e-mail: " + e.getMessage());
         }
     }
+
+    @Scheduled(cron = "0 0 8 * * *") // every day at 8 AM
+    public void checkAndSendBirthdays() {
+        System.out.println("Starting birthday check...");
+
+        LocalDate hoje = LocalDate.now();
+        int currentMonth = hoje.getMonthValue();
+        int currentDay = hoje.getDayOfMonth();
+        
+        List<Associate> aniversariantes = associateRepository.findByBirthdayMonthAndDay(currentMonth, currentDay);
+        
+        for (Associate associado : aniversariantes) {
+            
+            if (associado.getUser() != null) {
+                String email = associado.getUser().getEmail();
+                String nome = associado.getUser().getName();
+                
+                sendBirthdayEmail(email, nome);
+            }
+        }
+
+        System.out.println("Birthday check completed. Emails sent: " + aniversariantes.size());
+    }
+
+    public void sendBirthdayEmail(String to, String name) {
+        String subject = "Centro Cultural Dom Maurício";
+        
+        String topoUrl = "https://lh3.googleusercontent.com/d/15NVc2eHIegUHcDhWdfM-hxvADdEII1JD"; 
+        String rodapeUrl = "https://lh3.googleusercontent.com/d/1JMR_IIR0BbMJutuVQN8IB5yGVsHGDRJq"; 
+
+        String body = "<!DOCTYPE html>"
+                    + "<html lang=\"pt-BR\">"
+                    + "<head>"
+                    + "    <meta charset=\"UTF-8\">"
+                    + "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+                    + "    <meta name=\"color-scheme\" content=\"light only\">"
+                    + "    <meta name=\"supported-color-schemes\" content=\"light only\">"
+                    + "</head>"
+                    + "<body style=\"margin: 0; padding: 0; width: 100% !important; background-color: #121212; font-family: Arial, sans-serif;\">"
+                    + "    <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"background-color: #121212; padding: 40px 10px;\">"
+                    + "        <tr>"
+                    + "            <td align=\"center\">"
+                    + "                "
+                    + "                <table width=\"100%\" max-width=\"550\" style=\"max-width: 550px; background-color: #ebe5cf; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5);\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">"
+                    + "                    "
+                    + "                    "
+                    + "                    <tr>"
+                    + "                        <td align=\"center\" style=\"line-height: 0;\">"
+                    + "                            <img src=\"" + topoUrl + "\" alt=\"Topo\" width=\"100%\" style=\"width: 100%; max-width: 550px; height: auto; display: block; border: none;\">"
+                    + "                        </td>"
+                    + "                    </tr>"
+                    + "                    "
+                    + "                    "
+                    + "                    <tr>"
+                    + "                        <td style=\"background-color: #ebe5cf; padding: 35px 40px; text-align: center;\">"
+                    + "                            <h2 style=\"color: #000000 !important; font-size: 24px; margin-top: 0; margin-bottom: 20px; font-weight: bold;\">"
+                    + "                                Querido(a) " + name + ","
+                    + "                            </h2>"
+                    + "                            <p style=\"color: #1a1a1a !important; font-size: 16px; line-height: 1.6; margin-bottom: 20px;\">"
+                    + "                                Desejamos a você um aniversário repleto de alegria, saúde e momentos inesquecíveis! "
+                    + "                                Que este novo ciclo seja cheio de realizações e felicidade. Obrigado por fazer parte da "
+                    + "                                nossa comunidade no Centro Cultural Dom Maurício."
+                    + "                            </p>"
+                    + "                            <p style=\"color: #1a1a1a !important; font-size: 15px; margin-bottom: 0;\">"
+                    + "                                Att.,<br><strong>O Centro Cultural Dom Maurício</strong>"
+                    + "                            </p>"
+                    + "                        </td>"
+                    + "                    </tr>"
+                    + "                    "
+                    + "                    "
+                    + "                    <tr>"
+                    + "                        <td align=\"center\" style=\"line-height: 0;\">"
+                    + "                            <img src=\"" + rodapeUrl + "\" alt=\"Rodapé\" width=\"100%\" style=\"width: 100%; max-width: 550px; height: auto; display: block; border: none;\">"
+                    + "                        </td>"
+                    + "                    </tr>"
+                    + "                    "
+                    + "                </table>"
+                    + "            </td>"
+                    + "        </tr>"
+                    + "    </table>"
+                    + "</body>"
+                    + "</html>";
+
+        sendEmail(to, subject, body); 
+    }
+
+
 }
