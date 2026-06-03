@@ -17,39 +17,94 @@ import { useNavigate } from 'react-router-dom';
 import PasswordField from '../components/PasswordField';
 import { accessControlCreate } from '../services/auth/authService';
 import { type Role } from '../services/auth/roles';
+import { maskCPF, maskPhone } from '../utils/masks.util';
 
 const AccessControlCreateForm = () => {
+  const [errors, setErrors] = useState({
+    name: '',
+    phone: '',
+    cpf: '',
+    email: '',
+    password: '',
+    type: '',
+  });
+  const [phone, setPhone] = useState('');
+  const [cpf, setCpf] = useState('');
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const data = new FormData(e.currentTarget);
+
+    const role = String(data.get('type') ?? ''); // ? 'type'
+    const fullName = String(data.get('name') ?? '');
+    const phone = String(data.get('phone') ?? '');
+    const cpf = String(data.get('cpf') ?? '');
+    const email = String(data.get('email') ?? '');
+    const password = String(data.get('password') ?? '');
+
+    const newErrors = {
+      name: '',
+      phone: '',
+      cpf: '',
+      email: '',
+      password: '',
+      type: '',
+    };
+
+    if (!fullName.trim()) {
+      newErrors.name = 'Nome é obrigatório';
+    }
+
+    if (!phone.trim()) {
+      newErrors.phone = 'Telefone é obrigatório';
+    } else if (phone.replace(/\D/g, '').length !== 11) {
+      newErrors.phone = 'Telefone inválido';
+    }
+
+    if (!cpf.trim()) {
+      newErrors.cpf = 'CPF é obrigatório';
+    } else if (cpf.replace(/\D/g, '').length !== 11) {
+      newErrors.cpf = 'CPF inválido';
+    }
+
+    if (!email.trim()) {
+      newErrors.email = 'E-mail é obrigatório';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'E-mail inválido';
+    }
+
+    if (!password.trim()) {
+      newErrors.password = 'Senha é obrigatória';
+    }
+
+    if (!role) {
+      newErrors.type = 'Selecione um perfil';
+    }
+
+    setErrors(newErrors);
+
+    const hasErrors = Object.values(newErrors).some(Boolean);
+
+    if (hasErrors) {
+      return;
+    }
 
     setLoading(true);
 
     try {
-      const data = new FormData(e.currentTarget);
-
-      const role = data.get('type') as Role;
-      const fullName = data.get('name') as string;
-      const phone = data.get('phone') as string;
-      const cpf = data.get('cpf') as string;
-      const email = data.get('email') as string;
-      const password = data.get('password') as string;
-
-      const res = await accessControlCreate({
-        cpf,
+      await accessControlCreate({
+        cpf: cpf.replace(/\D/g, ''),
         email,
         fullName,
         password,
-        phone,
-        role,
+        phone: phone.replace(/\D/g, ''),
+        role: role as Role,
       });
 
-      console.log(res);
-      console.log(res.message);
-
-      console.log(Object.fromEntries(data));
       navigate('/controle-de-acesso');
     } finally {
       setLoading(false);
@@ -100,6 +155,8 @@ const AccessControlCreateForm = () => {
               required
               fullWidth
               slotProps={{ inputLabel: { shrink: true } }}
+              error={!!errors.name}
+              helperText={errors.name}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
@@ -109,7 +166,14 @@ const AccessControlCreateForm = () => {
               placeholder="Digite o telefone"
               required
               fullWidth
-              slotProps={{ inputLabel: { shrink: true } }}
+              value={phone}
+              onChange={(e) => setPhone(maskPhone(e.target.value))}
+              slotProps={{
+                inputLabel: { shrink: true },
+                htmlInput: { maxLength: 15 },
+              }}
+              error={!!errors.phone}
+              helperText={errors.phone}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 3 }}>
@@ -119,7 +183,14 @@ const AccessControlCreateForm = () => {
               placeholder="Informe o CPF"
               required
               fullWidth
-              slotProps={{ inputLabel: { shrink: true } }}
+              value={cpf}
+              onChange={(e) => setCpf(maskCPF(e.target.value))}
+              slotProps={{
+                inputLabel: { shrink: true },
+                htmlInput: { maxLength: 14 },
+              }}
+              error={!!errors.cpf}
+              helperText={errors.cpf}
             />
           </Grid>
 
@@ -133,6 +204,8 @@ const AccessControlCreateForm = () => {
               required
               fullWidth
               slotProps={{ inputLabel: { shrink: true } }}
+              error={!!errors.email}
+              helperText={errors.email}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
@@ -144,10 +217,12 @@ const AccessControlCreateForm = () => {
               fullWidth
               autoComplete="new-password"
               slotProps={{ inputLabel: { shrink: true } }}
+              error={!!errors.password}
+              helperText={errors.password}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <FormControl fullWidth required>
+            <FormControl fullWidth required error={!!errors.type}>
               <InputLabel shrink>Tipo de Perfil</InputLabel>
 
               <Select
@@ -172,6 +247,15 @@ const AccessControlCreateForm = () => {
                   </MenuItem>
                 ))}
               </Select>
+              {!!errors.type && (
+                <Typography
+                  variant="caption"
+                  color="error"
+                  sx={{ ml: 1.75, mt: 0.5 }}
+                >
+                  {errors.type}
+                </Typography>
+              )}
             </FormControl>
           </Grid>
         </Grid>

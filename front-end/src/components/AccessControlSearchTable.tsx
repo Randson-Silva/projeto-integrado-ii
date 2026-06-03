@@ -29,6 +29,7 @@ import { useNavigate } from 'react-router-dom';
 import { normalizeRoleView, type Role } from '../services/auth/roles';
 import type { User } from '../services/user/user.types';
 import { getUsers } from '../services/user/userService';
+import { maskCPF } from '../utils/masks.util';
 
 const AccessControlSearchTable = () => {
   const navigate = useNavigate();
@@ -235,7 +236,7 @@ const AccessControlSearchTable = () => {
 
                     <TableCell sx={{ py: 1.5 }}>
                       <Typography variant="body2" color="text.secondary">
-                        {user.cpf}
+                        {maskCPF(user.cpf)}
                       </Typography>
                     </TableCell>
 
