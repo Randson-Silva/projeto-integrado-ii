@@ -79,6 +79,7 @@ public class AssociateService {
         associate.setUser(newUser);
         associate.setAddress(address);
         associate.setSelfDeclaration(declaration);
+        associate.setAcceptedDataSharingTerm(data.acceptedDataSharingTerm());
 
         associateRepository.save(associate);
     }
@@ -138,6 +139,10 @@ public class AssociateService {
 
         if (data.workCategoryId() != null) {
             associate.setWorkCategory(findCategoryOrThrow(data.workCategoryId()));
+        }
+
+        if (data.acceptedDataSharingTerm() != null) {
+            associate.setAcceptedDataSharingTerm(data.acceptedDataSharingTerm());
         }
 
         // Update User fields

@@ -54,5 +54,7 @@ public record UpdateAssociateDto(
 
         EscolaridadeEnum education,
 
-        RendaEnum income
+        RendaEnum income,
+
+        Boolean acceptedDataSharingTerm
 ) {}

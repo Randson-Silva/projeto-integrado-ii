@@ -58,7 +58,10 @@ public record RegisterAssociateDto(
 
         @NotNull(message = "Legal guardian name is required for minors")
         @Size(max = 255, message = "Legal guardian name must be at most 255 characters")
-        String legalGuardianName
+        String legalGuardianName,
+
+        @NotNull(message = "Data sharing term decision is required")
+        Boolean acceptedDataSharingTerm
 ) {
         public String email() {
                 return baseData.email();

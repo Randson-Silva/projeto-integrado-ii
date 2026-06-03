@@ -17,7 +17,8 @@ public record AssociateResponseDto(
         boolean isActive,
         UserResponseDto user,
         Address address,
-        SelfDeclaration selfDeclaration
+        SelfDeclaration selfDeclaration,
+        boolean acceptedDataSharingTerm
 ) {
     public AssociateResponseDto(Associate associate) {
         this(
@@ -29,7 +30,8 @@ public record AssociateResponseDto(
                 associate.getUser().isActive(),
                 new UserResponseDto(associate.getUser()),
                 associate.getAddress(),
-                associate.getSelfDeclaration()
+                associate.getSelfDeclaration(),
+                associate.isAcceptedDataSharingTerm()
         );
     }
 }
