@@ -10,9 +10,10 @@ export type AssociateEducation =
   | 'SUPERIOR'
   | 'POS_GRADUACAO'
   | 'MESTRADO'
-  | 'DOUTORADO';
+  | 'DOUTORADO'
+  | 'NAO_INFORMADO';
 
-export interface AssociateProfileForm {
+export interface IAssociateProfileForm {
   id: string;
   fullName: string;
   cpf: string;
@@ -31,6 +32,15 @@ export interface AssociateProfileForm {
   sexualOrientation: string;
   education: AssociateEducation | '';
   income: AssociateIncome | '';
+  disability: string;
+}
+
+export interface IAssociateSelfDeclarationForm {
+  education: AssociateEducation;
+  race: string;
+  gender: string;
+  sexualOrientation: string;
+  income: AssociateIncome;
   disability: string;
 }
 

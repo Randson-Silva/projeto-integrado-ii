@@ -12,29 +12,56 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar, { type SidebarItem } from '../components/Sidebar';
 import { useAuth } from '../hooks/useAuth';
+import { authGetProfile } from '../services/auth/authService';
+import { normalizeRoleView } from '../services/auth/roles';
 
 const DRAWER_WIDTH = 224;
 
 const UserMenu = () => {
-  const { user, logout } = useAuth();
+  const { logout, token } = useAuth();
   const navigate = useNavigate();
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
 
-  const displayName =
-    (user as unknown as { fullName?: string; name?: string })?.fullName ??
-    (user as unknown as { name?: string })?.name ??
-    'Usuário';
-  const role = (user as unknown as { role?: string })?.role ?? '';
-  const initial = displayName.charAt(0).toUpperCase();
+  const [displayName, setDisplayName] = useState('');
+  const [role, setRole] = useState('');
+
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        if (!token) {
+          setDisplayName('Usuário');
+          setRole('Indefinido');
+          return;
+        }
+
+        const user = await authGetProfile({ token });
+
+        if (!user) {
+          setDisplayName('Usuário');
+          setRole('Indefinido');
+          return;
+        }
+
+        setDisplayName(user.name?.split(' ')[0] ?? 'Usuário');
+        setRole(normalizeRoleView(user.role));
+      } catch {
+        setDisplayName('Usuário');
+        setRole('Indefinido');
+      }
+    };
+
+    loadUserInfo();
+  }, [token]);
+
+  const initial = displayName ? displayName.charAt(0).toUpperCase() : '?';
 
   const handleLogout = () => {
     setAnchor(null);
     logout();
-    navigate('/login');
   };
 
   return (

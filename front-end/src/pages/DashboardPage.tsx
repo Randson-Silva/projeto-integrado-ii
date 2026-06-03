@@ -1,5 +1,3 @@
-import { Typography } from '@mui/material';
-
 import { useAuth } from '../hooks/useAuth';
 
 import { adminItems } from '../config/sidebarItems/adminItems';
@@ -9,6 +7,9 @@ import { superAdminItems } from '../config/sidebarItems/superAdminItems';
 
 import MainLayout from '../layouts/MainLayout';
 import { decodeJwt } from '../services/auth/jwt.config';
+
+import type { JSX } from 'react';
+import AssociateDashboard from '../components/Dashboards/AssociateDashboard';
 
 const DashboardPage = () => {
   const { token } = useAuth();
@@ -30,13 +31,18 @@ const DashboardPage = () => {
     ASSOCIATE: associateItems,
   };
 
-  const menuItems = menuItemsByRole[user.role];
+  const dashboardByRole: { [key: string]: JSX.Element } = {
+    // TODO: implmentar dashboards para cada tipo de usuário
+    // SUPER_ADMIN: <SuperAdminDashboard />,
+    // ADMIN: <AdminDashboard />,
+    // CONSULTANT: <ConsultantDashboard />,
+    ASSOCIATE: <AssociateDashboard />,
+  };
 
-  return (
-    <MainLayout menuItems={menuItems}>
-      <Typography sx={{ mt: 2 }}>Perfil atual: {user.role}</Typography>
-    </MainLayout>
-  );
+  const menuItems = menuItemsByRole[user.role];
+  const dashboard = dashboardByRole[user.role];
+
+  return <MainLayout menuItems={menuItems}>{dashboard}</MainLayout>;
 };
 
 export default DashboardPage;

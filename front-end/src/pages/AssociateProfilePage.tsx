@@ -1,4 +1,4 @@
-import AssociateProfile from '../components/AssociateProfile';
+import AssociateProfile from '../components/AdminAssociateProfile';
 import { adminItems } from '../config/sidebarItems/adminItems';
 import MainLayout from '../layouts/MainLayout';
 

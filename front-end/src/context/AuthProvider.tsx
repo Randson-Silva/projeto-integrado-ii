@@ -1,21 +1,41 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { AuthUser } from '../services/auth/auth.types';
+import { isTokenExpired } from '../services/auth/jwt.config';
 import { AuthContext } from './AuthContext';
 
 export const AuthProvider = ({ children }: React.PropsWithChildren) => {
   const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem('token');
-  });
+    const storedToken = localStorage.getItem('token');
 
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    const stored = localStorage.getItem('user');
-
-    if (!stored) {
+    if (!storedToken) {
       return null;
     }
 
-    return JSON.parse(stored);
+    if (isTokenExpired(storedToken)) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return null;
+    }
+
+    return storedToken;
+  });
+
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    const storedUser = localStorage.getItem('user');
+
+    if (!storedUser) {
+      return null;
+    }
+
+    const storedToken = localStorage.getItem('token');
+
+    if (!storedToken || isTokenExpired(storedToken)) {
+      localStorage.removeItem('user');
+      return null;
+    }
+
+    return JSON.parse(storedUser);
   });
 
   const setAuthToken = (token: string) => {
@@ -39,24 +59,41 @@ export const AuthProvider = ({ children }: React.PropsWithChildren) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
     localStorage.removeItem('token');
-    setUser(null);
+    localStorage.removeItem('user');
+
     setToken(null);
+    setUser(null);
   };
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    const checkToken = () => {
+      if (isTokenExpired(token)) {
+        logout();
+      }
+    };
+
+    checkToken();
+  }, [token]);
+
+  const isAuthenticated = token !== null && !isTokenExpired(token);
 
   const value = useMemo(
     () => ({
       token,
       user,
-      isAuthenticated: !!token,
+      isAuthenticated,
       setAuthToken,
       setAuthUser,
       removeAuthToken,
       removeAuthUser,
       logout,
     }),
-    [token, user]
+    [token, user, isAuthenticated]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
