@@ -38,7 +38,7 @@ import {
   mapFormToUpdatePayload,
 } from '../services/associate/associate.mappers';
 
-import type { AssociateProfileForm } from '../services/associate/associate.types';
+import type { IAssociateProfileForm } from '../services/associate/associate.types';
 
 import {
   deleteAssociate,
@@ -97,7 +97,7 @@ type Snack = {
   msg: string;
 };
 
-const EMPTY: AssociateProfileForm = {
+const EMPTY: IAssociateProfileForm = {
   id: '',
   fullName: '',
   cpf: '',
@@ -132,7 +132,7 @@ const AssociateProfile = () => {
 
   const [saving, setSaving] = useState(false);
 
-  const [form, setForm] = useState<AssociateProfileForm>(EMPTY);
+  const [form, setForm] = useState<IAssociateProfileForm>(EMPTY);
 
   const [inactivateOpen, setInactivateOpen] = useState(false);
 
@@ -213,7 +213,7 @@ const AssociateProfile = () => {
 
   const tf = (
     label: string,
-    key: keyof AssociateProfileForm,
+    key: keyof IAssociateProfileForm,
     type = 'text'
   ) => (
     <TextField
@@ -239,7 +239,7 @@ const AssociateProfile = () => {
 
   const sf = (
     label: string,
-    key: keyof AssociateProfileForm,
+    key: keyof IAssociateProfileForm,
     options: {
       value: string;
       label: string;

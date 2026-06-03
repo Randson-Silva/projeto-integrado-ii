@@ -9,7 +9,7 @@ interface GetProfileRequest {
 export async function authGetProfile({
   token,
 }: GetProfileRequest): Promise<AuthUser> {
-  const res = await api.get('/auth/password/validate', {
+  const res = await api.get('/auth/profile', {
     headers: { Authorization: `Bearer ${token}` },
   });
 

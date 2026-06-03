@@ -15,3 +15,17 @@ export function decodeJwt(token: string): JwtTokenPayload {
 
   return decoded;
 }
+
+type ExpJwtPayload = {
+  exp: number;
+};
+
+export const isTokenExpired = (token: string) => {
+  try {
+    const decoded = jwtDecode<ExpJwtPayload>(token);
+
+    return decoded.exp * 1000 <= Date.now();
+  } catch {
+    return true;
+  }
+};
