@@ -26,7 +26,7 @@ public class EmailService {
         sendEmail(email, subject, body);
     }
 
-    private void sendEmail(String to, String subject, String body) {
+    public void sendEmail(String to, String subject, String body) {
         try {
             SimpleMailMessage email = new SimpleMailMessage();
             email.setTo(to);

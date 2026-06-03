@@ -44,7 +44,8 @@ public record UpdateAssociateDto(
         @Size(min = 2, max = 2, message = "State code must be 2 letters")
         String state,
 
-        // SelfDeclaration fields
+        String socialName,
+
         String race,
 
         String gender,
@@ -53,7 +54,5 @@ public record UpdateAssociateDto(
 
         EscolaridadeEnum education,
 
-        RendaEnum income,
-
-        String disability
+        RendaEnum income
 ) {}

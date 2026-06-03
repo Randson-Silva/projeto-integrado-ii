@@ -54,7 +54,6 @@ public record RegisterAssociateDto(
         String sexualOrientation,
         EscolaridadeEnum education,
         RendaEnum income,
-        String disability,
         String additionalInfo,
 
         @NotNull(message = "Legal guardian name is required for minors")

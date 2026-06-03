@@ -54,12 +54,12 @@ public class AssociateService {
         address.setState(data.state());
 
         SelfDeclaration declaration = new SelfDeclaration();
+        declaration.setSocialName(data.socialName());
         declaration.setRace(data.race());
         declaration.setGender(data.gender());
         declaration.setSexualOrientation(data.sexualOrientation());
         declaration.setEducation(data.education());
         declaration.setIncome(data.income());
-        declaration.setDisability(data.disability());
 
         Associate associate = new Associate();
         associate.setCpf(data.cpf());
@@ -171,6 +171,10 @@ public class AssociateService {
         }
 
         // Update SelfDeclaration fields
+        if (data.socialName() != null) {
+            declaration.setSocialName(data.socialName());
+        }
+
         if (data.race() != null) {
             declaration.setRace(data.race());
         }
@@ -189,10 +193,6 @@ public class AssociateService {
 
         if (data.income() != null) {
             declaration.setIncome(data.income());
-        }
-
-        if (data.disability() != null) {
-            declaration.setDisability(data.disability());
         }
 
         return new AssociateResponseDto(associateRepository.save(associate));
@@ -209,6 +209,10 @@ public class AssociateService {
             associate.setSelfDeclaration(declaration);
         }
 
+        if (data.socialName() != null) {
+            declaration.setSocialName(data.socialName());
+        }
+
         if (data.race() != null) {
             declaration.setRace(data.race());
         }
@@ -227,10 +231,6 @@ public class AssociateService {
 
         if (data.income() != null) {
             declaration.setIncome(data.income());
-        }
-
-        if (data.disability() != null) {
-            declaration.setDisability(data.disability());
         }
 
         Associate savedAssociate = associateRepository.save(associate);
