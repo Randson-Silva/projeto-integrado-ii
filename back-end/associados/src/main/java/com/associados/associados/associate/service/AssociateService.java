@@ -10,8 +10,10 @@ import com.associados.associados.associate.dtos.response.AssociateResponseDto;
 import com.associados.associados.associate.dtos.response.SelfDeclarationResponseDto;
 import com.associados.associados.associate.entity.Address;
 import com.associados.associados.associate.entity.Associate;
+import com.associados.associados.associate.entity.Category;
 import com.associados.associados.associate.entity.SelfDeclaration;
 import com.associados.associados.associate.repository.AssociateRepository;
+import com.associados.associados.associate.repository.CategoryRepository;
 import com.associados.associados.auth.dtos.request.RegisterAssociateDto;
 import com.associados.associados.auth.infra.exceptions.BusinessException;
 import com.associados.associados.user.entity.User;
@@ -27,12 +29,14 @@ public class AssociateService {
 
     private final AssociateRepository associateRepository;
     private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
 
     @Transactional
     public void register(RegisterAssociateDto data) {
 
         validateCpf(data.cpf());
         validateEmailNotAlreadyUsed(data.email());
+        Category workCategory = findCategoryOrThrow(data.workCategoryId());
 
         User newUser = new User();
         newUser.setName(data.fullName());
@@ -70,7 +74,7 @@ public class AssociateService {
         else {
             associate.setLegalGuardianName("");
         }
-        associate.setWorkCategory(data.workCategory());
+        associate.setWorkCategory(workCategory);
         associate.setPhone(data.phone());
         associate.setUser(newUser);
         associate.setAddress(address);
@@ -132,8 +136,8 @@ public class AssociateService {
             associate.setPhone(data.phone());
         }
 
-        if (data.workCategory() != null) {
-            associate.setWorkCategory(data.workCategory());
+        if (data.workCategoryId() != null) {
+            associate.setWorkCategory(findCategoryOrThrow(data.workCategoryId()));
         }
 
         // Update User fields
@@ -248,6 +252,11 @@ public class AssociateService {
     private Associate findAssociateOrThrow(java.util.UUID id) {
         return associateRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Associate not found"));
+    }
+
+    private Category findCategoryOrThrow(java.util.UUID id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Category not found"));
     }
 
     private void validateCpfNotAlreadyUsed(String cpf, java.util.UUID associateId) {

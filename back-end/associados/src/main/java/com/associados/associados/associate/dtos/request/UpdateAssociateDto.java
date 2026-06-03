@@ -1,8 +1,8 @@
 package com.associados.associados.associate.dtos.request;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
-import com.associados.associados.associate.enums.CategoriaEnum;
 import com.associados.associados.associate.enums.EscolaridadeEnum;
 import com.associados.associados.associate.enums.RendaEnum;
 
@@ -20,7 +20,7 @@ public record UpdateAssociateDto(
         @Pattern(regexp = "\\d{10,11}", message = "Phone must contain 10-11 digits")
         String phone,
 
-        CategoriaEnum workCategory,
+        UUID workCategoryId,
 
         // User fields
         @Pattern(regexp = "^[A-Za-zÀ-ÿ ]+$", message = "Full name must contain only letters")

@@ -16,6 +16,7 @@ public interface AssociateRepository extends JpaRepository<Associate, UUID> {
     Optional<Associate> findByUserId(UUID userId);
     
     boolean existsByCpf(String cpf);
+    boolean existsByWorkCategoryId(UUID workCategoryId);
 
     @Override
     List<Associate> findAll();
