@@ -71,6 +71,20 @@ public class AssociateController {
         return ResponseEntity.ok(associates);
     }
 
+    @GetMapping("/me")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Get own associate details", description = "Retrieves complete information for the authenticated associate.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Associate retrieved successfully"),
+        @ApiResponse(responseCode = "404", description = "Associate not found"),
+        @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
+    public ResponseEntity<AssociateResponseDto> getOwnAssociate() {
+        User authenticatedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        AssociateResponseDto associate = associateService.getAssociateByUserId(authenticatedUser.getId());
+        return ResponseEntity.ok(associate);
+    }
+
     @GetMapping("/{id}")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Get associate details", description = "Retrieves complete information for a specific associate")

@@ -25,6 +25,9 @@ public class SelfDeclaration {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(length = 100)
+    private String socialName;
+
     @Column(length = 50)
     private String race;
 
@@ -39,8 +42,4 @@ public class SelfDeclaration {
 
     @Enumerated(EnumType.STRING)
     private RendaEnum income;
-
-    @Column(length = 255)
-    private String disability;
 }
-

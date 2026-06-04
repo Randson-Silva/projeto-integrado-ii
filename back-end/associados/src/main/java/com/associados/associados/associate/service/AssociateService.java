@@ -10,8 +10,10 @@ import com.associados.associados.associate.dtos.response.AssociateResponseDto;
 import com.associados.associados.associate.dtos.response.SelfDeclarationResponseDto;
 import com.associados.associados.associate.entity.Address;
 import com.associados.associados.associate.entity.Associate;
+import com.associados.associados.associate.entity.Category;
 import com.associados.associados.associate.entity.SelfDeclaration;
 import com.associados.associados.associate.repository.AssociateRepository;
+import com.associados.associados.associate.repository.CategoryRepository;
 import com.associados.associados.auth.dtos.request.RegisterAssociateDto;
 import com.associados.associados.auth.infra.exceptions.BusinessException;
 import com.associados.associados.user.entity.User;
@@ -27,12 +29,14 @@ public class AssociateService {
 
     private final AssociateRepository associateRepository;
     private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
 
     @Transactional
     public void register(RegisterAssociateDto data) {
 
         validateCpf(data.cpf());
         validateEmailNotAlreadyUsed(data.email());
+        Category workCategory = findCategoryOrThrow(data.workCategoryId());
 
         User newUser = new User();
         newUser.setName(data.fullName());
@@ -54,12 +58,12 @@ public class AssociateService {
         address.setState(data.state());
 
         SelfDeclaration declaration = new SelfDeclaration();
+        declaration.setSocialName(data.socialName());
         declaration.setRace(data.race());
         declaration.setGender(data.gender());
         declaration.setSexualOrientation(data.sexualOrientation());
         declaration.setEducation(data.education());
         declaration.setIncome(data.income());
-        declaration.setDisability(data.disability());
 
         Associate associate = new Associate();
         associate.setCpf(data.cpf());
@@ -70,11 +74,12 @@ public class AssociateService {
         else {
             associate.setLegalGuardianName("");
         }
-        associate.setWorkCategory(data.workCategory());
+        associate.setWorkCategory(workCategory);
         associate.setPhone(data.phone());
         associate.setUser(newUser);
         associate.setAddress(address);
         associate.setSelfDeclaration(declaration);
+        associate.setAcceptedDataSharingTerm(data.acceptedDataSharingTerm());
 
         associateRepository.save(associate);
     }
@@ -104,6 +109,12 @@ public class AssociateService {
         return new AssociateResponseDto(associate);
     }
 
+    public AssociateResponseDto getAssociateByUserId(java.util.UUID userId) {
+        Associate associate = associateRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException("Associate not found"));
+        return new AssociateResponseDto(associate);
+    }
+
     @Transactional
     public AssociateResponseDto updateAssociate(java.util.UUID id, UpdateAssociateDto data) {
         Associate associate = findAssociateOrThrow(id);
@@ -126,8 +137,12 @@ public class AssociateService {
             associate.setPhone(data.phone());
         }
 
-        if (data.workCategory() != null) {
-            associate.setWorkCategory(data.workCategory());
+        if (data.workCategoryId() != null) {
+            associate.setWorkCategory(findCategoryOrThrow(data.workCategoryId()));
+        }
+
+        if (data.acceptedDataSharingTerm() != null) {
+            associate.setAcceptedDataSharingTerm(data.acceptedDataSharingTerm());
         }
 
         // Update User fields
@@ -164,7 +179,10 @@ public class AssociateService {
             address.setState(data.state());
         }
 
-        // Update SelfDeclaration fields
+        if (data.socialName() != null) {
+            declaration.setSocialName(data.socialName());
+        }
+
         if (data.race() != null) {
             declaration.setRace(data.race());
         }
@@ -183,10 +201,6 @@ public class AssociateService {
 
         if (data.income() != null) {
             declaration.setIncome(data.income());
-        }
-
-        if (data.disability() != null) {
-            declaration.setDisability(data.disability());
         }
 
         return new AssociateResponseDto(associateRepository.save(associate));
@@ -203,6 +217,10 @@ public class AssociateService {
             associate.setSelfDeclaration(declaration);
         }
 
+        if (data.socialName() != null) {
+            declaration.setSocialName(data.socialName());
+        }
+
         if (data.race() != null) {
             declaration.setRace(data.race());
         }
@@ -221,10 +239,6 @@ public class AssociateService {
 
         if (data.income() != null) {
             declaration.setIncome(data.income());
-        }
-
-        if (data.disability() != null) {
-            declaration.setDisability(data.disability());
         }
 
         Associate savedAssociate = associateRepository.save(associate);
@@ -242,6 +256,11 @@ public class AssociateService {
     private Associate findAssociateOrThrow(java.util.UUID id) {
         return associateRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Associate not found"));
+    }
+
+    private Category findCategoryOrThrow(java.util.UUID id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Category not found"));
     }
 
     private void validateCpfNotAlreadyUsed(String cpf, java.util.UUID associateId) {

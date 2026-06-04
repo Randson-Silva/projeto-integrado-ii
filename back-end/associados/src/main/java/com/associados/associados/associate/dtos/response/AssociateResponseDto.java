@@ -6,7 +6,6 @@ import java.util.UUID;
 import com.associados.associados.associate.entity.Address;
 import com.associados.associados.associate.entity.Associate;
 import com.associados.associados.associate.entity.SelfDeclaration;
-import com.associados.associados.associate.enums.CategoriaEnum;
 import com.associados.associados.user.dtos.response.UserResponseDto;
 
 public record AssociateResponseDto(
@@ -14,10 +13,11 @@ public record AssociateResponseDto(
         String cpf,
         LocalDate birthDate,
         String phone,
-        CategoriaEnum workCategory,
+        CategoryResponseDto workCategory,
         UserResponseDto user,
         Address address,
-        SelfDeclaration selfDeclaration
+        SelfDeclaration selfDeclaration,
+        boolean acceptedDataSharingTerm
 ) {
     public AssociateResponseDto(Associate associate) {
         this(
@@ -25,10 +25,11 @@ public record AssociateResponseDto(
                 associate.getCpf(),
                 associate.getBirthDate(),
                 associate.getPhone(),
-                associate.getWorkCategory(),
+                associate.getWorkCategory() == null ? null : new CategoryResponseDto(associate.getWorkCategory()),
                 new UserResponseDto(associate.getUser()),
                 associate.getAddress(),
-                associate.getSelfDeclaration()
+                associate.getSelfDeclaration(),
+                associate.isAcceptedDataSharingTerm()
         );
     }
 }
