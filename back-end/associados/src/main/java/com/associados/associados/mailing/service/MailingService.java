@@ -23,7 +23,7 @@ public class MailingService {
 
     public List<MailingRecipientResponseDto> getRecipients(MailingRecipientScope scope) {
         List<User> recipients = switch (scope) {
-            case ALL -> userRepository.findAll();
+            case ALL -> userRepository.findByRoleIn(List.of(RoleEnum.ASSOCIATE, RoleEnum.ADMIN, RoleEnum.CONSULTANT)); //except super admin (aka access managager)
             case ASSOCIATES -> userRepository.findByRoleIn(List.of(RoleEnum.ASSOCIATE));
             case ADMINS_AND_CONSULTANTS -> userRepository.findByRoleIn(List.of(RoleEnum.ADMIN, RoleEnum.CONSULTANT));
         };
