@@ -2,6 +2,11 @@ export type AssociateStatus = 'ATIVO' | 'PENDENTE' | 'INATIVADO' | 'INATIVO';
 
 export type AssociateCategory = 'ARTISTA' | 'PRODUTOR' | 'TECNICO' | 'OUTRO';
 
+export interface AssociateCategoryResponse {
+  id: string;
+  name: string;
+}
+
 export type AssociateIncome = 'BAIXA' | 'MEDIA' | 'ALTA';
 
 export type AssociateEducation =
@@ -35,6 +40,10 @@ export interface IAssociateProfileForm {
   disability: string;
 }
 
+// Alias sem prefixo para compatibilidade com o padrão do develop
+export type AssociateProfileForm = IAssociateProfileForm;
+
+
 export interface IAssociateSelfDeclarationForm {
   education: AssociateEducation;
   race: string;
@@ -48,7 +57,7 @@ export interface AssociateResponse {
   id: string;
   cpf: string;
   birthDate?: string;
-  workCategory?: AssociateCategory;
+  workCategory?: AssociateCategoryResponse;
   phone?: string;
   legalGuardianName?: string;
   user: {
@@ -63,7 +72,7 @@ export interface AssociateResponse {
     createdAt?: string;
     updatedAt?: string;
     enabled?: boolean;
-    active?: boolean;
+    active: boolean;
     username?: string;
     authorities?: { authority: string }[];
     accountNonExpired?: boolean;
@@ -81,13 +90,14 @@ export interface AssociateResponse {
   };
   selfDeclaration?: {
     id?: string;
+    socialName?: string;
     race?: string;
     gender?: string;
     sexualOrientation?: string;
     education?: AssociateEducation;
     income?: AssociateIncome;
-    disability?: string;
   };
+  acceptedDataSharingTerm?: boolean;
   status?: AssociateStatus;
 }
 

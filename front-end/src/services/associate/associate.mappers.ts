@@ -14,7 +14,7 @@ export const mapAssociateResponseToForm = (
   email: associate.user.email ?? '',
   phone: associate.phone ?? associate.user.phone ?? '',
   birthDate: associate.birthDate ?? '',
-  category: associate.workCategory ?? '',
+  category: associate.workCategory?.id ?? '',
   addressZipCode: associate.address?.postalCode ?? '',
   addressState: associate.address?.state ?? '',
   addressCity: associate.address?.city ?? '',
@@ -26,7 +26,7 @@ export const mapAssociateResponseToForm = (
   sexualOrientation: associate.selfDeclaration?.sexualOrientation ?? '',
   education: associate.selfDeclaration?.education ?? '',
   income: associate.selfDeclaration?.income ?? '',
-  disability: associate.selfDeclaration?.disability ?? '',
+  disability: '',
 });
 
 export const mapFormToUpdatePayload = (

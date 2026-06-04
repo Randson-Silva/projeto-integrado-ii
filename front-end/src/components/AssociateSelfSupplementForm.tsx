@@ -21,6 +21,8 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import api from '../services/api';
+import { getMyAssociate } from '../services/associate/associateService';
 
 interface SelfDeclForm {
   education: string;
@@ -43,100 +45,116 @@ interface ProfileForm {
   addressStreet: string;
   addressNumber: string;
   addressComplement: string;
-  availability: string;
   category: string;
   dataSharing: boolean;
 }
 
 const BR_STATES = [
-  'AC',
-  'AL',
-  'AP',
-  'AM',
-  'BA',
-  'CE',
-  'DF',
-  'ES',
-  'GO',
-  'MA',
-  'MT',
-  'MS',
-  'MG',
-  'PA',
-  'PB',
-  'PR',
-  'PE',
-  'PI',
-  'RJ',
-  'RN',
-  'RS',
-  'RO',
-  'RR',
-  'SC',
-  'SP',
-  'SE',
-  'TO',
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ];
 
-// Mock — TODO: substituir por API
-const MOCK_SELF_DECL: SelfDeclForm = {
-  education: 'PREFIRO_NAO_INFORMAR',
-  income: 'R$ 1.500,00',
-  race: 'BRANCO',
-  gender: 'MASCULINO',
-  sexualOrientation: 'HETEROSSEXUAL',
+const EMPTY_SELF_DECL: SelfDeclForm = {
+  education: '',
+  income: '',
+  race: '',
+  gender: '',
+  sexualOrientation: '',
 };
 
-const MOCK_PROFILE: ProfileForm = {
-  fullName: 'João da Silva',
-  cpf: '000.000.000-00',
-  birthDate: '2004-04-15',
-  email: 'joao.silva@gmail.com',
-  phone: '(00) 0.0000-0000',
-  addressZipCode: '63900-000',
-  addressState: 'CE',
-  addressCity: 'Quixadá',
-  addressNeighborhood: 'Centro',
-  addressStreet: 'Rua Rodrigues Junior',
-  addressNumber: '001',
-  addressComplement: 'APT 123',
-  availability: 'MANHA',
-  category: 'CANTOR',
-  dataSharing: true,
+const EMPTY_PROFILE: ProfileForm = {
+  fullName: '',
+  cpf: '',
+  birthDate: '',
+  email: '',
+  phone: '',
+  addressZipCode: '',
+  addressState: '',
+  addressCity: '',
+  addressNeighborhood: '',
+  addressStreet: '',
+  addressNumber: '',
+  addressComplement: '',
+  category: '',
+  dataSharing: false,
 };
 
 type Snack = { open: boolean; severity: 'success' | 'error'; msg: string };
 
+const maskCurrency = (v: string) => {
+  const digits = v.replace(/\D/g, '');
+  const num = Number(digits) / 100;
+  return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
 const AssociateSelfSupplementForm = () => {
   const { token } = useAuth();
 
+  const [loading, setLoading] = useState(true);
   const [editingDecl, setEditingDecl] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [selfDecl, setSelfDecl] = useState<SelfDeclForm>(MOCK_SELF_DECL);
-  const [selfDeclDraft, setSelfDeclDraft] =
-    useState<SelfDeclForm>(MOCK_SELF_DECL);
-  const [profile, setProfile] = useState<ProfileForm>(MOCK_PROFILE);
-  const [snack, setSnack] = useState<Snack>({
-    open: false,
-    severity: 'success',
-    msg: '',
-  });
-
-  // TODO: carregar dados reais via API
-  useEffect(() => {
-    if (!token) return;
-    // const load = async () => { ... }
-    // load();
-  }, [token]);
+  const [selfDecl, setSelfDecl] = useState<SelfDeclForm>(EMPTY_SELF_DECL);
+  const [selfDeclDraft, setSelfDeclDraft] = useState<SelfDeclForm>(EMPTY_SELF_DECL);
+  const [profile, setProfile] = useState<ProfileForm>(EMPTY_PROFILE);
+  const [snack, setSnack] = useState<Snack>({ open: false, severity: 'success', msg: '' });
 
   const toast = (severity: 'success' | 'error', msg: string) =>
     setSnack({ open: true, severity, msg });
 
+  useEffect(() => {
+    if (!token) return;
+    const load = async () => {
+      try {
+        const data = await getMyAssociate(token);
+        const decl: SelfDeclForm = {
+          education: data.selfDeclaration?.education ?? '',
+          income: data.selfDeclaration?.income ?? '',
+          race: data.selfDeclaration?.race ?? '',
+          gender: data.selfDeclaration?.gender ?? '',
+          sexualOrientation: data.selfDeclaration?.sexualOrientation ?? '',
+        };
+        setSelfDecl(decl);
+        setSelfDeclDraft(decl);
+        setProfile({
+          fullName: data.user.name ?? '',
+          cpf: data.cpf ?? '',
+          birthDate: data.birthDate ?? '',
+          email: data.user.email ?? '',
+          phone: data.phone ?? '',
+          addressZipCode: data.address?.postalCode ?? '',
+          addressState: data.address?.state ?? '',
+          addressCity: data.address?.city ?? '',
+          addressNeighborhood: data.address?.neighborhood ?? '',
+          addressStreet: data.address?.street ?? '',
+          addressNumber: data.address?.number ?? '',
+          addressComplement: '',
+          category: data.workCategory?.name ?? '',
+          dataSharing: data.acceptedDataSharingTerm ?? false,
+        });
+      } catch {
+        toast('error', 'Erro ao carregar dados.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [token]);
+
   const handleSaveDecl = async () => {
     setSaving(true);
     try {
-      // TODO: API update autodeclaratórios
-      console.log('Save autodecl:', selfDeclDraft);
+      await api.patch(
+        '/associates/me/self-declaration',
+        {
+          race: selfDeclDraft.race || undefined,
+          gender: selfDeclDraft.gender || undefined,
+          sexualOrientation: selfDeclDraft.sexualOrientation || undefined,
+          education: selfDeclDraft.education || undefined,
+          income: selfDeclDraft.income || undefined,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setSelfDecl({ ...selfDeclDraft });
       setEditingDecl(false);
       toast('success', 'Dados salvos com sucesso!');
@@ -152,7 +170,6 @@ const AssociateSelfSupplementForm = () => {
     setEditingDecl(false);
   };
 
-  //  Select field (autodeclaratórios)
   const declSelect = (
     label: string,
     key: keyof SelfDeclForm,
@@ -188,7 +205,6 @@ const AssociateSelfSupplementForm = () => {
     </FormControl>
   );
 
-  // Renda Pessoal — campo de texto com máscara de moeda
   const rendaField = (
     <TextField
       label="Renda Pessoal"
@@ -219,17 +235,10 @@ const AssociateSelfSupplementForm = () => {
     />
   );
 
-  //  Profile TextField
-  const ptf = (
-    label: string,
-    value: string,
-    onChange?: (v: string) => void,
-    type = 'text'
-  ) => (
+  const ptf = (label: string, value: string, type = 'text') => (
     <TextField
       label={label}
       value={value}
-      onChange={onChange ? (e) => onChange(e.target.value) : undefined}
       disabled
       type={type}
       size="small"
@@ -238,10 +247,18 @@ const AssociateSelfSupplementForm = () => {
     />
   );
 
+  if (loading) {
+    return (
+      <Stack sx={{ alignItems: 'center', justifyContent: 'center', py: 10 }}>
+        <CircularProgress />
+      </Stack>
+    );
+  }
+
   return (
     <>
       <Stack spacing={4}>
-        {/*  Avatar grande centralizado  */}
+        {/* Avatar */}
         <Stack sx={{ alignItems: 'center' }}>
           <Box sx={{ position: 'relative', width: 'fit-content' }}>
             <Avatar
@@ -255,7 +272,6 @@ const AssociateSelfSupplementForm = () => {
                 sx={{ fontSize: { xs: 80, sm: 110 }, color: 'rgba(0,0,0,0.3)' }}
               />
             </Avatar>
-            {/* Botão de editar avatar (edit mode) */}
             {editingDecl && (
               <IconButton
                 size="small"
@@ -275,6 +291,14 @@ const AssociateSelfSupplementForm = () => {
               </IconButton>
             )}
           </Box>
+          <Typography variant="h6" sx={{ mt: 1, fontWeight: 700 }}>
+            {profile.fullName || '—'}
+          </Typography>
+          {profile.category && (
+            <Typography variant="body2" color="text.secondary">
+              {profile.category}
+            </Typography>
+          )}
         </Stack>
 
         {/* Dados Autodeclaratórios */}
@@ -307,18 +331,20 @@ const AssociateSelfSupplementForm = () => {
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
               {declSelect('Escolaridade', 'education', [
-                {
-                  value: 'PREFIRO_NAO_INFORMAR',
-                  label: 'Prefiro não informar',
-                },
                 { value: 'FUNDAMENTAL', label: 'Ensino Fundamental' },
                 { value: 'MEDIO', label: 'Ensino Médio' },
                 { value: 'SUPERIOR', label: 'Superior' },
-                { value: 'POS', label: 'Pós-graduação' },
+                { value: 'POS_GRADUACAO', label: 'Pós-graduação' },
+                { value: 'MESTRADO', label: 'Mestrado' },
+                { value: 'DOUTORADO', label: 'Doutorado' },
               ])}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 150 }}>
-              {rendaField}
+              {declSelect('Renda Pessoal', 'income', [
+                { value: 'BAIXA', label: 'Baixa' },
+                { value: 'MEDIA', label: 'Média' },
+                { value: 'ALTA', label: 'Alta' },
+              ])}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 150 }}>
               {declSelect('Etnia', 'race', [
@@ -327,10 +353,7 @@ const AssociateSelfSupplementForm = () => {
                 { value: 'PRETO', label: 'Preto (a)' },
                 { value: 'AMARELO', label: 'Amarelo (a)' },
                 { value: 'INDIGENA', label: 'Indígena' },
-                {
-                  value: 'PREFIRO_NAO_INFORMAR',
-                  label: 'Prefiro não informar',
-                },
+                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
@@ -339,33 +362,22 @@ const AssociateSelfSupplementForm = () => {
                 { value: 'FEMININO', label: 'Feminino' },
                 { value: 'NAO_BINARIO', label: 'Não-binário' },
                 { value: 'OUTRO', label: 'Outro' },
-                {
-                  value: 'PREFIRO_NAO_INFORMAR',
-                  label: 'Prefiro não informar',
-                },
+                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
               {declSelect('Orientação Sexual', 'sexualOrientation', [
-                { value: 'HETEROSSEXUAL', label: 'Heterosexual' },
+                { value: 'HETEROSSEXUAL', label: 'Heterossexual' },
                 { value: 'HOMOSSEXUAL', label: 'Homossexual' },
                 { value: 'BISSEXUAL', label: 'Bissexual' },
                 { value: 'OUTRO', label: 'Outro' },
-                {
-                  value: 'PREFIRO_NAO_INFORMAR',
-                  label: 'Prefiro não informar',
-                },
+                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
           </Grid>
 
-          {/* Cancelar / Salvar — só em edit mode */}
           {editingDecl && (
-            <Stack
-              direction="row"
-              spacing={2}
-              sx={{ pt: 1, justifyContent: 'center' }}
-            >
+            <Stack direction="row" spacing={2} sx={{ pt: 1, justifyContent: 'center' }}>
               <Button
                 variant="contained"
                 onClick={handleCancelDecl}
@@ -388,157 +400,77 @@ const AssociateSelfSupplementForm = () => {
                 color="primary"
                 onClick={handleSaveDecl}
                 disabled={saving}
-                sx={{
-                  fontWeight: 700,
-                  borderRadius: 10,
-                  textTransform: 'none',
-                  px: 4,
-                  py: 1.5,
-                }}
+                sx={{ fontWeight: 700, borderRadius: 10, textTransform: 'none', px: 4, py: 1.5 }}
               >
-                {saving ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  'Salvar'
-                )}
+                {saving ? <CircularProgress size={20} color="inherit" /> : 'Salvar'}
               </Button>
             </Stack>
           )}
         </Stack>
 
-        {/*  Dados Pessoais (somente leitura)  */}
+        {/* Dados Pessoais */}
         <Stack spacing={2}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
             Dados Pessoais
           </Typography>
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 5 }}>
-              {ptf('Nome Completo', profile.fullName)}
-            </Grid>
+            <Grid size={{ xs: 12, sm: 5 }}>{ptf('Nome Completo', profile.fullName)}</Grid>
             <Grid size={{ xs: 12, sm: 4 }}>{ptf('CPF', profile.cpf)}</Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>
-              {ptf('Date', profile.birthDate, undefined, 'date')}
-            </Grid>
+            <Grid size={{ xs: 12, sm: 3 }}>{ptf('Data de Nascimento', profile.birthDate, 'date')}</Grid>
             <Grid size={{ xs: 12, sm: 8 }}>{ptf('E-mail', profile.email)}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              {ptf('Telefone', profile.phone)}
-            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>{ptf('Telefone', profile.phone)}</Grid>
           </Grid>
         </Stack>
 
-        {/*  Endereço (somente leitura)  */}
+        {/* Endereço */}
         <Stack spacing={2}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
             Endereço
           </Typography>
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 2 }}>
-              {ptf('CEP', profile.addressZipCode)}
-            </Grid>
+            <Grid size={{ xs: 12, sm: 2 }}>{ptf('CEP', profile.addressZipCode)}</Grid>
             <Grid size={{ xs: 12, sm: 3 }}>
               <FormControl size="small" fullWidth>
                 <InputLabel shrink>Estado</InputLabel>
-                <Select
-                  value={profile.addressState}
-                  label="Estado"
-                  notched
-                  disabled
-                >
+                <Select value={profile.addressState} label="Estado" notched disabled>
                   {BR_STATES.map((s) => (
-                    <MenuItem key={s} value={s}>
-                      {s}
-                    </MenuItem>
+                    <MenuItem key={s} value={s}>{s}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <FormControl size="small" fullWidth>
-                <InputLabel shrink>Cidade</InputLabel>
-                <Select
-                  value={profile.addressCity}
-                  label="Cidade"
-                  notched
-                  disabled
-                >
-                  <MenuItem value="Quixadá">Quixadá</MenuItem>
-                  <MenuItem value="Fortaleza">Fortaleza</MenuItem>
-                  <MenuItem value="Outras">Outras</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              {ptf('Bairro', profile.addressNeighborhood)}
-            </Grid>
-            <Grid size={{ xs: 12, sm: 5 }}>
-              {ptf('Rua', profile.addressStreet)}
-            </Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>
-              {ptf('Número', profile.addressNumber)}
-            </Grid>
-            <Grid size={{ xs: 12, sm: 5 }}>
-              {ptf('Complemento', profile.addressComplement)}
-            </Grid>
+            <Grid size={{ xs: 12, sm: 3 }}>{ptf('Cidade', profile.addressCity)}</Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>{ptf('Bairro', profile.addressNeighborhood)}</Grid>
+            <Grid size={{ xs: 12, sm: 5 }}>{ptf('Rua', profile.addressStreet)}</Grid>
+            <Grid size={{ xs: 12, sm: 2 }}>{ptf('Número', profile.addressNumber)}</Grid>
+            <Grid size={{ xs: 12, sm: 5 }}>{ptf('Complemento', profile.addressComplement)}</Grid>
           </Grid>
         </Stack>
 
-        {/*  Dados Institucionais (somente leitura)  */}
+        {/* Dados Institucionais */}
         <Stack spacing={2}>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
             Dados Institucionais
           </Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <FormControl size="small" fullWidth>
-                <InputLabel shrink>Disponibilidade de Horario</InputLabel>
-                <Select
-                  value={profile.availability}
-                  label="Disponibilidade de Horario"
-                  notched
-                  disabled
-                >
-                  <MenuItem value="MANHA">Matutino</MenuItem>
-                  <MenuItem value="TARDE">Vespertino</MenuItem>
-                  <MenuItem value="NOITE">Noturno</MenuItem>
-                  <MenuItem value="FLEXIVEL">Flexível</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <FormControl size="small" fullWidth>
-                <InputLabel shrink>Categoria</InputLabel>
-                <Select
-                  value={profile.category}
-                  label="Categoria"
-                  notched
-                  disabled
-                >
-                  <MenuItem value="ARTISTA">Artista</MenuItem>
-                  <MenuItem value="PRODUTOR">Produtor</MenuItem>
-                  <MenuItem value="TECNICO">Técnico</MenuItem>
-                  <MenuItem value="CANTOR">Cantor</MenuItem>
-                  <MenuItem value="OUTRO">Outro</MenuItem>
-                </Select>
-              </FormControl>
+              {ptf('Categoria', profile.category)}
             </Grid>
           </Grid>
         </Stack>
 
-        {/*  Checkbox autorização  */}
+        {/* Checkbox autorização */}
         <FormControlLabel
           control={
             <Checkbox
               checked={profile.dataSharing}
-              onChange={(e) =>
-                setProfile((p) => ({ ...p, dataSharing: e.target.checked }))
-              }
+              disabled
               color="primary"
             />
           }
           label={
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              Eu autorizo o compartilhamento de todos os meus dados com
-              parcerios da associação.
+              Eu autorizo o compartilhamento de todos os meus dados com parceiros da associação.
             </Typography>
           }
         />
@@ -550,11 +482,7 @@ const AssociateSelfSupplementForm = () => {
         onClose={() => setSnack((p) => ({ ...p, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert
-          severity={snack.severity}
-          variant="filled"
-          sx={{ borderRadius: 2, fontWeight: 600 }}
-        >
+        <Alert severity={snack.severity} variant="filled" sx={{ borderRadius: 2, fontWeight: 600 }}>
           {snack.msg}
         </Alert>
       </Snackbar>
@@ -563,4 +491,3 @@ const AssociateSelfSupplementForm = () => {
 };
 
 export default AssociateSelfSupplementForm;
-

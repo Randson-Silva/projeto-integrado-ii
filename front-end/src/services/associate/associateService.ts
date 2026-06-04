@@ -15,7 +15,7 @@ export interface CreateAssociatePayload {
 
   birthDate: string;
 
-  workCategory: AssociateCategory;
+  workCategoryId?: string;
 
   availableHours?: string;
 
@@ -35,6 +35,7 @@ export interface CreateAssociatePayload {
 
   additionalInfo?: string;
   legalGuardianName?: string;
+  acceptedDataSharingTerm?: boolean;
 }
 
 export interface UpdateAssociatePayload {
@@ -87,6 +88,18 @@ export async function getAssociateById(
   id: string
 ): Promise<Associate> {
   const res = await api.get(`/associates/${id}`, {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`,
+    },
+  });
+
+  return res.data;
+}
+
+export async function getMyAssociate(
+  bearerToken: string
+): Promise<Associate> {
+  const res = await api.get('/associates/me', {
     headers: {
       Authorization: `Bearer ${bearerToken}`,
     },

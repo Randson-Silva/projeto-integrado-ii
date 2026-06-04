@@ -16,12 +16,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import DuplicateCPFDialog from './DuplicateCPFDialog';
 import { createAssociate } from '../services/associate/associateService';
-import type { AssociateCategory } from '../services/associate/associate.types';
+import api from '../services/api';
+import type { AssociateCategoryResponse } from '../services/associate/associate.types';
 
 const BR_STATES = [
   'AC',
@@ -95,16 +96,24 @@ const AssociateCreateForm = () => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState<AssociateCreateForm>(EMPTY);
-
   const [saving, setSaving] = useState(false);
-
   const [duplicateOpen, setDuplicate] = useState(false);
-
+  const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
   const [snack, setSnack] = useState<Snack>({
     open: false,
     severity: 'success',
     msg: '',
   });
+
+  useEffect(() => {
+    if (!token) return;
+    api
+      .get<AssociateCategoryResponse[]>('/categories', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setCategories(res.data))
+      .catch(() => {/* silently ignore, select fica vazio */});
+  }, [token]);
 
   const set =
     (key: keyof AssociateCreateForm) =>
@@ -128,7 +137,7 @@ const AssociateCreateForm = () => {
 
         birthDate: form.birthDate,
 
-        workCategory: form.category as AssociateCategory,
+        workCategoryId: form.category || undefined,
 
         postalCode: form.addressZipCode.replace(/\D/g, ''),
 
@@ -143,6 +152,8 @@ const AssociateCreateForm = () => {
         state: form.addressState,
 
         legalGuardianName: isUnder18 ? form.guardianName : '',
+
+        acceptedDataSharingTerm: true,
       });
 
       setSnack({
@@ -209,7 +220,7 @@ const AssociateCreateForm = () => {
           v === '' ? (
             <span style={{ color: '#9e9e9e' }}>Selecione</span>
           ) : (
-            String(v)
+            options.find((o) => o.value === v)?.label ?? String(v)
           )
         }
         onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
@@ -399,12 +410,9 @@ const AssociateCreateForm = () => {
             </Grid>
 
             <Grid size={{ xs: 12, sm: 3 }}>
-              {selectField('Categoria', 'category', [
-                { value: 'ARTISTA', label: 'Artista' },
-                { value: 'PRODUTOR', label: 'Produtor' },
-                { value: 'TECNICO', label: 'Técnico' },
-                { value: 'OUTRO', label: 'Outro' },
-              ])}
+              {selectField('Categoria', 'category',
+                categories.map((c) => ({ value: c.id, label: c.name }))
+              )}
             </Grid>
           </Grid>
 

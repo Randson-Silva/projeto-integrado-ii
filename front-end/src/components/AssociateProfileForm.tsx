@@ -38,8 +38,9 @@ import {
   mapFormToUpdatePayload,
 } from '../services/associate/associate.mappers';
 
-import type { IAssociateProfileForm } from '../services/associate/associate.types';
+import type { AssociateCategoryResponse, IAssociateProfileForm } from '../services/associate/associate.types';
 
+import api from '../services/api';
 import {
   deleteAssociate,
   getAssociateById,
@@ -134,6 +135,8 @@ const AssociateProfile = () => {
 
   const [form, setForm] = useState<IAssociateProfileForm>(EMPTY);
 
+  const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
+
   const [inactivateOpen, setInactivateOpen] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -157,7 +160,6 @@ const AssociateProfile = () => {
         if (!token || !id) return;
 
         const res = await getAssociateById(token, id);
-
         setForm(mapAssociateResponseToForm(res));
       } catch {
         toast('error', 'Erro ao carregar associado.');
@@ -165,9 +167,18 @@ const AssociateProfile = () => {
         setLoading(false);
       }
     };
-
     load();
   }, [id, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    api
+      .get<AssociateCategoryResponse[]>('/categories', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setCategories(res.data))
+      .catch(() => {});
+  }, [token]);
 
   const handleSave = async () => {
     try {
@@ -595,45 +606,9 @@ const AssociateProfile = () => {
 
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, sm: 4 }}>
-              {sf('Disponibilidade de Horário', 'disability', [
-                {
-                  value: 'MANHA',
-                  label: 'Matutino',
-                },
-                {
-                  value: 'TARDE',
-                  label: 'Vespertino',
-                },
-                {
-                  value: 'NOITE',
-                  label: 'Noturno',
-                },
-                {
-                  value: 'FLEXIVEL',
-                  label: 'Flexível',
-                },
-              ])}
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 3 }}>
-              {sf('Categoria', 'category', [
-                {
-                  value: 'ARTISTA',
-                  label: 'Artista',
-                },
-                {
-                  value: 'PRODUTOR',
-                  label: 'Produtor',
-                },
-                {
-                  value: 'TECNICO',
-                  label: 'Técnico',
-                },
-                {
-                  value: 'OUTRO',
-                  label: 'Outro',
-                },
-              ])}
+              {sf('Categoria', 'category',
+                categories.map((c) => ({ value: c.id, label: c.name }))
+              )}
             </Grid>
           </Grid>
 
