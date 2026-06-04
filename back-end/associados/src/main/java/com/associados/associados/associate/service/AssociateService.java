@@ -179,7 +179,6 @@ public class AssociateService {
             address.setState(data.state());
         }
 
-        // Update SelfDeclaration fields
         if (data.socialName() != null) {
             declaration.setSocialName(data.socialName());
         }
