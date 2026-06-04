@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.associados.associados.associate.entity.Address;
 import com.associados.associados.associate.entity.Associate;
 import com.associados.associados.associate.entity.SelfDeclaration;
+import com.associados.associados.associate.enums.DisponibilidadeHorarioEnum;
 import com.associados.associados.user.dtos.response.UserResponseDto;
 
 public record AssociateResponseDto(
@@ -14,6 +15,7 @@ public record AssociateResponseDto(
         LocalDate birthDate,
         String phone,
         CategoryResponseDto workCategory,
+        DisponibilidadeHorarioEnum availableHours,
         UserResponseDto user,
         Address address,
         SelfDeclaration selfDeclaration,
@@ -26,6 +28,7 @@ public record AssociateResponseDto(
                 associate.getBirthDate(),
                 associate.getPhone(),
                 associate.getWorkCategory() == null ? null : new CategoryResponseDto(associate.getWorkCategory()),
+                associate.getAvailableHours(),
                 new UserResponseDto(associate.getUser()),
                 associate.getAddress(),
                 associate.getSelfDeclaration(),

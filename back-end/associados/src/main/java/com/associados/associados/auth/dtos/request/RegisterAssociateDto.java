@@ -1,15 +1,17 @@
 package com.associados.associados.auth.dtos.request;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.associados.associados.associate.enums.DisponibilidadeHorarioEnum;
 import com.associados.associados.associate.enums.EscolaridadeEnum;
-import com.associados.associados.associate.enums.RendaEnum;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 public record RegisterAssociateDto(
@@ -27,7 +29,8 @@ public record RegisterAssociateDto(
         @NotNull(message = "Work category is required")
         UUID workCategoryId,
 
-        String availableHours,
+        @NotNull(message = "Available hours are required")
+        DisponibilidadeHorarioEnum availableHours,
 
         @NotBlank(message = "Postal code is required")
         @Pattern(regexp = "\\d{8}", message = "Postal code must contain exactly 8 numeric digits")
@@ -38,6 +41,9 @@ public record RegisterAssociateDto(
 
         @NotBlank(message = "Number is required")
         String number,
+
+        @Size(max = 100, message = "Complement must be at most 100 characters")
+        String complement,
 
         @NotBlank(message = "Neighborhood is required")
         String neighborhood,
@@ -53,8 +59,8 @@ public record RegisterAssociateDto(
         String gender,
         String sexualOrientation,
         EscolaridadeEnum education,
-        RendaEnum income,
-        String additionalInfo,
+        @PositiveOrZero(message = "Income must be zero or positive")
+        BigDecimal income,
 
         @NotNull(message = "Legal guardian name is required for minors")
         @Size(max = 255, message = "Legal guardian name must be at most 255 characters")
