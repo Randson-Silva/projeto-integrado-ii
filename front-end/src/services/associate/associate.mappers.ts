@@ -44,11 +44,11 @@ export const mapFormToUpdatePayload = (
   neighborhood: form.addressNeighborhood || undefined,
   city: form.addressCity || undefined,
   state: form.addressState || undefined,
-  race: form.race || undefined,
-  gender: form.gender || undefined,
-  sexualOrientation: form.sexualOrientation || undefined,
-  education: form.education === '' ? undefined : form.education,
-  income: form.income === '' ? undefined : form.income,
+  race: !form.race || form.race === 'PREFIRO_NAO_INFORMAR' ? null : form.race,
+  gender: !form.gender || form.gender === 'PREFIRO_NAO_INFORMAR' ? null : form.gender,
+  sexualOrientation: !form.sexualOrientation || form.sexualOrientation === 'PREFIRO_NAO_INFORMAR' ? null : form.sexualOrientation,
+  education: !form.education || form.education === 'PREFIRO_NAO_INFORMAR' ? null : form.education,
+  income: !form.income || form.income === 'PREFIRO_NAO_INFORMAR' ? null : form.income,
   disability: form.disability || undefined,
 });
 

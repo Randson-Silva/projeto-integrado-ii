@@ -143,15 +143,16 @@ const AssociateSelfSupplementForm = () => {
 
   const handleSaveDecl = async () => {
     setSaving(true);
+    const mapVal = (v: string) => (!v || v === 'PREFIRO_NAO_INFORMAR' ? null : v);
     try {
       await api.patch(
         '/associates/me/self-declaration',
         {
-          race: selfDeclDraft.race || undefined,
-          gender: selfDeclDraft.gender || undefined,
-          sexualOrientation: selfDeclDraft.sexualOrientation || undefined,
-          education: selfDeclDraft.education || undefined,
-          income: selfDeclDraft.income || undefined,
+          race: mapVal(selfDeclDraft.race),
+          gender: mapVal(selfDeclDraft.gender),
+          sexualOrientation: mapVal(selfDeclDraft.sexualOrientation),
+          education: mapVal(selfDeclDraft.education),
+          income: mapVal(selfDeclDraft.income),
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -331,23 +332,26 @@ const AssociateSelfSupplementForm = () => {
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
               {declSelect('Escolaridade', 'education', [
+                { value: '', label: 'Selecione' },
                 { value: 'FUNDAMENTAL', label: 'Ensino Fundamental' },
                 { value: 'MEDIO', label: 'Ensino Médio' },
                 { value: 'SUPERIOR', label: 'Superior' },
                 { value: 'POS_GRADUACAO', label: 'Pós-graduação' },
-                { value: 'MESTRADO', label: 'Mestrado' },
-                { value: 'DOUTORADO', label: 'Doutorado' },
+                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 150 }}>
               {declSelect('Renda Pessoal', 'income', [
+                { value: '', label: 'Selecione' },
                 { value: 'BAIXA', label: 'Baixa' },
                 { value: 'MEDIA', label: 'Média' },
                 { value: 'ALTA', label: 'Alta' },
+                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 150 }}>
               {declSelect('Etnia', 'race', [
+                { value: '', label: 'Selecione' },
                 { value: 'BRANCO', label: 'Branco (a)' },
                 { value: 'PARDO', label: 'Pardo (a)' },
                 { value: 'PRETO', label: 'Preto (a)' },
@@ -358,6 +362,7 @@ const AssociateSelfSupplementForm = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
               {declSelect('Identidade de Gênero', 'gender', [
+                { value: '', label: 'Selecione' },
                 { value: 'MASCULINO', label: 'Masculino' },
                 { value: 'FEMININO', label: 'Feminino' },
                 { value: 'NAO_BINARIO', label: 'Não-binário' },
@@ -367,6 +372,7 @@ const AssociateSelfSupplementForm = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
               {declSelect('Orientação Sexual', 'sexualOrientation', [
+                { value: '', label: 'Selecione' },
                 { value: 'HETEROSSEXUAL', label: 'Heterossexual' },
                 { value: 'HOMOSSEXUAL', label: 'Homossexual' },
                 { value: 'BISSEXUAL', label: 'Bissexual' },

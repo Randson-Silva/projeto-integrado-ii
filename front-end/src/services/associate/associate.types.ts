@@ -32,12 +32,14 @@ export interface IAssociateProfileForm {
   addressNeighborhood: string;
   addressStreet: string;
   addressNumber: string;
+  addressComplement?: string;
   race: string;
   gender: string;
   sexualOrientation: string;
   education: AssociateEducation | '';
   income: AssociateIncome | '';
   disability: string;
+  availableHours?: string;
 }
 
 // Alias sem prefixo para compatibilidade com o padrão do develop

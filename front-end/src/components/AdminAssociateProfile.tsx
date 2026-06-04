@@ -38,7 +38,9 @@ import {
   mapFormToUpdatePayload,
 } from '../services/associate/associate.mappers';
 
-import type { IAssociateProfileForm } from '../services/associate/associate.types';
+import type { AssociateCategoryResponse, IAssociateProfileForm } from '../services/associate/associate.types';
+
+import api from '../services/api';
 
 import {
   deleteAssociate,
@@ -134,6 +136,8 @@ const AssociateProfile = () => {
 
   const [form, setForm] = useState<IAssociateProfileForm>(EMPTY);
 
+  const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
+
   const [inactivateOpen, setInactivateOpen] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -157,7 +161,6 @@ const AssociateProfile = () => {
         if (!token || !id) return;
 
         const res = await getAssociateById(token, id);
-
         setForm(mapAssociateResponseToForm(res));
       } catch {
         toast('error', 'Erro ao carregar associado.');
@@ -165,9 +168,18 @@ const AssociateProfile = () => {
         setLoading(false);
       }
     };
-
     load();
   }, [id, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    api
+      .get<AssociateCategoryResponse[]>('/categories', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setCategories(res.data))
+      .catch(() => {});
+  }, [token]);
 
   const handleSave = async () => {
     try {
@@ -215,27 +227,76 @@ const AssociateProfile = () => {
     label: string,
     key: keyof IAssociateProfileForm,
     type = 'text'
-  ) => (
-    <TextField
-      label={label}
-      value={String(form[key] ?? '')}
-      onChange={(e) =>
-        setForm((p) => ({
-          ...p,
-          [key]: e.target.value,
-        }))
+  ) => {
+    const applyMask = (value: string, fieldKey: string) => {
+      let v = String(value ?? '').replace(/\D/g, '');
+      if (fieldKey === 'cpf') {
+        return v
+          .replace(/(\d{3})(\d)/, '$1.$2')
+          .replace(/(\d{3})(\d)/, '$1.$2')
+          .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+          .slice(0, 14);
       }
-      disabled={!editing}
-      type={type}
-      size="small"
-      fullWidth
-      slotProps={{
-        inputLabel: {
-          shrink: true,
-        },
-      }}
-    />
-  );
+      if (fieldKey === 'addressZipCode') {
+        return v.replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
+      }
+      if (fieldKey === 'phone') {
+        return v
+          .replace(/(\d{2})(\d)/, '($1) $2')
+          .replace(/(\d{4,5})(\d{4})$/, '$1-$2')
+          .slice(0, 15);
+      }
+      if (fieldKey === 'addressNumber') {
+        return v;
+      }
+      return value;
+    };
+
+    const getMaxLength = (fieldKey: string) => {
+      if (fieldKey === 'cpf') return 14;
+      if (fieldKey === 'addressZipCode') return 9;
+      if (fieldKey === 'phone') return 15;
+      return undefined;
+    };
+
+    return (
+      <TextField
+        label={label}
+        value={applyMask(String(form[key] ?? ''), key)}
+        onChange={(e) =>
+          setForm((p) => ({
+            ...p,
+            [key]: applyMask(e.target.value, key),
+          }))
+        }
+        disabled={!editing}
+        type={type}
+        size="small"
+        fullWidth
+        slotProps={{
+          inputLabel: {
+            shrink: true,
+          },
+          htmlInput: {
+            maxLength: getMaxLength(key),
+            inputMode: ['cpf', 'addressZipCode', 'phone', 'addressNumber'].includes(key) ? 'numeric' : 'text',
+          },
+        }}
+        onKeyDown={(e) => {
+          if (['cpf', 'addressZipCode', 'phone', 'addressNumber'].includes(key as string)) {
+            if (
+              e.key.length === 1 &&
+              !/[0-9]/.test(e.key) &&
+              !e.ctrlKey &&
+              !e.metaKey
+            ) {
+              e.preventDefault();
+            }
+          }
+        }}
+      />
+    );
+  };
 
   const sf = (
     label: string,
@@ -252,7 +313,10 @@ const AssociateProfile = () => {
         value={String(form[key] ?? '')}
         label={label}
         notched
-        disabled={!editing}
+        disabled={
+          !editing ||
+          ['education', 'income', 'race', 'gender', 'sexualOrientation'].includes(key as string)
+        }
         onChange={(e) =>
           setForm((p) => ({
             ...p,
@@ -559,10 +623,13 @@ const AssociateProfile = () => {
               {sf(
                 'Estado',
                 'addressState',
-                BR_STATES.map((s) => ({
-                  value: s,
-                  label: s,
-                }))
+                [
+                  { value: '', label: 'Selecione' },
+                  ...BR_STATES.map((s) => ({
+                    value: s,
+                    label: s,
+                  })),
+                ]
               )}
             </Grid>
 
@@ -572,12 +639,16 @@ const AssociateProfile = () => {
               {tf('Bairro', 'addressNeighborhood')}
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 6 }}>
-              {tf('Logradouro', 'addressStreet')}
+            <Grid size={{ xs: 12, sm: 5 }}>
+              {tf('Rua', 'addressStreet')}
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 6 }}>
-              {tf('Complemento', 'addressNumber')}
+            <Grid size={{ xs: 12, sm: 2 }}>
+              {tf('Número', 'addressNumber')}
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 5 }}>
+              {tf('Complemento', 'addressComplement')}
             </Grid>
           </Grid>
 
@@ -595,44 +666,20 @@ const AssociateProfile = () => {
 
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, sm: 4 }}>
-              {sf('Disponibilidade de Horário', 'disability', [
-                {
-                  value: 'MANHA',
-                  label: 'Matutino',
-                },
-                {
-                  value: 'TARDE',
-                  label: 'Vespertino',
-                },
-                {
-                  value: 'NOITE',
-                  label: 'Noturno',
-                },
-                {
-                  value: 'FLEXIVEL',
-                  label: 'Flexível',
-                },
+              {sf('Disponibilidade de Horário', 'availableHours', [
+                { value: '', label: 'Selecione' },
+                { value: 'MANHA', label: 'Matutino' },
+                { value: 'TARDE', label: 'Vespertino' },
+                { value: 'NOITE', label: 'Noturno' },
+                { value: 'FLEXIVEL', label: 'Flexível' },
+                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 3 }}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               {sf('Categoria', 'category', [
-                {
-                  value: 'ARTISTA',
-                  label: 'Artista',
-                },
-                {
-                  value: 'PRODUTOR',
-                  label: 'Produtor',
-                },
-                {
-                  value: 'TECNICO',
-                  label: 'Técnico',
-                },
-                {
-                  value: 'OUTRO',
-                  label: 'Outro',
-                },
+                { value: '', label: 'Selecione' },
+                ...categories.map((c) => ({ value: c.id, label: c.name })),
               ])}
             </Grid>
           </Grid>
@@ -658,97 +705,56 @@ const AssociateProfile = () => {
           >
             <Grid size={{ xs: 12, sm: 3 }}>
               {sf('Escolaridade', 'education', [
-                {
-                  value: 'FUNDAMENTAL',
-                  label: 'Fundamental',
-                },
-                {
-                  value: 'MEDIO',
-                  label: 'Ensino Médio',
-                },
-                {
-                  value: 'SUPERIOR',
-                  label: 'Superior',
-                },
-                {
-                  value: 'POS',
-                  label: 'Pós-graduação',
-                },
+                { value: '', label: 'Selecione' },
+                { value: 'FUNDAMENTAL', label: 'Fundamental' },
+                { value: 'MEDIO', label: 'Ensino Médio' },
+                { value: 'SUPERIOR', label: 'Superior' },
+                { value: 'POS_GRADUACAO', label: 'Pós-graduação' },
+                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
 
             <Grid size={{ xs: 12, sm: 3 }}>
               {sf('Renda Pessoal', 'income', [
+                { value: '', label: 'Selecione' },
                 { value: 'BAIXA', label: 'Baixa' },
                 { value: 'MEDIA', label: 'Média' },
                 { value: 'ALTA', label: 'Alta' },
+                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
 
             <Grid size={{ xs: 12, sm: 2 }}>
               {sf('Etnia', 'race', [
-                {
-                  value: 'BRANCO',
-                  label: 'Branco (a)',
-                },
-                {
-                  value: 'PARDO',
-                  label: 'Pardo (a)',
-                },
-                {
-                  value: 'PRETO',
-                  label: 'Preto (a)',
-                },
-                {
-                  value: 'AMARELO',
-                  label: 'Amarelo (a)',
-                },
-                {
-                  value: 'INDIGENA',
-                  label: 'Indígena',
-                },
+                { value: '', label: 'Selecione' },
+                { value: 'BRANCO', label: 'Branco (a)' },
+                { value: 'PARDO', label: 'Pardo (a)' },
+                { value: 'PRETO', label: 'Preto (a)' },
+                { value: 'AMARELO', label: 'Amarelo (a)' },
+                { value: 'INDIGENA', label: 'Indígena' },
+                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
 
             <Grid size={{ xs: 12, sm: 2 }}>
               {sf('Identidade de Gênero', 'gender', [
-                {
-                  value: 'MASCULINO',
-                  label: 'Masculino',
-                },
-                {
-                  value: 'FEMININO',
-                  label: 'Feminino',
-                },
-                {
-                  value: 'NAO_BINARIO',
-                  label: 'Não-binário',
-                },
-                {
-                  value: 'OUTRO',
-                  label: 'Outro',
-                },
+                { value: '', label: 'Selecione' },
+                { value: 'MASCULINO', label: 'Masculino' },
+                { value: 'FEMININO', label: 'Feminino' },
+                { value: 'NAO_BINARIO', label: 'Não-binário' },
+                { value: 'OUTRO', label: 'Outro' },
+                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
 
             <Grid size={{ xs: 12, sm: 2 }}>
               {sf('Orientação Sexual', 'sexualOrientation', [
-                {
-                  value: 'HETEROSSEXUAL',
-                  label: 'Heterosexual',
-                },
-                {
-                  value: 'HOMOSSEXUAL',
-                  label: 'Homossexual',
-                },
-                {
-                  value: 'BISSEXUAL',
-                  label: 'Bissexual',
-                },
-                {
-                  value: 'OUTRO',
-                  label: 'Outro',
-                },
+                { value: '', label: 'Selecione' },
+                { value: 'HETEROSSEXUAL', label: 'Heterosexual' },
+                { value: 'HOMOSSEXUAL', label: 'Homossexual' },
+                { value: 'BISSEXUAL', label: 'Bissexual' },
+                { value: 'OUTRO', label: 'Outro' },
+                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
           </Grid>
