@@ -33,10 +33,10 @@ public class AssociateAuthService {
     @Transactional
     public void sendLoginToken(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BusinessException("Usuário não encontrado."));
+                .orElseThrow(() -> new BusinessException("User not found."));
 
         if (user.getRole() != RoleEnum.ASSOCIATE) {
-            throw new BusinessException("Este fluxo de login é exclusivo para associados.");
+            throw new BusinessException("This login flow is exclusive to associates.");
         }
 
         tokenRepository.deleteByUserEmailAndType(email, TokenType.ASSOCIATE_LOGIN);
@@ -58,10 +58,10 @@ public class AssociateAuthService {
     @Transactional
     public String authenticateByToken(String tokenValue) {
         AuthToken authToken = tokenRepository.findByTokenAndType(tokenValue, TokenType.ASSOCIATE_LOGIN)
-                .orElseThrow(() -> new BusinessException("Token de login inválido ou expirado."));
+                .orElseThrow(() -> new BusinessException("Invalid or expired login token."));
 
         if (authToken.isExpired() || authToken.isUsed()) {
-            throw new BusinessException("Token expirado ou já utilizado.");
+            throw new BusinessException("Token has expired or has already been used.");
         }
 
         authToken.setUsed(true);
