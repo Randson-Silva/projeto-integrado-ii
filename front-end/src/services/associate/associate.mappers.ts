@@ -35,7 +35,7 @@ export const mapFormToUpdatePayload = (
   cpf: form.cpf || undefined,
   birthDate: form.birthDate || undefined,
   phone: form.phone || undefined,
-  workCategory: form.category === '' ? undefined : form.category,
+  workCategoryId: form.category || undefined,
   fullName: form.fullName || undefined,
   email: form.email || undefined,
   postalCode: form.addressZipCode || undefined,

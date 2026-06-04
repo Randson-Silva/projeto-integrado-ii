@@ -25,7 +25,7 @@ export interface IAssociateProfileForm {
   email: string;
   phone: string;
   birthDate: string;
-  category: AssociateCategory | '';
+  category: string; // UUID from categories table
   addressZipCode: string;
   addressState: string;
   addressCity: string;
@@ -149,7 +149,7 @@ export interface UpdateAssociatePayload {
   cpf?: string;
   birthDate?: string;
   phone?: string;
-  workCategory?: AssociateCategory;
+  workCategoryId?: string;
   fullName?: string;
   email?: string;
   postalCode?: string;
