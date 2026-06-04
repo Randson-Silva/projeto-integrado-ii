@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import com.associados.associados.user.entity.User;
 
-public record UserResponseDto(UUID id, String name, String email, String cpf, String phone, String role) {
+public record UserResponseDto(UUID id, String name, String email, String cpf, String phone, String role, boolean active) {
     public UserResponseDto(User user) {
         this(
                 user.getId(),
@@ -12,7 +12,8 @@ public record UserResponseDto(UUID id, String name, String email, String cpf, St
                 user.getEmail(),
                 user.getCpf(),
                 user.getPhone(),
-                user.getRole().name()
+                user.getRole().name(),
+                user.isActive()
         );
     }
 }

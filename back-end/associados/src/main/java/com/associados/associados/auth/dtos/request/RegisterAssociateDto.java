@@ -1,8 +1,8 @@
 package com.associados.associados.auth.dtos.request;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
-import com.associados.associados.associate.enums.CategoriaEnum;
 import com.associados.associados.associate.enums.EscolaridadeEnum;
 import com.associados.associados.associate.enums.RendaEnum;
 
@@ -25,7 +25,7 @@ public record RegisterAssociateDto(
         LocalDate birthDate,
 
         @NotNull(message = "Work category is required")
-        CategoriaEnum workCategory,
+        UUID workCategoryId,
 
         String availableHours,
 
@@ -54,12 +54,14 @@ public record RegisterAssociateDto(
         String sexualOrientation,
         EscolaridadeEnum education,
         RendaEnum income,
-        String disability,
         String additionalInfo,
 
         @NotNull(message = "Legal guardian name is required for minors")
         @Size(max = 255, message = "Legal guardian name must be at most 255 characters")
-        String legalGuardianName
+        String legalGuardianName,
+
+        @NotNull(message = "Data sharing term decision is required")
+        Boolean acceptedDataSharingTerm
 ) {
         public String email() {
                 return baseData.email();

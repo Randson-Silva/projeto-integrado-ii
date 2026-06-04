@@ -5,21 +5,21 @@ import com.associados.associados.associate.enums.EscolaridadeEnum;
 import com.associados.associados.associate.enums.RendaEnum;
 
 public record SelfDeclarationResponseDto(
+        String socialName,
         String race,
         String gender,
         String sexualOrientation,
         EscolaridadeEnum education,
-        RendaEnum income,
-        String disability
+        RendaEnum income
 ) {
     public SelfDeclarationResponseDto(SelfDeclaration selfDeclaration) {
         this(
+                selfDeclaration.getSocialName(),
                 selfDeclaration.getRace(),
                 selfDeclaration.getGender(),
                 selfDeclaration.getSexualOrientation(),
                 selfDeclaration.getEducation(),
-                selfDeclaration.getIncome(),
-                selfDeclaration.getDisability()
+                selfDeclaration.getIncome()
         );
     }
 }

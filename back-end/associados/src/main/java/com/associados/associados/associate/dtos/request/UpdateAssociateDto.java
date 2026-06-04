@@ -1,8 +1,8 @@
 package com.associados.associados.associate.dtos.request;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
-import com.associados.associados.associate.enums.CategoriaEnum;
 import com.associados.associados.associate.enums.EscolaridadeEnum;
 import com.associados.associados.associate.enums.RendaEnum;
 
@@ -20,7 +20,7 @@ public record UpdateAssociateDto(
         @Pattern(regexp = "\\d{10,11}", message = "Phone must contain 10-11 digits")
         String phone,
 
-        CategoriaEnum workCategory,
+        UUID workCategoryId,
 
         // User fields
         @Pattern(regexp = "^[A-Za-zÀ-ÿ ]+$", message = "Full name must contain only letters")
@@ -44,7 +44,8 @@ public record UpdateAssociateDto(
         @Size(min = 2, max = 2, message = "State code must be 2 letters")
         String state,
 
-        // SelfDeclaration fields
+        String socialName,
+
         String race,
 
         String gender,
@@ -55,5 +56,5 @@ public record UpdateAssociateDto(
 
         RendaEnum income,
 
-        String disability
+        Boolean acceptedDataSharingTerm
 ) {}
