@@ -53,6 +53,7 @@ public class AssociateService {
         address.setPostalCode(data.postalCode());
         address.setStreet(data.street());
         address.setNumber(data.number());
+        address.setComplement(data.complement());
         address.setNeighborhood(data.neighborhood());
         address.setCity(data.city());
         address.setState(data.state());
@@ -75,6 +76,7 @@ public class AssociateService {
             associate.setLegalGuardianName("");
         }
         associate.setWorkCategory(workCategory);
+        associate.setAvailableHours(data.availableHours());
         associate.setPhone(data.phone());
         associate.setUser(newUser);
         associate.setAddress(address);
@@ -141,6 +143,10 @@ public class AssociateService {
             associate.setWorkCategory(findCategoryOrThrow(data.workCategoryId()));
         }
 
+        if (data.availableHours() != null) {
+            associate.setAvailableHours(data.availableHours());
+        }
+
         if (data.acceptedDataSharingTerm() != null) {
             associate.setAcceptedDataSharingTerm(data.acceptedDataSharingTerm());
         }
@@ -165,6 +171,10 @@ public class AssociateService {
 
         if (data.number() != null) {
             address.setNumber(data.number());
+        }
+
+        if (data.complement() != null) {
+            address.setComplement(data.complement());
         }
 
         if (data.neighborhood() != null) {

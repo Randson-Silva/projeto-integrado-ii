@@ -36,6 +36,9 @@ public class Address {
     @Column(length = 20)
     private String number;
 
+    @Column(length = 100)
+    private String complement;
+
     @NotBlank(message = "Neighborhood is required")
     @Column(length = 100)
     private String neighborhood;
@@ -49,4 +52,3 @@ public class Address {
     @Column(length = 2)
     private String state;
 }
-

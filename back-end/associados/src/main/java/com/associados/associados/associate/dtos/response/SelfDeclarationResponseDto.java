@@ -1,8 +1,9 @@
 package com.associados.associados.associate.dtos.response;
 
+import java.math.BigDecimal;
+
 import com.associados.associados.associate.entity.SelfDeclaration;
 import com.associados.associados.associate.enums.EscolaridadeEnum;
-import com.associados.associados.associate.enums.RendaEnum;
 
 public record SelfDeclarationResponseDto(
         String socialName,
@@ -10,7 +11,7 @@ public record SelfDeclarationResponseDto(
         String gender,
         String sexualOrientation,
         EscolaridadeEnum education,
-        RendaEnum income
+        BigDecimal income
 ) {
     public SelfDeclarationResponseDto(SelfDeclaration selfDeclaration) {
         this(

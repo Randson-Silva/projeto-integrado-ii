@@ -1,13 +1,15 @@
 package com.associados.associados.associate.dtos.request;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.associados.associados.associate.enums.DisponibilidadeHorarioEnum;
 import com.associados.associados.associate.enums.EscolaridadeEnum;
-import com.associados.associados.associate.enums.RendaEnum;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 public record UpdateAssociateDto(
@@ -21,6 +23,8 @@ public record UpdateAssociateDto(
         String phone,
 
         UUID workCategoryId,
+
+        DisponibilidadeHorarioEnum availableHours,
 
         // User fields
         @Pattern(regexp = "^[A-Za-zÀ-ÿ ]+$", message = "Full name must contain only letters")
@@ -36,6 +40,9 @@ public record UpdateAssociateDto(
         String street,
 
         String number,
+
+        @Size(max = 100, message = "Complement must be at most 100 characters")
+        String complement,
 
         String neighborhood,
 
@@ -54,7 +61,8 @@ public record UpdateAssociateDto(
 
         EscolaridadeEnum education,
 
-        RendaEnum income,
+        @PositiveOrZero(message = "Income must be zero or positive")
+        BigDecimal income,
 
         Boolean acceptedDataSharingTerm
 ) {}
