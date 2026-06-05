@@ -188,17 +188,7 @@ const SettingsForm = () => {
 
   return (
     <Stack spacing={2.5}>
-      {/* Breadcrumb */}
-      <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
-        <SettingsOutlinedIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-        <Typography
-          variant="body2"
-          color="primary.main"
-          sx={{ fontWeight: 600 }}
-        >
-          Configurações
-        </Typography>
-      </Stack>
+
 
       <Grid container spacing={3} sx={{ alignItems: 'flex-start' }}>
         {/* Definições de Colunas */}

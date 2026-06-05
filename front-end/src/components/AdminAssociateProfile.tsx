@@ -32,6 +32,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useAuth } from '../hooks/useAuth';
+import { decodeJwt } from '../services/auth/jwt.config';
 
 import {
   mapAssociateResponseToForm,
@@ -157,6 +158,9 @@ const AssociateProfile = () => {
       severity,
       msg,
     });
+
+  const user = token ? decodeJwt(token) : null;
+  const canEdit = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
   useEffect(() => {
     const load = async () => {
@@ -453,7 +457,7 @@ const AssociateProfile = () => {
                 alignItems: 'flex-end',
               }}
             >
-              {!editing && (
+              {!editing && canEdit && (
                 <Button
                   startIcon={<EditIcon sx={{ fontSize: 16 }} />}
                   variant="contained"
@@ -473,7 +477,7 @@ const AssociateProfile = () => {
             </Stack>
           </Stack>
 
-          {!editing && (
+          {!editing && canEdit && (
             <>
               <Typography
                 variant="subtitle2"

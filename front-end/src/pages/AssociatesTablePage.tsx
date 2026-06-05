@@ -4,7 +4,7 @@ import MainLayout from '../layouts/MainLayout';
 
 const AssociatesTablePage = () => {
   return (
-    <MainLayout menuItems={adminItems} pageTitle="Associados">
+    <MainLayout pageTitle="Associados">
       <AssociatesTable />
     </MainLayout>
   );

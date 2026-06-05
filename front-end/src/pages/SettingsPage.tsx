@@ -4,7 +4,7 @@ import MainLayout from '../layouts/MainLayout';
 
 const SettingsPage = () => {
   return (
-    <MainLayout menuItems={adminItems} pageTitle="Configurações">
+    <MainLayout pageTitle="Configurações">
       <SettingsForm />
     </MainLayout>
   );

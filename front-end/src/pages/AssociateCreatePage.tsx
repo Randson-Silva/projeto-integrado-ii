@@ -4,7 +4,7 @@ import MainLayout from '../layouts/MainLayout';
 
 const AssociateCreatePage = () => {
   return (
-    <MainLayout menuItems={adminItems} pageTitle="Cadastro de Associados">
+    <MainLayout pageTitle="Cadastro de Associados">
       <AssociateCreateForm />
     </MainLayout>
   );

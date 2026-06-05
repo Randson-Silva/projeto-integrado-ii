@@ -18,6 +18,11 @@ import Sidebar, { type SidebarItem } from '../components/Sidebar';
 import { useAuth } from '../hooks/useAuth';
 import { authGetProfile } from '../services/auth/authService';
 import { normalizeRoleView } from '../services/auth/roles';
+import { decodeJwt } from '../services/auth/jwt.config';
+import { adminItems } from '../config/sidebarItems/adminItems';
+import { consultantItems } from '../config/sidebarItems/consultantItems';
+import { superAdminItems } from '../config/sidebarItems/superAdminItems';
+import { associateItems } from '../config/sidebarItems/associateItems';
 
 const DRAWER_WIDTH = 224;
 
@@ -138,13 +143,31 @@ const UserMenu = () => {
 
 interface MainLayoutProps {
   children: React.ReactNode;
-  menuItems: SidebarItem[];
+  menuItems?: SidebarItem[];
   pageTitle?: string;
 }
 
 const MainLayout = ({ children, menuItems, pageTitle }: MainLayoutProps) => {
+  const { token } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const drawer = <Sidebar items={menuItems} />;
+
+  let activeItems: SidebarItem[] = [];
+  if (menuItems) {
+    activeItems = menuItems;
+  } else if (token) {
+    const user = decodeJwt(token);
+    if (user?.role === 'SUPER_ADMIN') {
+      activeItems = superAdminItems;
+    } else if (user?.role === 'CONSULTANT') {
+      activeItems = consultantItems;
+    } else if (user?.role === 'ASSOCIATE') {
+      activeItems = associateItems;
+    } else {
+      activeItems = adminItems;
+    }
+  }
+
+  const drawer = <Sidebar items={activeItems} />;
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'grey.50' }}>

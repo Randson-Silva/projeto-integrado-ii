@@ -4,7 +4,7 @@ import MainLayout from '../layouts/MainLayout';
 
 const AssociateProfilePage = () => {
   return (
-    <MainLayout menuItems={adminItems} pageTitle="Perfil de Associado">
+    <MainLayout pageTitle="Perfil de Associado">
       <AssociateProfile />
     </MainLayout>
   );

@@ -15,15 +15,18 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ResetPasswordDialog from './ResetPasswordDialog';
+import { useAuth } from '../hooks/useAuth';
+import { authGetProfile } from '../services/auth/authService';
+import { normalizeRoleView } from '../services/auth/roles';
 
 interface AdminProfileForm {
   fullName: string;
   cpf: string;
   email: string;
   phone: string;
-  birthDate: string;
+  role: string;
 }
 
 const MOCK_PROFILE: AdminProfileForm = {
@@ -37,7 +40,15 @@ const MOCK_PROFILE: AdminProfileForm = {
 type Snack = { open: boolean; severity: 'success' | 'error'; msg: string };
 
 const AdminProfileForm = () => {
-  const [form, setForm] = useState<AdminProfileForm>({ ...MOCK_PROFILE });
+  const { token } = useAuth();
+  const [form, setForm] = useState<AdminProfileForm>({
+    fullName: '',
+    cpf: '',
+    email: '',
+    phone: '',
+    role: '',
+  });
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
@@ -47,9 +58,49 @@ const AdminProfileForm = () => {
     msg: '',
   });
 
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!token) return;
+      try {
+        setLoading(true);
+        const user = await authGetProfile({ token });
+        setForm({
+          fullName: user.name ?? '',
+          cpf: applyMask(user.cpf ?? '', 'cpf'),
+          email: user.email ?? '',
+          phone: applyMask(user.phone ?? '', 'phone'),
+          role: user.role ? normalizeRoleView(user.role) : '',
+        });
+      } catch (err) {
+        setSnack({ open: true, severity: 'error', msg: 'Erro ao carregar perfil.' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProfile();
+  }, [token]);
+
+  const applyMask = (value: string, key: keyof AdminProfileForm): string => {
+    const digits = value.replace(/\D/g, '');
+    if (key === 'cpf') {
+      return digits
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+        .slice(0, 14);
+    }
+    if (key === 'phone') {
+      return digits
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{5})(\d)/, '$1-$2')
+        .slice(0, 15);
+    }
+    return value;
+  };
+
   const set =
     (key: keyof AdminProfileForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((p) => ({ ...p, [key]: e.target.value }));
+      setForm((p) => ({ ...p, [key]: applyMask(e.target.value, key) }));
 
   const handleSave = async () => {
     setSaving(true);
@@ -89,11 +140,8 @@ const AdminProfileForm = () => {
         {/* Header */}
         <Stack
           direction="row"
-          sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+          sx={{ alignItems: 'center', justifyContent: 'flex-end' }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Meu Perfil
-          </Typography>
           {!editing && (
             <Button
               variant="contained"
@@ -159,15 +207,27 @@ const AdminProfileForm = () => {
           <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
             Dados Pessoais
           </Typography>
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12 }}>{f('Nome Completo', 'fullName')}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              {f('Data de Nascimento', 'birthDate')}
+          {loading ? (
+            <Stack alignItems="center" py={4}>
+              <CircularProgress />
+            </Stack>
+          ) : (
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid size={{ xs: 12 }}>{f('Nome Completo', 'fullName')}</Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>{f('Telefone', 'phone')}</Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>{f('CPF', 'cpf')}</Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>{f('E-mail', 'email')}</Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Tipo de Acesso"
+                  value={form.role}
+                  disabled
+                  size="small"
+                  fullWidth
+                />
+              </Grid>
             </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{f('CPF', 'cpf')}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{f('Telefone', 'phone')}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{f('E-mail', 'email')}</Grid>
-          </Grid>
+          )}
 
           {/* Segurança */}
           <Divider sx={{ mb: 3 }} />

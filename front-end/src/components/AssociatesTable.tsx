@@ -255,18 +255,7 @@ const AssociatesTable = () => {
 
   return (
     <Stack spacing={2.5}>
-      {/* Breadcrumb */}
-      <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
-        <GroupOutlinedIcon sx={{ color: 'primary.main', fontSize: 18 }} />
 
-        <Typography
-          variant="body2"
-          color="primary.main"
-          sx={{ fontWeight: 600 }}
-        >
-          Associados
-        </Typography>
-      </Stack>
 
       {/* Actions row */}
       <Stack
