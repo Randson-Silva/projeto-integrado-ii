@@ -42,4 +42,6 @@ public class SelfDeclaration {
 
     @Column(precision = 10, scale = 2)
     private BigDecimal income;
+
+    private boolean acceptedDataSharingTerm = false;
 }

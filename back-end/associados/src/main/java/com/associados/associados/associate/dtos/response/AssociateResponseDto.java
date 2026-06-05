@@ -18,8 +18,7 @@ public record AssociateResponseDto(
         DisponibilidadeHorarioEnum availableHours,
         UserResponseDto user,
         Address address,
-        SelfDeclaration selfDeclaration,
-        boolean acceptedDataSharingTerm
+        SelfDeclaration selfDeclaration
 ) {
     public AssociateResponseDto(Associate associate) {
         this(
@@ -31,8 +30,7 @@ public record AssociateResponseDto(
                 associate.getAvailableHours(),
                 new UserResponseDto(associate.getUser()),
                 associate.getAddress(),
-                associate.getSelfDeclaration(),
-                associate.isAcceptedDataSharingTerm()
+                associate.getSelfDeclaration()
         );
     }
 }

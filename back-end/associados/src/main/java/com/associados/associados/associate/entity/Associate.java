@@ -7,9 +7,9 @@ import com.associados.associados.associate.enums.DisponibilidadeHorarioEnum;
 import com.associados.associados.user.entity.User;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -69,8 +69,6 @@ public class Associate {
 
     @Size(max = 255, message = "Legal guardian name must be at most 255 characters")
     private String legalGuardianName;
-
-    private boolean acceptedDataSharingTerm = false;
 
     public void validateSecurityConstraints() {
         if (user == null || !user.getRole().name().equals("ASSOCIATE")) {
