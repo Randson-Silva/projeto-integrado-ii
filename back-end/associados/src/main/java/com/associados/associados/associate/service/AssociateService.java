@@ -65,6 +65,7 @@ public class AssociateService {
         declaration.setSexualOrientation(data.sexualOrientation());
         declaration.setEducation(data.education());
         declaration.setIncome(data.income());
+        declaration.setAcceptedDataSharingTerm(data.acceptedDataSharingTerm());
 
         Associate associate = new Associate();
         associate.setCpf(data.cpf());
@@ -81,7 +82,6 @@ public class AssociateService {
         associate.setUser(newUser);
         associate.setAddress(address);
         associate.setSelfDeclaration(declaration);
-        associate.setAcceptedDataSharingTerm(data.acceptedDataSharingTerm());
 
         associateRepository.save(associate);
     }
@@ -145,10 +145,6 @@ public class AssociateService {
 
         if (data.availableHours() != null) {
             associate.setAvailableHours(data.availableHours());
-        }
-
-        if (data.acceptedDataSharingTerm() != null) {
-            associate.setAcceptedDataSharingTerm(data.acceptedDataSharingTerm());
         }
 
         // Update User fields
@@ -249,6 +245,10 @@ public class AssociateService {
 
         if (data.income() != null) {
             declaration.setIncome(data.income());
+        }
+
+        if (data.acceptedDataSharingTerm() != null) {
+            declaration.setAcceptedDataSharingTerm(data.acceptedDataSharingTerm());
         }
 
         Associate savedAssociate = associateRepository.save(associate);

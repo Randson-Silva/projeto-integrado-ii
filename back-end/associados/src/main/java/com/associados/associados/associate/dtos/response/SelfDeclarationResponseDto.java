@@ -11,7 +11,8 @@ public record SelfDeclarationResponseDto(
         String gender,
         String sexualOrientation,
         EscolaridadeEnum education,
-        BigDecimal income
+        BigDecimal income,
+        boolean acceptedDataSharingTerm
 ) {
     public SelfDeclarationResponseDto(SelfDeclaration selfDeclaration) {
         this(
@@ -20,7 +21,8 @@ public record SelfDeclarationResponseDto(
                 selfDeclaration.getGender(),
                 selfDeclaration.getSexualOrientation(),
                 selfDeclaration.getEducation(),
-                selfDeclaration.getIncome()
+                selfDeclaration.getIncome(),
+                selfDeclaration.isAcceptedDataSharingTerm()
         );
     }
 }

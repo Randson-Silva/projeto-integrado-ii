@@ -62,7 +62,5 @@ public record UpdateAssociateDto(
         EscolaridadeEnum education,
 
         @PositiveOrZero(message = "Income must be zero or positive")
-        BigDecimal income,
-
-        Boolean acceptedDataSharingTerm
+        BigDecimal income
 ) {}

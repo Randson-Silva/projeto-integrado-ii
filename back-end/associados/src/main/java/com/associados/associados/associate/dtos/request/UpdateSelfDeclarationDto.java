@@ -13,5 +13,7 @@ public record UpdateSelfDeclarationDto(
         String sexualOrientation,
         EscolaridadeEnum education,
         @PositiveOrZero(message = "Income must be zero or positive")
-        BigDecimal income
+        BigDecimal income,
+        Boolean acceptedDataSharingTerm
+
 ) {}
