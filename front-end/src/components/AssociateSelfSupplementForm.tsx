@@ -22,8 +22,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import api from '../services/api';
-import { getMyAssociate } from '../services/associate/associateService';
+import { getMyAssociate, updateMySelfDeclaration } from '../services/associate/associateService';
 
 interface SelfDeclForm {
   education: string;
@@ -45,6 +44,7 @@ interface ProfileForm {
   addressCity: string;
   addressNeighborhood: string;
   addressStreet: string;
+  addressNumber: string;
   addressComplement: string;
   category: string;
   availableHours: string;
@@ -77,6 +77,7 @@ const EMPTY_PROFILE: ProfileForm = {
   addressCity: '',
   addressNeighborhood: '',
   addressStreet: '',
+  addressNumber: '',
   addressComplement: '',
   category: '',
   availableHours: '',
@@ -159,18 +160,14 @@ const AssociateSelfSupplementForm = () => {
       return digits ? Number(digits) / 100 : null;
     })();
     try {
-      await api.patch(
-        '/associates/me/self-declaration',
-        {
-          race: mapVal(selfDeclDraft.race),
-          gender: mapVal(selfDeclDraft.gender),
-          sexualOrientation: mapVal(selfDeclDraft.sexualOrientation),
-          education: mapVal(selfDeclDraft.education),
-          income: parsedIncome,
-          acceptedDataSharingTerm: selfDeclDraft.dataSharing,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await updateMySelfDeclaration(token, {
+        race: mapVal(selfDeclDraft.race),
+        gender: mapVal(selfDeclDraft.gender),
+        sexualOrientation: mapVal(selfDeclDraft.sexualOrientation),
+        education: mapVal(selfDeclDraft.education) as any, // Cast ou mapeamento necessário dependendo do enum
+        income: parsedIncome,
+        acceptedDataSharingTerm: selfDeclDraft.dataSharing,
+      });
       setSelfDecl({ ...selfDeclDraft });
       setEditingDecl(false);
       toast('success', 'Dados salvos com sucesso!');

@@ -20,8 +20,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import DuplicateCPFDialog from './DuplicateCPFDialog';
-import { createAssociate } from '../services/associate/associateService';
-import api from '../services/api';
+import { createAssociate, getCategories } from '../services/associate/associateService';
 import type { AssociateCategoryResponse } from '../services/associate/associate.types';
 
 const BR_STATES = [
@@ -109,11 +108,8 @@ const AssociateCreateForm = () => {
 
   useEffect(() => {
     if (!token) return;
-    api
-      .get<AssociateCategoryResponse[]>('/categories', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setCategories(res.data))
+    getCategories(token)
+      .then((data) => setCategories(data))
       .catch(() => {/* silently ignore, select fica vazio */});
   }, [token]);
 

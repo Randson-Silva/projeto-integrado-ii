@@ -106,5 +106,4 @@ export const mapFormToCreatePayload = (
   education: form.education === '' ? undefined : (form.education as CreateAssociatePayload['education']),
   income: parseMaskedIncome(String(form.income ?? '')) ?? undefined,
   legalGuardianName: undefined,
-  acceptedDataSharingTerm: true,
 });

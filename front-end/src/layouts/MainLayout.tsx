@@ -28,6 +28,7 @@ const UserMenu = () => {
 
   const [displayName, setDisplayName] = useState('');
   const [role, setRole] = useState('');
+  const [rawRole, setRawRole] = useState('');
 
   useEffect(() => {
     const loadUserInfo = async () => {
@@ -43,14 +44,17 @@ const UserMenu = () => {
         if (!user) {
           setDisplayName('Usuário');
           setRole('Indefinido');
+          setRawRole('');
           return;
         }
 
         setDisplayName(user.name?.split(' ')[0] ?? 'Usuário');
         setRole(normalizeRoleView(user.role));
+        setRawRole(user.role);
       } catch {
         setDisplayName('Usuário');
         setRole('Indefinido');
+        setRawRole('');
       }
     };
 
@@ -115,7 +119,11 @@ const UserMenu = () => {
         <MenuItem
           onClick={() => {
             setAnchor(null);
-            navigate('/meu-perfil');
+            if (rawRole === 'ASSOCIATE') {
+              navigate('/meu-cadastro');
+            } else {
+              navigate('/meu-perfil');
+            }
           }}
         >
           Meu Perfil

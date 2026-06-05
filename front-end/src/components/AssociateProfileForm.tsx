@@ -40,10 +40,10 @@ import {
 
 import type { AssociateCategoryResponse, IAssociateProfileForm } from '../services/associate/associate.types';
 
-import api from '../services/api';
 import {
   deleteAssociate,
   getAssociateById,
+  getCategories,
   updateAssociate,
 } from '../services/associate/associateService';
 
@@ -172,11 +172,8 @@ const AssociateProfile = () => {
 
   useEffect(() => {
     if (!token) return;
-    api
-      .get<AssociateCategoryResponse[]>('/categories', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setCategories(res.data))
+    getCategories(token)
+      .then((data) => setCategories(data))
       .catch(() => {});
   }, [token]);
 
