@@ -43,7 +43,7 @@ const LoginForm = () => {
 
       setAuthToken(token);
 
-      navigate('/dashboard');
+      navigate('/associados');
     } catch {
       setEmailError('Credenciais inválidas. Verifique e tente novamente.');
     } finally {

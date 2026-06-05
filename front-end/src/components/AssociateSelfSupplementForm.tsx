@@ -46,6 +46,7 @@ interface ProfileForm {
   addressNumber: string;
   addressComplement: string;
   category: string;
+  availableHours: string;
   dataSharing: boolean;
 }
 
@@ -77,6 +78,7 @@ const EMPTY_PROFILE: ProfileForm = {
   addressNumber: '',
   addressComplement: '',
   category: '',
+  availableHours: '',
   dataSharing: false,
 };
 
@@ -109,7 +111,9 @@ const AssociateSelfSupplementForm = () => {
         const data = await getMyAssociate(token);
         const decl: SelfDeclForm = {
           education: data.selfDeclaration?.education ?? '',
-          income: data.selfDeclaration?.income ?? '',
+          income: data.selfDeclaration?.income != null
+            ? data.selfDeclaration.income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            : '',
           race: data.selfDeclaration?.race ?? '',
           gender: data.selfDeclaration?.gender ?? '',
           sexualOrientation: data.selfDeclaration?.sexualOrientation ?? '',
@@ -128,8 +132,9 @@ const AssociateSelfSupplementForm = () => {
           addressNeighborhood: data.address?.neighborhood ?? '',
           addressStreet: data.address?.street ?? '',
           addressNumber: data.address?.number ?? '',
-          addressComplement: '',
+          addressComplement: data.address?.complement ?? '',
           category: data.workCategory?.name ?? '',
+          availableHours: data.availableHours ?? '',
           dataSharing: data.acceptedDataSharingTerm ?? false,
         });
       } catch {
@@ -144,6 +149,13 @@ const AssociateSelfSupplementForm = () => {
   const handleSaveDecl = async () => {
     setSaving(true);
     const mapVal = (v: string) => (!v || v === 'PREFIRO_NAO_INFORMAR' ? null : v);
+    // Converte renda mascarada ("R$ 1.500,00") para número
+    const parsedIncome = (() => {
+      const raw = selfDeclDraft.income;
+      if (!raw || raw === 'PREFIRO_NAO_INFORMAR') return null;
+      const digits = raw.replace(/\D/g, '');
+      return digits ? Number(digits) / 100 : null;
+    })();
     try {
       await api.patch(
         '/associates/me/self-declaration',
@@ -152,7 +164,7 @@ const AssociateSelfSupplementForm = () => {
           gender: mapVal(selfDeclDraft.gender),
           sexualOrientation: mapVal(selfDeclDraft.sexualOrientation),
           education: mapVal(selfDeclDraft.education),
-          income: mapVal(selfDeclDraft.income),
+          income: parsedIncome,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -196,7 +208,18 @@ const AssociateSelfSupplementForm = () => {
             borderColor: editingDecl ? 'primary.main' : undefined,
           },
         }}
+        displayEmpty
+        renderValue={(v) =>
+          v === '' ? (
+            <span style={{ color: '#9e9e9e' }}>Selecione</span>
+          ) : (
+            options.find((o) => o.value === v)?.label ?? String(v)
+          )
+        }
       >
+        <MenuItem value="" disabled>
+          <em>Selecione</em>
+        </MenuItem>
         {options.map((o) => (
           <MenuItem key={o.value} value={o.value}>
             {o.label}
@@ -212,9 +235,11 @@ const AssociateSelfSupplementForm = () => {
       value={selfDeclDraft.income}
       onChange={(e) => {
         if (!editingDecl) return;
+        const masked = maskCurrency(e.target.value);
+        e.target.value = masked;
         setSelfDeclDraft((p) => ({
           ...p,
-          income: maskCurrency(e.target.value),
+          income: masked,
         }));
       }}
       disabled={!editingDecl}
@@ -231,6 +256,9 @@ const AssociateSelfSupplementForm = () => {
               borderColor: editingDecl ? 'primary.main' : undefined,
             },
           },
+        },
+        htmlInput: {
+          inputMode: 'numeric',
         },
       }}
     />
@@ -333,21 +361,23 @@ const AssociateSelfSupplementForm = () => {
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
               {declSelect('Escolaridade', 'education', [
                 { value: '', label: 'Selecione' },
-                { value: 'FUNDAMENTAL', label: 'Ensino Fundamental' },
-                { value: 'MEDIO', label: 'Ensino Médio' },
-                { value: 'SUPERIOR', label: 'Superior' },
-                { value: 'POS_GRADUACAO', label: 'Pós-graduação' },
+                { value: 'FUNDAMENTAL_INCOMPLETO', label: 'Fundamental Incompleto' },
+                { value: 'FUNDAMENTAL_COMPLETO', label: 'Fundamental Completo' },
+                { value: 'MEDIO_INCOMPLETO', label: 'Médio Incompleto' },
+                { value: 'MEDIO_COMPLETO', label: 'Médio Completo' },
+                { value: 'SUPERIOR_INCOMPLETO', label: 'Superior Incompleto' },
+                { value: 'SUPERIOR_COMPLETO', label: 'Superior Completo' },
+                { value: 'ESPECIALIZACAO_INCOMPLETA', label: 'Espec. Incompleta' },
+                { value: 'ESPECIALIZACAO_COMPLETA', label: 'Espec. Completa' },
+                { value: 'MESTRADO_INCOMPLETO', label: 'Mestrado Incompleto' },
+                { value: 'MESTRADO_COMPLETO', label: 'Mestrado Completo' },
+                { value: 'DOUTORADO_INCOMPLETO', label: 'Doutorado Incompleto' },
+                { value: 'DOUTORADO_COMPLETO', label: 'Doutorado Completo' },
                 { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 150 }}>
-              {declSelect('Renda Pessoal', 'income', [
-                { value: '', label: 'Selecione' },
-                { value: 'BAIXA', label: 'Baixa' },
-                { value: 'MEDIA', label: 'Média' },
-                { value: 'ALTA', label: 'Alta' },
-                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
-              ])}
+              {rendaField}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 150 }}>
               {declSelect('Etnia', 'race', [
@@ -357,15 +387,19 @@ const AssociateSelfSupplementForm = () => {
                 { value: 'PRETO', label: 'Preto (a)' },
                 { value: 'AMARELO', label: 'Amarelo (a)' },
                 { value: 'INDIGENA', label: 'Indígena' },
+                { value: 'QUILOMBOLA', label: 'Quilombola' },
                 { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
               {declSelect('Identidade de Gênero', 'gender', [
                 { value: '', label: 'Selecione' },
-                { value: 'MASCULINO', label: 'Masculino' },
-                { value: 'FEMININO', label: 'Feminino' },
-                { value: 'NAO_BINARIO', label: 'Não-binário' },
+                { value: 'HOMEM_CIS', label: 'Homem Cis' },
+                { value: 'HOMEM_TRANS', label: 'Homem Trans' },
+                { value: 'MULHER_CIS', label: 'Mulher Cis' },
+                { value: 'MULHER_TRANS', label: 'Mulher Trans' },
+                { value: 'NAO_BINARIO', label: 'Não Binário' },
+                { value: 'GENERO_FLUIDO', label: 'Gênero Fluído' },
                 { value: 'OUTRO', label: 'Outro' },
                 { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
@@ -459,6 +493,20 @@ const AssociateSelfSupplementForm = () => {
             Dados Institucionais
           </Typography>
           <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              {ptf(
+                'Disponibilidade de Horário',
+                profile.availableHours === 'MATUTINO'
+                  ? 'Matutino'
+                  : profile.availableHours === 'VESPERTINO'
+                  ? 'Vespertino'
+                  : profile.availableHours === 'NOTURNO'
+                  ? 'Noturno'
+                  : profile.availableHours === 'TODOS'
+                  ? 'Todos os turnos'
+                  : profile.availableHours
+              )}
+            </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
               {ptf('Categoria', profile.category)}
             </Grid>

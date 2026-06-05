@@ -66,6 +66,7 @@ interface AssociateCreateForm {
   addressCity: string;
   addressNeighborhood: string;
   addressStreet: string;
+  addressNumber: string;
   addressComplement: string;
   availability: string;
   category: string;
@@ -83,6 +84,7 @@ const EMPTY: AssociateCreateForm = {
   addressCity: '',
   addressNeighborhood: '',
   addressStreet: '',
+  addressNumber: '',
   addressComplement: '',
   availability: '',
   category: '',
@@ -115,10 +117,66 @@ const AssociateCreateForm = () => {
       .catch(() => {/* silently ignore, select fica vazio */});
   }, [token]);
 
-  const set =
-    (key: keyof AssociateCreateForm) =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((p) => ({ ...p, [key]: e.target.value }));
+  const applyMask = (value: string, key: keyof AssociateCreateForm): string => {
+    const digits = value.replace(/\D/g, '');
+    if (key === 'cpf') {
+      return digits
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+        .slice(0, 14);
+    }
+    if (key === 'phone') {
+      return digits
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{4,5})(\d{4})$/, '$1-$2')
+        .slice(0, 15);
+    }
+    if (key === 'addressZipCode') {
+      return digits.replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
+    }
+    if (key === 'addressNumber') {
+      return digits.slice(0, 10);
+    }
+    return value;
+  };
+
+  const maskedKeys: (keyof AssociateCreateForm)[] = ['cpf', 'phone', 'addressZipCode', 'addressNumber'];
+
+  const textField = (
+    label: string,
+    key: keyof AssociateCreateForm,
+    placeholder?: string,
+    type = 'text'
+  ) => (
+    <TextField
+      label={label}
+      placeholder={placeholder}
+      value={form[key]}
+      onChange={(e) => {
+        const masked = applyMask(e.target.value, key);
+        e.target.value = masked;
+        setForm((p) => ({ ...p, [key]: masked }));
+      }}
+      type={type}
+      size="small"
+      fullWidth
+      slotProps={{
+        inputLabel: { shrink: true },
+        htmlInput: {
+          maxLength: key === 'cpf' ? 14 : key === 'phone' ? 15 : key === 'addressZipCode' ? 9 : key === 'addressNumber' ? 10 : undefined,
+          inputMode: maskedKeys.includes(key) ? 'numeric' : 'text',
+        },
+      }}
+      onKeyDown={(e) => {
+        if (maskedKeys.includes(key)) {
+          if (e.key.length === 1 && !/[0-9]/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+          }
+        }
+      }}
+    />
+  );
 
   const handleSubmit = async () => {
     setSaving(true);
@@ -139,11 +197,15 @@ const AssociateCreateForm = () => {
 
         workCategoryId: form.category || undefined,
 
+        availableHours: (form.availability as 'MATUTINO' | 'VESPERTINO' | 'NOTURNO' | 'TODOS') || 'TODOS',
+
         postalCode: form.addressZipCode.replace(/\D/g, ''),
 
         street: form.addressStreet,
 
-        number: '0',
+        number: form.addressNumber || '0',
+
+        complement: form.addressComplement || undefined,
 
         neighborhood: form.addressNeighborhood,
 
@@ -185,23 +247,7 @@ const AssociateCreateForm = () => {
     }
   };
 
-  const textField = (
-    label: string,
-    key: keyof AssociateCreateForm,
-    placeholder?: string,
-    type = 'text'
-  ) => (
-    <TextField
-      label={label}
-      placeholder={placeholder}
-      value={form[key]}
-      onChange={set(key)}
-      type={type}
-      size="small"
-      fullWidth
-      slotProps={{ inputLabel: { shrink: true } }}
-    />
-  );
+
 
   const selectField = (
     label: string,
@@ -225,6 +271,9 @@ const AssociateCreateForm = () => {
         }
         onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
       >
+        <MenuItem value="" disabled>
+          <em>Selecione</em>
+        </MenuItem>
         {options.map((o) => (
           <MenuItem key={o.value} value={o.value}>
             {o.label}
@@ -378,16 +427,20 @@ const AssociateCreateForm = () => {
               {textField('Bairro', 'addressNeighborhood', 'Informe o Bairro')}
             </Grid>
 
-            {/* Row 2: Logradouro, Complemento */}
+            {/* Row 2: Rua, Número, Complemento */}
             <Grid size={{ xs: 12, sm: 6 }}>
-              {textField('Logradouro', 'addressStreet', 'Informe o Logradouro')}
+              {textField('Rua', 'addressStreet', 'Informe a Rua')}
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid size={{ xs: 12, sm: 2 }}>
+              {textField('Número', 'addressNumber', 'Nº')}
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 4 }}>
               {textField(
                 'Complemento',
                 'addressComplement',
-                'Informe dados complementares'
+                'Apto, bloco...'
               )}
             </Grid>
           </Grid>
@@ -402,10 +455,10 @@ const AssociateCreateForm = () => {
           <Grid container spacing={2} sx={{ mb: 4 }}>
             <Grid size={{ xs: 12, sm: 4 }}>
               {selectField('Disponibilidade de Horário', 'availability', [
-                { value: 'MANHA', label: 'Manhã' },
-                { value: 'TARDE', label: 'Tarde' },
-                { value: 'NOITE', label: 'Noite' },
-                { value: 'FLEXIVEL', label: 'Flexível' },
+                { value: 'MATUTINO', label: 'Matutino' },
+                { value: 'VESPERTINO', label: 'Vespertino' },
+                { value: 'NOTURNO', label: 'Noturno' },
+                { value: 'TODOS', label: 'Todos os turnos' },
               ])}
             </Grid>
 

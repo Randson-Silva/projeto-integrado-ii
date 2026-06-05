@@ -1,67 +1,6 @@
 import api from '../api';
-import type { Associate, AssociateCategory } from './associate.types';
+import type { Associate, CreateAssociatePayload, UpdateAssociatePayload } from './associate.types';
 
-export interface CreateAssociatePayload {
-  baseData: {
-    email: string;
-    password: string;
-    fullName: string;
-    cpf: string;
-    phone: string;
-  };
-
-  socialName?: string;
-  artisticName?: string;
-
-  birthDate: string;
-
-  workCategoryId?: string;
-
-  availableHours?: string;
-
-  postalCode: string;
-  street: string;
-  number: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-
-  race?: string;
-  gender?: string;
-  sexualOrientation?: string;
-  education?: string;
-  income?: string;
-  disability?: string;
-
-  additionalInfo?: string;
-  legalGuardianName?: string;
-  acceptedDataSharingTerm?: boolean;
-}
-
-export interface UpdateAssociatePayload {
-  cpf?: string;
-  birthDate?: string;
-  phone?: string;
-
-  workCategory?: AssociateCategory;
-
-  fullName?: string;
-  email?: string;
-
-  postalCode?: string;
-  street?: string;
-  number?: string;
-  neighborhood?: string;
-  city?: string;
-  state?: string;
-
-  race?: string;
-  gender?: string;
-  sexualOrientation?: string;
-  education?: string;
-  income?: string;
-  disability?: string;
-}
 
 export interface GetAssociatesParams {
   page?: number;

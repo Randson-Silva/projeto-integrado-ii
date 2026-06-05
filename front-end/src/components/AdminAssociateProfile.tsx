@@ -107,12 +107,14 @@ const EMPTY: IAssociateProfileForm = {
   phone: '',
   birthDate: '',
   category: '',
+  availableHours: '',
   addressZipCode: '',
   addressState: '',
   addressCity: '',
   addressNeighborhood: '',
   addressStreet: '',
   addressNumber: '',
+  addressComplement: '',
   race: '',
   gender: '',
   sexualOrientation: '',
@@ -247,7 +249,7 @@ const AssociateProfile = () => {
           .slice(0, 15);
       }
       if (fieldKey === 'addressNumber') {
-        return v;
+        return v.slice(0, 10);
       }
       return value;
     };
@@ -256,6 +258,7 @@ const AssociateProfile = () => {
       if (fieldKey === 'cpf') return 14;
       if (fieldKey === 'addressZipCode') return 9;
       if (fieldKey === 'phone') return 15;
+      if (fieldKey === 'addressNumber') return 10;
       return undefined;
     };
 
@@ -263,12 +266,11 @@ const AssociateProfile = () => {
       <TextField
         label={label}
         value={applyMask(String(form[key] ?? ''), key)}
-        onChange={(e) =>
-          setForm((p) => ({
-            ...p,
-            [key]: applyMask(e.target.value, key),
-          }))
-        }
+        onChange={(e) => {
+          const masked = applyMask(e.target.value, key);
+          e.target.value = masked;
+          setForm((p) => ({ ...p, [key]: masked }));
+        }}
         disabled={!editing}
         type={type}
         size="small"
@@ -323,7 +325,18 @@ const AssociateProfile = () => {
             [key]: e.target.value,
           }))
         }
+        displayEmpty
+        renderValue={(v) =>
+          v === '' ? (
+            <span style={{ color: '#9e9e9e' }}>Selecione</span>
+          ) : (
+            options.find((o) => o.value === v)?.label ?? String(v)
+          )
+        }
       >
+        <MenuItem value="" disabled>
+          <em>Selecione</em>
+        </MenuItem>
         {options.map((o) => (
           <MenuItem key={o.value} value={o.value}>
             {o.label}
@@ -668,11 +681,10 @@ const AssociateProfile = () => {
             <Grid size={{ xs: 12, sm: 4 }}>
               {sf('Disponibilidade de Horário', 'availableHours', [
                 { value: '', label: 'Selecione' },
-                { value: 'MANHA', label: 'Matutino' },
-                { value: 'TARDE', label: 'Vespertino' },
-                { value: 'NOITE', label: 'Noturno' },
-                { value: 'FLEXIVEL', label: 'Flexível' },
-                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
+                { value: 'MATUTINO', label: 'Matutino' },
+                { value: 'VESPERTINO', label: 'Vespertino' },
+                { value: 'NOTURNO', label: 'Noturno' },
+                { value: 'TODOS', label: 'Todos os turnos' },
               ])}
             </Grid>
 
@@ -706,22 +718,31 @@ const AssociateProfile = () => {
             <Grid size={{ xs: 12, sm: 3 }}>
               {sf('Escolaridade', 'education', [
                 { value: '', label: 'Selecione' },
-                { value: 'FUNDAMENTAL', label: 'Fundamental' },
-                { value: 'MEDIO', label: 'Ensino Médio' },
-                { value: 'SUPERIOR', label: 'Superior' },
-                { value: 'POS_GRADUACAO', label: 'Pós-graduação' },
+                { value: 'FUNDAMENTAL_INCOMPLETO', label: 'Fundamental Incompleto' },
+                { value: 'FUNDAMENTAL_COMPLETO', label: 'Fundamental Completo' },
+                { value: 'MEDIO_INCOMPLETO', label: 'Médio Incompleto' },
+                { value: 'MEDIO_COMPLETO', label: 'Médio Completo' },
+                { value: 'SUPERIOR_INCOMPLETO', label: 'Superior Incompleto' },
+                { value: 'SUPERIOR_COMPLETO', label: 'Superior Completo' },
+                { value: 'ESPECIALIZACAO_INCOMPLETA', label: 'Espec. Incompleta' },
+                { value: 'ESPECIALIZACAO_COMPLETA', label: 'Espec. Completa' },
+                { value: 'MESTRADO_INCOMPLETO', label: 'Mestrado Incompleto' },
+                { value: 'MESTRADO_COMPLETO', label: 'Mestrado Completo' },
+                { value: 'DOUTORADO_INCOMPLETO', label: 'Doutorado Incompleto' },
+                { value: 'DOUTORADO_COMPLETO', label: 'Doutorado Completo' },
                 { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
 
             <Grid size={{ xs: 12, sm: 3 }}>
-              {sf('Renda Pessoal', 'income', [
-                { value: '', label: 'Selecione' },
-                { value: 'BAIXA', label: 'Baixa' },
-                { value: 'MEDIA', label: 'Média' },
-                { value: 'ALTA', label: 'Alta' },
-                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
-              ])}
+              <TextField
+                label="Renda Pessoal"
+                value={String(form.income ?? '')}
+                disabled
+                size="small"
+                fullWidth
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
             </Grid>
 
             <Grid size={{ xs: 12, sm: 2 }}>
@@ -732,6 +753,7 @@ const AssociateProfile = () => {
                 { value: 'PRETO', label: 'Preto (a)' },
                 { value: 'AMARELO', label: 'Amarelo (a)' },
                 { value: 'INDIGENA', label: 'Indígena' },
+                { value: 'QUILOMBOLA', label: 'Quilombola' },
                 { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
             </Grid>
@@ -739,9 +761,12 @@ const AssociateProfile = () => {
             <Grid size={{ xs: 12, sm: 2 }}>
               {sf('Identidade de Gênero', 'gender', [
                 { value: '', label: 'Selecione' },
-                { value: 'MASCULINO', label: 'Masculino' },
-                { value: 'FEMININO', label: 'Feminino' },
-                { value: 'NAO_BINARIO', label: 'Não-binário' },
+                { value: 'HOMEM_CIS', label: 'Homem Cis' },
+                { value: 'HOMEM_TRANS', label: 'Homem Trans' },
+                { value: 'MULHER_CIS', label: 'Mulher Cis' },
+                { value: 'MULHER_TRANS', label: 'Mulher Trans' },
+                { value: 'NAO_BINARIO', label: 'Não Binário' },
+                { value: 'GENERO_FLUIDO', label: 'Gênero Fluído' },
                 { value: 'OUTRO', label: 'Outro' },
                 { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
               ])}
