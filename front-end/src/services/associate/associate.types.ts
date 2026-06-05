@@ -111,9 +111,9 @@ export interface AssociateResponse {
     sexualOrientation?: string;
     education?: AssociateEducation;
     income?: number | null; // BigDecimal do backend
+    acceptedDataSharingTerm?: boolean;
   };
   availableHours?: DisponibilidadeHorarioEnum;
-  acceptedDataSharingTerm?: boolean;
   status?: AssociateStatus;
 }
 

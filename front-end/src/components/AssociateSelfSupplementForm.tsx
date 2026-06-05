@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Chip,
   CircularProgress,
   FormControl,
   FormControlLabel,
@@ -30,6 +31,7 @@ interface SelfDeclForm {
   race: string;
   gender: string;
   sexualOrientation: string;
+  dataSharing: boolean;
 }
 
 interface ProfileForm {
@@ -43,11 +45,10 @@ interface ProfileForm {
   addressCity: string;
   addressNeighborhood: string;
   addressStreet: string;
-  addressNumber: string;
   addressComplement: string;
   category: string;
   availableHours: string;
-  dataSharing: boolean;
+  status: string;
 }
 
 const BR_STATES = [
@@ -62,6 +63,7 @@ const EMPTY_SELF_DECL: SelfDeclForm = {
   race: '',
   gender: '',
   sexualOrientation: '',
+  dataSharing: false,
 };
 
 const EMPTY_PROFILE: ProfileForm = {
@@ -75,11 +77,10 @@ const EMPTY_PROFILE: ProfileForm = {
   addressCity: '',
   addressNeighborhood: '',
   addressStreet: '',
-  addressNumber: '',
   addressComplement: '',
   category: '',
   availableHours: '',
-  dataSharing: false,
+  status: '',
 };
 
 type Snack = { open: boolean; severity: 'success' | 'error'; msg: string };
@@ -117,6 +118,7 @@ const AssociateSelfSupplementForm = () => {
           race: data.selfDeclaration?.race ?? '',
           gender: data.selfDeclaration?.gender ?? '',
           sexualOrientation: data.selfDeclaration?.sexualOrientation ?? '',
+          dataSharing: data.selfDeclaration?.acceptedDataSharingTerm ?? false,
         };
         setSelfDecl(decl);
         setSelfDeclDraft(decl);
@@ -135,7 +137,7 @@ const AssociateSelfSupplementForm = () => {
           addressComplement: data.address?.complement ?? '',
           category: data.workCategory?.name ?? '',
           availableHours: data.availableHours ?? '',
-          dataSharing: data.acceptedDataSharingTerm ?? false,
+          status: data.user?.active ? 'Ativo' : 'Inativo',
         });
       } catch {
         toast('error', 'Erro ao carregar dados.');
@@ -165,6 +167,7 @@ const AssociateSelfSupplementForm = () => {
           sexualOrientation: mapVal(selfDeclDraft.sexualOrientation),
           education: mapVal(selfDeclDraft.education),
           income: parsedIncome,
+          acceptedDataSharingTerm: selfDeclDraft.dataSharing,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -323,11 +326,82 @@ const AssociateSelfSupplementForm = () => {
           <Typography variant="h6" sx={{ mt: 1, fontWeight: 700 }}>
             {profile.fullName || '—'}
           </Typography>
-          {profile.category && (
-            <Typography variant="body2" color="text.secondary">
-              {profile.category}
-            </Typography>
+
+          {profile.status && (
+            <Box sx={{ mt: 0.5 }}>
+              <Chip
+                label={profile.status}
+                color={profile.status === 'Ativo' ? 'success' : 'error'}
+                size="small"
+                sx={{ fontWeight: 600 }}
+              />
+            </Box>
           )}
+        </Stack>
+
+        {/* Dados Pessoais */}
+        <Stack spacing={2}>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Dados Pessoais
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 5 }}>{ptf('Nome Completo', profile.fullName)}</Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>{ptf('CPF', profile.cpf)}</Grid>
+            <Grid size={{ xs: 12, sm: 3 }}>{ptf('Data de Nascimento', profile.birthDate, 'date')}</Grid>
+            <Grid size={{ xs: 12, sm: 8 }}>{ptf('E-mail', profile.email)}</Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>{ptf('Telefone', profile.phone)}</Grid>
+          </Grid>
+        </Stack>
+
+        {/* Endereço */}
+        <Stack spacing={2}>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Endereço
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 2 }}>{ptf('CEP', profile.addressZipCode)}</Grid>
+            <Grid size={{ xs: 12, sm: 3 }}>
+              <FormControl size="small" fullWidth>
+                <InputLabel shrink>Estado</InputLabel>
+                <Select value={profile.addressState} label="Estado" notched disabled>
+                  {BR_STATES.map((s) => (
+                    <MenuItem key={s} value={s}>{s}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 3 }}>{ptf('Cidade', profile.addressCity)}</Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>{ptf('Bairro', profile.addressNeighborhood)}</Grid>
+            <Grid size={{ xs: 12, sm: 5 }}>{ptf('Rua', profile.addressStreet)}</Grid>
+            <Grid size={{ xs: 12, sm: 2 }}>{ptf('Número', profile.addressNumber)}</Grid>
+            <Grid size={{ xs: 12, sm: 5 }}>{ptf('Complemento', profile.addressComplement)}</Grid>
+          </Grid>
+        </Stack>
+
+        {/* Dados Institucionais */}
+        <Stack spacing={2}>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Dados Institucionais
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              {ptf(
+                'Disponibilidade de Horário',
+                profile.availableHours === 'MATUTINO'
+                  ? 'Matutino'
+                  : profile.availableHours === 'VESPERTINO'
+                  ? 'Vespertino'
+                  : profile.availableHours === 'NOTURNO'
+                  ? 'Noturno'
+                  : profile.availableHours === 'TODOS'
+                  ? 'Todos os turnos'
+                  : profile.availableHours
+              )}
+            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              {ptf('Categoria', profile.category)}
+            </Grid>
+          </Grid>
         </Stack>
 
         {/* Dados Autodeclaratórios */}
@@ -416,8 +490,25 @@ const AssociateSelfSupplementForm = () => {
             </Grid>
           </Grid>
 
+          <FormControlLabel
+            sx={{ mt: 2 }}
+            control={
+              <Checkbox
+                checked={selfDeclDraft.dataSharing}
+                onChange={(e) => setSelfDeclDraft({ ...selfDeclDraft, dataSharing: e.target.checked })}
+                disabled={!editingDecl}
+                color="primary"
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Eu autorizo o compartilhamento de todos os meus dados com parceiros da associação.
+              </Typography>
+            }
+          />
+
           {editingDecl && (
-            <Stack direction="row" spacing={2} sx={{ pt: 1, justifyContent: 'center' }}>
+            <Stack direction="row" spacing={2} sx={{ pt: 1, justifyContent: 'flex-start' }}>
               <Button
                 variant="contained"
                 onClick={handleCancelDecl}
@@ -447,87 +538,6 @@ const AssociateSelfSupplementForm = () => {
             </Stack>
           )}
         </Stack>
-
-        {/* Dados Pessoais */}
-        <Stack spacing={2}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Dados Pessoais
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 5 }}>{ptf('Nome Completo', profile.fullName)}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{ptf('CPF', profile.cpf)}</Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>{ptf('Data de Nascimento', profile.birthDate, 'date')}</Grid>
-            <Grid size={{ xs: 12, sm: 8 }}>{ptf('E-mail', profile.email)}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{ptf('Telefone', profile.phone)}</Grid>
-          </Grid>
-        </Stack>
-
-        {/* Endereço */}
-        <Stack spacing={2}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Endereço
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 2 }}>{ptf('CEP', profile.addressZipCode)}</Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <FormControl size="small" fullWidth>
-                <InputLabel shrink>Estado</InputLabel>
-                <Select value={profile.addressState} label="Estado" notched disabled>
-                  {BR_STATES.map((s) => (
-                    <MenuItem key={s} value={s}>{s}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>{ptf('Cidade', profile.addressCity)}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{ptf('Bairro', profile.addressNeighborhood)}</Grid>
-            <Grid size={{ xs: 12, sm: 5 }}>{ptf('Rua', profile.addressStreet)}</Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>{ptf('Número', profile.addressNumber)}</Grid>
-            <Grid size={{ xs: 12, sm: 5 }}>{ptf('Complemento', profile.addressComplement)}</Grid>
-          </Grid>
-        </Stack>
-
-        {/* Dados Institucionais */}
-        <Stack spacing={2}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Dados Institucionais
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              {ptf(
-                'Disponibilidade de Horário',
-                profile.availableHours === 'MATUTINO'
-                  ? 'Matutino'
-                  : profile.availableHours === 'VESPERTINO'
-                  ? 'Vespertino'
-                  : profile.availableHours === 'NOTURNO'
-                  ? 'Noturno'
-                  : profile.availableHours === 'TODOS'
-                  ? 'Todos os turnos'
-                  : profile.availableHours
-              )}
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              {ptf('Categoria', profile.category)}
-            </Grid>
-          </Grid>
-        </Stack>
-
-        {/* Checkbox autorização */}
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={profile.dataSharing}
-              disabled
-              color="primary"
-            />
-          }
-          label={
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              Eu autorizo o compartilhamento de todos os meus dados com parceiros da associação.
-            </Typography>
-          }
-        />
       </Stack>
 
       <Snackbar
