@@ -72,12 +72,12 @@ const AdminTokenResetForm = () => {
       return;
     }
 
+    if (!user) {
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!user) {
-        return;
-      }
-
       const { resetToken, valid } = await authPasswordValidate({
         token,
       });
@@ -91,8 +91,7 @@ const AdminTokenResetForm = () => {
       removeAuthUser();
 
       navigate('/reset-password');
-    } catch (error) {
-      console.log(error);
+    } catch {
       setError('Token inválido ou expirado. Tente novamente.');
       setDigits(Array(TOKEN_LENGTH).fill(''));
       focusAt(0);

@@ -32,6 +32,11 @@ const AccessControlLoginForm = () => {
     const data = new FormData(e.currentTarget);
     const accessKey = data.get('accessKey') as string;
 
+    if (!accessKey.trim()) {
+      setKeyError('A Chave de Acesso é obrigatória!');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -98,8 +103,12 @@ const AccessControlLoginForm = () => {
           placeholder="Digite a Chave de Acesso"
           fullWidth
           required
+          disabled={loading}
           error={!!keyError}
           helperText={keyError}
+          onChange={() => {
+            setKeyError('');
+          }}
         />
 
         <Button

@@ -17,6 +17,7 @@ const LoginForm = () => {
   const [loading, setLoading] = useState(false);
 
   const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const navigate = useNavigate();
 
@@ -32,6 +33,21 @@ const LoginForm = () => {
     const email = data.get('email') as string;
 
     const password = data.get('password') as string;
+
+    if (!email.trim()) {
+      setEmailError('O e-mail é obrigatório!');
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setEmailError('O e-mail deve ser válido!');
+      return;
+    }
+
+    if (!password.trim()) {
+      setPasswordError('A senha é obrigatória!');
+      return;
+    }
 
     setLoading(true);
 
@@ -92,7 +108,11 @@ const LoginForm = () => {
           label="Senha"
           name="password"
           placeholder="Digite sua senha"
-          helperText=" "
+          error={!!passwordError}
+          helperText={passwordError}
+          onChange={() => {
+            setPasswordError('');
+          }}
           fullWidth
           required
           autoComplete="current-password"

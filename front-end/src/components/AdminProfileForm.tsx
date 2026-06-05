@@ -16,15 +16,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import type { AdminProfileForm } from '../services/admin/admin.types';
 import ResetPasswordDialog from './ResetPasswordDialog';
-
-interface AdminProfileForm {
-  fullName: string;
-  cpf: string;
-  email: string;
-  phone: string;
-  birthDate: string;
-}
 
 const MOCK_PROFILE: AdminProfileForm = {
   fullName: 'João da Silva',
@@ -37,6 +30,10 @@ const MOCK_PROFILE: AdminProfileForm = {
 type Snack = { open: boolean; severity: 'success' | 'error'; msg: string };
 
 const AdminProfileForm = () => {
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<keyof AdminProfileForm, string>>
+  >({});
+
   const [form, setForm] = useState<AdminProfileForm>({ ...MOCK_PROFILE });
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -48,10 +45,46 @@ const AdminProfileForm = () => {
   });
 
   const set =
-    (key: keyof AdminProfileForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    (key: keyof AdminProfileForm) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((p) => ({ ...p, [key]: e.target.value }));
 
+      setFieldErrors((prev) => ({
+        ...prev,
+        [key]: undefined,
+      }));
+    };
+
   const handleSave = async () => {
+    const errors: Partial<Record<keyof AdminProfileForm, string>> = {};
+
+    if (!form.fullName.trim()) {
+      errors.fullName = 'Nome é obrigatório';
+    }
+
+    if (!form.cpf.trim()) {
+      errors.cpf = 'CPF é obrigatório';
+    }
+
+    if (!form.phone.trim()) {
+      errors.phone = 'Telefone é obrigatório';
+    }
+
+    if (!form.email.trim()) {
+      errors.email = 'E-mail é obrigatório';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      errors.email = 'Formato de e-mail inválido';
+    }
+
+    if (!form.birthDate.trim()) {
+      errors.birthDate = 'Data de nascimento é obrigatória';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
     setSaving(true);
     try {
       await new Promise((r) => setTimeout(r, 800));
@@ -80,6 +113,8 @@ const AdminProfileForm = () => {
       disabled={!editing}
       size="small"
       fullWidth
+      error={Boolean(fieldErrors[key])}
+      helperText={fieldErrors[key]}
     />
   );
 
@@ -206,6 +241,7 @@ const AdminProfileForm = () => {
                   onClick={() => {
                     setEditing(false);
                     setForm({ ...MOCK_PROFILE });
+                    setFieldErrors({});
                   }}
                   sx={{
                     borderRadius: 10,
