@@ -17,7 +17,9 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import type { AdminProfileForm } from '../services/admin/admin.types';
+import { maskCPF, maskPhone } from '../utils/masks.util';
 import ResetPasswordDialog from './ResetPasswordDialog';
+import { isValidBirthDate } from '../utils/dates.util';
 
 const MOCK_PROFILE: AdminProfileForm = {
   fullName: 'João da Silva',
@@ -47,7 +49,27 @@ const AdminProfileForm = () => {
   const set =
     (key: keyof AdminProfileForm) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setForm((p) => ({ ...p, [key]: e.target.value }));
+      let value = e.target.value;
+
+      if (key === 'birthDate') {
+        value = value.replace(/\D/g, '').slice(0, 8);
+
+        if (value.length > 4) {
+          value = `${value.slice(0, 2)}/${value.slice(2, 4)}/${value.slice(4)}`;
+        } else if (value.length > 2) {
+          value = `${value.slice(0, 2)}/${value.slice(2)}`;
+        }
+      }
+
+      if (key === 'cpf') {
+        value = maskCPF(value);
+      }
+
+      if (key === 'phone') {
+        value = maskPhone(value);
+      }
+
+      setForm((p) => ({ ...p, [key]: value }));
 
       setFieldErrors((prev) => ({
         ...prev,
@@ -56,18 +78,12 @@ const AdminProfileForm = () => {
     };
 
   const handleSave = async () => {
+    setFieldErrors({});
+
     const errors: Partial<Record<keyof AdminProfileForm, string>> = {};
 
     if (!form.fullName.trim()) {
       errors.fullName = 'Nome é obrigatório';
-    }
-
-    if (!form.cpf.trim()) {
-      errors.cpf = 'CPF é obrigatório';
-    }
-
-    if (!form.phone.trim()) {
-      errors.phone = 'Telefone é obrigatório';
     }
 
     if (!form.email.trim()) {
@@ -76,8 +92,22 @@ const AdminProfileForm = () => {
       errors.email = 'Formato de e-mail inválido';
     }
 
+    if (!form.cpf.trim()) {
+      errors.cpf = 'CPF é obrigatório';
+    } else if (form.cpf.replace(/\D/g, '').length !== 11) {
+      errors.cpf = 'CPF inválido';
+    }
+
+    if (!form.phone.trim()) {
+      errors.phone = 'Telefone é obrigatório';
+    } else if (form.phone.replace(/\D/g, '').length < 10) {
+      errors.phone = 'Telefone inválido';
+    }
+
     if (!form.birthDate.trim()) {
       errors.birthDate = 'Data de nascimento é obrigatória';
+    } else if (!isValidBirthDate(form.birthDate)) {
+      errors.birthDate = 'Data de nascimento inválida';
     }
 
     if (Object.keys(errors).length > 0) {
@@ -113,6 +143,7 @@ const AdminProfileForm = () => {
       disabled={!editing}
       size="small"
       fullWidth
+      required
       error={Boolean(fieldErrors[key])}
       helperText={fieldErrors[key]}
     />
@@ -126,15 +157,15 @@ const AdminProfileForm = () => {
           direction="row"
           sx={{ alignItems: 'center', justifyContent: 'space-between' }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Meu Perfil
-          </Typography>
           {!editing && (
             <Button
               variant="contained"
               color="primary"
               size="small"
-              onClick={() => setEditing(true)}
+              onClick={() => {
+                setFieldErrors({});
+                setEditing(true);
+              }}
               sx={{
                 borderRadius: 10,
                 textTransform: 'none',
@@ -210,7 +241,7 @@ const AdminProfileForm = () => {
             direction="row"
             sx={{ alignItems: 'center', justifyContent: 'space-between' }}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: 70 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               Segurança
             </Typography>
             <Button

@@ -1,3 +1,4 @@
+import { maskPhone, maskCPF, maskCEP } from '../../utils/masks.util';
 import type {
   AssociateProfileForm,
   AssociateResponse,
@@ -7,27 +8,33 @@ import type {
 
 export const mapAssociateResponseToForm = (
   associate: AssociateResponse
-): AssociateProfileForm => ({
-  id: associate.id,
-  fullName: associate.user.name ?? '',
-  cpf: associate.cpf ?? '',
-  email: associate.user.email ?? '',
-  phone: associate.phone ?? associate.user.phone ?? '',
-  birthDate: associate.birthDate ?? '',
-  category: associate.workCategory ?? '',
-  addressZipCode: associate.address?.postalCode ?? '',
-  addressState: associate.address?.state ?? '',
-  addressCity: associate.address?.city ?? '',
-  addressNeighborhood: associate.address?.neighborhood ?? '',
-  addressStreet: associate.address?.street ?? '',
-  addressNumber: associate.address?.number ?? '',
-  race: associate.selfDeclaration?.race ?? '',
-  gender: associate.selfDeclaration?.gender ?? '',
-  sexualOrientation: associate.selfDeclaration?.sexualOrientation ?? '',
-  education: associate.selfDeclaration?.education ?? '',
-  income: associate.selfDeclaration?.income ?? '',
-  disability: associate.selfDeclaration?.disability ?? '',
-});
+): AssociateProfileForm => {
+  const phone = associate.phone ?? associate.user.phone ?? '';
+  const cpf = associate.cpf ?? associate.user.cpf ?? '';
+  const cep = associate.address?.postalCode ?? '';
+
+  return {
+    id: associate.id,
+    fullName: associate.user.name ?? '',
+    cpf: maskCPF(cpf) ?? '',
+    email: associate.user.email ?? '',
+    phone: maskPhone(phone) ?? '',
+    birthDate: associate.birthDate ?? '',
+    category: associate.workCategory ?? '',
+    addressZipCode: maskCEP(cep) ?? '',
+    addressState: associate.address?.state ?? '',
+    addressCity: associate.address?.city ?? '',
+    addressNeighborhood: associate.address?.neighborhood ?? '',
+    addressStreet: associate.address?.street ?? '',
+    addressNumber: associate.address?.number ?? '',
+    race: associate.selfDeclaration?.race ?? '',
+    gender: associate.selfDeclaration?.gender ?? '',
+    sexualOrientation: associate.selfDeclaration?.sexualOrientation ?? '',
+    education: associate.selfDeclaration?.education ?? '',
+    income: associate.selfDeclaration?.income ?? '',
+    disability: associate.selfDeclaration?.disability ?? '',
+  };
+};
 
 export const mapFormToUpdatePayload = (
   form: AssociateProfileForm

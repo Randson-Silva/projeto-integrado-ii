@@ -1,7 +1,6 @@
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
-import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import {
   Box,
   Button,
@@ -188,18 +187,6 @@ const SettingsForm = () => {
 
   return (
     <Stack spacing={2.5}>
-      {/* Breadcrumb */}
-      <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
-        <SettingsOutlinedIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-        <Typography
-          variant="body2"
-          color="primary.main"
-          sx={{ fontWeight: 600 }}
-        >
-          Configurações
-        </Typography>
-      </Stack>
-
       <Grid container spacing={3} sx={{ alignItems: 'flex-start' }}>
         {/* Definições de Colunas */}
         <Grid size={{ xs: 12, md: 6 }}>

@@ -38,8 +38,8 @@ const ResetPasswordDialog = ({ open, onClose }: Props) => {
       setError('As senhas não coincidem.');
       return;
     }
-    if (newPassword.length < 6) {
-      setError('A nova senha deve ter pelo menos 6 caracteres.');
+    if (newPassword.length < 8) {
+      setError('A nova senha deve ter pelo menos 8 caracteres.');
       return;
     }
     setLoading(true);

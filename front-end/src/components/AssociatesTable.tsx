@@ -1,7 +1,6 @@
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -39,6 +38,7 @@ import type {
 } from '../services/associate/associate.types';
 
 import { normalizeCategoryView } from '../services/associate/associate.types';
+import { maskCPF } from '../utils/masks.util';
 
 type ChipColor = 'success' | 'warning' | 'default' | 'error';
 
@@ -255,19 +255,6 @@ const AssociatesTable = () => {
 
   return (
     <Stack spacing={2.5}>
-      {/* Breadcrumb */}
-      <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
-        <GroupOutlinedIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-
-        <Typography
-          variant="body2"
-          color="primary.main"
-          sx={{ fontWeight: 600 }}
-        >
-          Associados
-        </Typography>
-      </Stack>
-
       {/* Actions row */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
@@ -442,7 +429,7 @@ const AssociatesTable = () => {
 
                       <TableCell sx={{ py: 2 }}>
                         <Typography variant="body2" color="text.secondary">
-                          {u.cpf ?? '-'}
+                          {maskCPF(u.cpf) ?? '-'}
                         </Typography>
                       </TableCell>
 

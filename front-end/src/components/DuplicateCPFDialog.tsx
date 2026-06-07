@@ -32,8 +32,8 @@ const DuplicateCPFDialog = ({ open, onClose }: Props) => (
     </DialogTitle>
     <DialogContent>
       <Typography variant="body2" color="text.secondary">
-        Não foi possível realizar o cadastro pois este CPF já está cadastrado no
-        banco de dados.
+        Não foi possível realizar o cadastro pois este Email ou CPF já está
+        cadastrado no banco de dados.
       </Typography>
     </DialogContent>
     <DialogActions sx={{ px: 3, pb: 2 }}>
