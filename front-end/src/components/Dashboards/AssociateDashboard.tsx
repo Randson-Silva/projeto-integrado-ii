@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../hooks/useAuth';
-import { getAssociateById } from '../../services/associate/associateService';
+import { getMyAssociate } from '../../services/associate/associateService';
 import { authGetProfile } from '../../services/auth/authService';
 
 const AssociateDashboard = () => {
@@ -14,6 +14,7 @@ const AssociateDashboard = () => {
 
   const [firstName, setFirstName] = useState('Associado');
   const [status, setStatus] = useState('Indefinido');
+  const [hasProfile, setHasProfile] = useState(false);
 
   useEffect(() => {
     const loadAssociate = async () => {
@@ -21,13 +22,34 @@ const AssociateDashboard = () => {
         return;
       }
 
-      const { id } = await authGetProfile({ token });
+      try {
+        const profile = await authGetProfile({ token });
+        setFirstName(profile.name ? profile.name.split(' ')[0] : 'Associado');
 
-      const { user: associate } = await getAssociateById(token, id!);
+        try {
+          const associate = await getMyAssociate(token);
+          
+          const sd = associate.selfDeclaration;
+          // Verifica se o associado já preencheu algum dado autodeclaratório real (ignora termo de consentimento)
+          const hasCompletedComplementaryData = !!sd && (
+            !!sd.socialName || 
+            !!sd.race || 
+            !!sd.gender || 
+            !!sd.sexualOrientation || 
+            !!sd.education || 
+            (sd.income !== undefined && sd.income !== null)
+          );
 
-      setFirstName(associate.name ? associate.name.split(' ')[0] : 'Associado');
-
-      setStatus(associate.enabled ? 'Ativo' : 'Inativo');
+          setHasProfile(hasCompletedComplementaryData);
+          setStatus(associate.user?.active ? 'Ativo' : 'Inativo');
+        } catch (error) {
+          // Se retornar 404, o associado ainda não tem o objeto base
+          setHasProfile(false);
+          setStatus('Pendente');
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      }
     };
 
     loadAssociate();
@@ -48,23 +70,25 @@ const AssociateDashboard = () => {
           Ações
         </Typography>
 
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<PersonAddAlt1Icon />}
-          onClick={() => navigate('/meu-cadastro')}
-          sx={{
-            borderRadius: 10,
-            textTransform: 'none',
-            fontWeight: 600,
-            px: 3,
-            py: 1.5,
-            width: 'fit-content',
-            fontSize: 16,
-          }}
-        >
-          Complementar Cadastro
-        </Button>
+        {!hasProfile && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<PersonAddAlt1Icon />}
+            onClick={() => navigate('/meu-cadastro')}
+            sx={{
+              borderRadius: 10,
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              width: 'fit-content',
+              fontSize: 16,
+            }}
+          >
+            Complementar Cadastro
+          </Button>
+        )}
 
         <Button
           variant="contained"
@@ -96,7 +120,7 @@ const AssociateDashboard = () => {
         <Chip
           label={status}
           sx={{
-            bgcolor: '#8FA882',
+            bgcolor: status === 'Ativo' ? '#8FA882' : (status === 'Pendente' ? '#ED6C02' : '#D32F2F'),
             color: '#fff',
             fontWeight: 600,
             fontSize: 15,

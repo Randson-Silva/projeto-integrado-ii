@@ -92,6 +92,21 @@ const maskCurrency = (v: string) => {
   return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
+const formatCPF = (cpf: string) => {
+  if (!cpf) return '';
+  const digits = cpf.replace(/\D/g, '');
+  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+};
+
+const formatPhone = (phone: string) => {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 11) {
+    return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  }
+  return digits.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+};
+
 const AssociateSelfSupplementForm = () => {
   const { token } = useAuth();
 
@@ -151,8 +166,9 @@ const AssociateSelfSupplementForm = () => {
 
   const handleSaveDecl = async () => {
     setSaving(true);
-    const mapVal = (v: string) => (!v || v === 'PREFIRO_NAO_INFORMAR' ? null : v);
-    // Converte renda mascarada ("R$ 1.500,00") para número
+    const mapVal = (v: string) => (!v ? "" : v);
+    const mapEnum = (v: string) => (!v || v === 'PREFIRO_NAO_INFORMAR' ? null : v);
+    // Converte renda mascarada ("R$ 1.500,00") para número ou envia null
     const parsedIncome = (() => {
       const raw = selfDeclDraft.income;
       if (!raw || raw === 'PREFIRO_NAO_INFORMAR') return null;
@@ -164,7 +180,7 @@ const AssociateSelfSupplementForm = () => {
         race: mapVal(selfDeclDraft.race),
         gender: mapVal(selfDeclDraft.gender),
         sexualOrientation: mapVal(selfDeclDraft.sexualOrientation),
-        education: mapVal(selfDeclDraft.education) as any, // Cast ou mapeamento necessário dependendo do enum
+        education: mapEnum(selfDeclDraft.education) as any, // Cast ou mapeamento necessário dependendo do enum
         income: parsedIncome,
         acceptedDataSharingTerm: selfDeclDraft.dataSharing,
       });
@@ -343,10 +359,10 @@ const AssociateSelfSupplementForm = () => {
           </Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 5 }}>{ptf('Nome Completo', profile.fullName)}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{ptf('CPF', profile.cpf)}</Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>{ptf('CPF', formatCPF(profile.cpf))}</Grid>
             <Grid size={{ xs: 12, sm: 3 }}>{ptf('Data de Nascimento', profile.birthDate, 'date')}</Grid>
             <Grid size={{ xs: 12, sm: 8 }}>{ptf('E-mail', profile.email)}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{ptf('Telefone', profile.phone)}</Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>{ptf('Telefone', formatPhone(profile.phone))}</Grid>
           </Grid>
         </Stack>
 
