@@ -15,11 +15,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.associados.associados.auth.infra.exceptions.BusinessException;
+import com.associados.associados.user.dtos.request.PatchUserContactDto;
 import com.associados.associados.user.dtos.request.ToggleActiveDto;
 import com.associados.associados.user.dtos.request.UpdateProfileDto;
 import com.associados.associados.user.dtos.request.UpdateUserRoleDto;
 import com.associados.associados.user.dtos.response.UserResponseDto;
 import com.associados.associados.user.entity.User;
+import com.associados.associados.user.enums.RoleEnum;
 import com.associados.associados.user.service.AccessManagementService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -97,16 +100,39 @@ public class AccessManagementController {
 
     @PutMapping("/{id}")
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Edit user profile", description = "Updates user name, email, and phone")
+    @Operation(summary = "Edit user profile", description = "Updates user name, email, and phone (SUPER_ADMIN only)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Profile updated successfully"),
         @ApiResponse(responseCode = "400", description = "Invalid data or email already in use"),
-        @ApiResponse(responseCode = "404", description = "User not found")
+        @ApiResponse(responseCode = "404", description = "User not found"),
+        @ApiResponse(responseCode = "403", description = "Permission denied")
     })
     public ResponseEntity<UserResponseDto> updateProfile(
             @PathVariable UUID id,
             @RequestBody @Valid UpdateProfileDto data) {
-        var updatedUser = accessManagementService.updateProfile(id, data);
+        UUID requesterId = getAuthenticatedUserId();
+        var updatedUser = accessManagementService.updateProfile(requesterId, id, data);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @PatchMapping("/me/contact")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Update own contact information", description = "Updates email and phone for authenticated user (ADMIN and CONSULTANT only)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Contact information updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid data or email already in use"),
+        @ApiResponse(responseCode = "403", description = "Permission denied")
+    })
+    public ResponseEntity<UserResponseDto> updateOwnContact(
+            @RequestBody @Valid PatchUserContactDto data) {
+        UUID userId = getAuthenticatedUserId();
+        User requester = getAuthenticatedUser();
+
+        if (requester.getRole() != RoleEnum.ADMIN && requester.getRole() != RoleEnum.CONSULTANT) {
+            throw new BusinessException("Only ADMIN and CONSULTANT can update contact information");
+        }
+
+        var updatedUser = accessManagementService.updateOwnContact(userId, data);
         return ResponseEntity.ok(updatedUser);
     }
 
@@ -128,6 +154,10 @@ public class AccessManagementController {
     private UUID getAuthenticatedUserId() {
         User authenticatedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return authenticatedUser.getId();
+    }
+
+    private User getAuthenticatedUser() {
+        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 }
 

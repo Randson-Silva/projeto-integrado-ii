@@ -16,4 +16,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByRole(RoleEnum role);
     Page<User> findByRole(RoleEnum role, Pageable pageable);
     List<User> findByRoleIn(List<RoleEnum> roles);
+    Page<User> findByRoleNot(RoleEnum role, Pageable pageable);
 }
