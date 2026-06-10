@@ -33,10 +33,10 @@ public class AssociateAuthService {
     @Transactional
     public void sendLoginToken(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BusinessException("User not found."));
+                .orElseThrow(() -> new BusinessException("If the user exists, a recovery email has been sent."));
 
         if (user.getRole() != RoleEnum.ASSOCIATE) {
-            throw new BusinessException("This login flow is exclusive to associates.");
+            throw new BusinessException("If the user exists, a recovery email has been sent.");
         }
 
         tokenRepository.deleteByUserEmailAndType(email, TokenType.ASSOCIATE_LOGIN);
