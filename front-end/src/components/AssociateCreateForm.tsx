@@ -26,8 +26,11 @@ import {
   type State,
 } from '../services/address/ibgeService';
 import { getAddressByCep } from '../services/address/viaCepService';
-import type { AssociateCategory } from '../services/associate/associate.types';
-import { createAssociate } from '../services/associate/associateService';
+import type { AssociateCategoryResponse } from '../services/associate/associate.types';
+import {
+  createAssociate,
+  getCategories,
+} from '../services/associate/associateService';
 import { isValidBirthDate } from '../utils/dates.util';
 import { maskCEP, maskCPF, maskPhone } from '../utils/masks.util';
 import DuplicateCPFDialog from './DuplicateCPFDialog';
@@ -44,8 +47,8 @@ interface AssociateCreateForm {
   addressCity: string;
   addressNeighborhood: string;
   addressStreet: string;
-  addressComplement: string;
   addressNumber: string;
+  addressComplement: string;
   availability: string;
   category: string;
 }
@@ -62,8 +65,8 @@ const EMPTY: AssociateCreateForm = {
   addressCity: '',
   addressNeighborhood: '',
   addressStreet: '',
-  addressComplement: '',
   addressNumber: '',
+  addressComplement: '',
   availability: '',
   category: '',
 };
@@ -77,6 +80,7 @@ const AssociateCreateForm = () => {
   const [form, setForm] = useState<AssociateCreateForm>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [duplicateOpen, setDuplicate] = useState(false);
+  const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
   const [snack, setSnack] = useState<Snack>({
     open: false,
     severity: 'success',
@@ -146,6 +150,15 @@ const AssociateCreateForm = () => {
       console.error(error);
     }
   };
+
+  useEffect(() => {
+    if (!token) return;
+    getCategories(token)
+      .then((data) => setCategories(data))
+      .catch(() => {
+        /* silently ignore, select fica vazio */
+      });
+  }, [token]);
 
   const set =
     (key: keyof AssociateCreateForm) =>
@@ -265,8 +278,6 @@ const AssociateCreateForm = () => {
     try {
       if (!token) return;
 
-      console.log('dentro do try, birthDate:', form.birthDate);
-
       await createAssociate(token, {
         baseData: {
           email: form.email,
@@ -277,14 +288,26 @@ const AssociateCreateForm = () => {
         },
 
         birthDate: form.birthDate,
-        workCategory: form.category as AssociateCategory,
+
+        workCategoryId: form.category || undefined,
+
+        availableHours:
+          (form.availability as
+            | 'MATUTINO'
+            | 'VESPERTINO'
+            | 'NOTURNO'
+            | 'TODOS') || 'TODOS',
+
         postalCode: form.addressZipCode.replace(/\D/g, ''),
         street: form.addressStreet,
-        number: form.addressNumber,
+        number: form.addressNumber || '0',
+        complement: form.addressComplement || undefined,
         neighborhood: form.addressNeighborhood,
         city: form.addressCity,
         state: form.addressState,
         legalGuardianName: isUnder18 ? form.guardianName : '',
+
+        acceptedDataSharingTerm: true,
       });
 
       setSnack({
@@ -355,7 +378,7 @@ const AssociateCreateForm = () => {
           v === '' ? (
             <span style={{ color: '#9e9e9e' }}>Selecione</span>
           ) : (
-            String(v)
+            (options.find((o) => o.value === v)?.label ?? String(v))
           )
         }
         onChange={(e) => {
@@ -370,6 +393,9 @@ const AssociateCreateForm = () => {
           }));
         }}
       >
+        <MenuItem value="" disabled>
+          <em>Selecione</em>
+        </MenuItem>
         {options.map((o) => (
           <MenuItem key={o.value} value={o.value}>
             {o.label}
@@ -562,12 +588,8 @@ const AssociateCreateForm = () => {
               {textField('Número', 'addressNumber', 'Nº')}
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 6 }}>
-              {textField(
-                'Complemento',
-                'addressComplement',
-                'Informe dados complementares'
-              )}
+            <Grid size={{ xs: 12, sm: 4 }}>
+              {textField('Complemento', 'addressComplement', 'Apto, bloco...')}
             </Grid>
           </Grid>
 
@@ -581,20 +603,19 @@ const AssociateCreateForm = () => {
           <Grid container spacing={2} sx={{ mb: 4 }}>
             <Grid size={{ xs: 12, sm: 4 }}>
               {selectField('Disponibilidade de Horário', 'availability', [
-                { value: 'MANHA', label: 'Manhã' },
-                { value: 'TARDE', label: 'Tarde' },
-                { value: 'NOITE', label: 'Noite' },
-                { value: 'FLEXIVEL', label: 'Flexível' },
+                { value: 'MATUTINO', label: 'Matutino' },
+                { value: 'VESPERTINO', label: 'Vespertino' },
+                { value: 'NOTURNO', label: 'Noturno' },
+                { value: 'TODOS', label: 'Todos os turnos' },
               ])}
             </Grid>
 
             <Grid size={{ xs: 12, sm: 3 }}>
-              {selectField('Categoria', 'category', [
-                { value: 'ARTISTA', label: 'Artista' },
-                { value: 'PRODUTOR', label: 'Produtor' },
-                { value: 'TECNICO', label: 'Técnico' },
-                { value: 'OUTRO', label: 'Outro' },
-              ])}
+              {selectField(
+                'Categoria',
+                'category',
+                categories.map((c) => ({ value: c.id, label: c.name }))
+              )}
             </Grid>
           </Grid>
 

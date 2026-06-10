@@ -53,14 +53,19 @@ public class SecurityConfiguration {
                     req.requestMatchers(HttpMethod.POST, "/auth/password/reset").hasAuthority("PASSWORD_RESET");
                     req.requestMatchers("/error/**").permitAll();
                     req.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
+                    req.requestMatchers(HttpMethod.GET, "/terms/data-sharing").permitAll(); //temporário (depois revisar permissões)
 
                     req.requestMatchers(HttpMethod.POST, "/admins").hasRole("SUPER_ADMIN");
                     req.requestMatchers(HttpMethod.POST, "/associates").hasRole("ADMIN");
+                    req.requestMatchers(HttpMethod.GET, "/associates/me").hasRole("ASSOCIATE");
                     req.requestMatchers(HttpMethod.GET, "/associates").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers(HttpMethod.GET, "/associates/**").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers(HttpMethod.PATCH, "/associates/me/self-declaration").hasRole("ASSOCIATE");
                     req.requestMatchers(HttpMethod.PATCH, "/associates/**").hasRole("ADMIN");
                     req.requestMatchers(HttpMethod.DELETE, "/associates/**").hasRole("ADMIN");
+                    req.requestMatchers("/categories").hasRole("ADMIN");
+                    req.requestMatchers("/categories/**").hasRole("ADMIN");
+                    req.requestMatchers("/mailing/**").hasAnyRole("ADMIN");
                     req.requestMatchers("/management/**").hasAnyRole("SUPER_ADMIN");
                     req.anyRequest().authenticated();
                 })

@@ -15,18 +15,29 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
-import type { AdminProfileForm } from '../services/admin/admin.types';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { authGetProfile } from '../services/auth/authService';
+import { normalizeRoleView } from '../services/auth/roles';
+import type { User } from '../services/user/user.types';
+import { accessControlUpdateUser } from '../services/user/userService';
 import { maskCPF, maskPhone } from '../utils/masks.util';
 import ResetPasswordDialog from './ResetPasswordDialog';
-import { isValidBirthDate } from '../utils/dates.util';
 
-const MOCK_PROFILE: AdminProfileForm = {
-  fullName: 'João da Silva',
-  cpf: '000.000.000-00',
-  email: 'joao@email.com',
-  phone: '(88) 9 0000-0000',
-  birthDate: '01/01/1990',
+interface AdminProfileForm {
+  fullName: string;
+  cpf: string;
+  email: string;
+  phone: string;
+  role: string;
+}
+
+const blank: AdminProfileForm = {
+  fullName: '',
+  cpf: '',
+  email: '',
+  phone: '',
+  role: '',
 };
 
 type Snack = { open: boolean; severity: 'success' | 'error'; msg: string };
@@ -36,7 +47,15 @@ const AdminProfileForm = () => {
     Partial<Record<keyof AdminProfileForm, string>>
   >({});
 
-  const [form, setForm] = useState<AdminProfileForm>({ ...MOCK_PROFILE });
+  const { token } = useAuth();
+  const [originalForm, setOriginalForm] = useState<AdminProfileForm>({
+    ...blank,
+  });
+  const [form, setForm] = useState<AdminProfileForm>({ ...blank });
+
+  const [profile, setProfile] = useState<User | null>(null);
+
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
@@ -46,20 +65,52 @@ const AdminProfileForm = () => {
     msg: '',
   });
 
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!token) return;
+      try {
+        setLoading(true);
+        const user = await authGetProfile({ token });
+
+        const { email, role, cpf = '', id = '', name = '', phone = '' } = user;
+
+        const userProfile: User = {
+          cpf,
+          email,
+          role,
+          id,
+          name,
+          phone,
+        };
+
+        setProfile(userProfile);
+
+        const formData = {
+          fullName: user.name ?? '',
+          cpf: maskCPF(user.cpf ?? ''),
+          email: user.email ?? '',
+          phone: maskPhone(user.phone ?? ''),
+          role: normalizeRoleView(user.role),
+        };
+        setOriginalForm(formData);
+        setForm(formData);
+      } catch {
+        setSnack({
+          open: true,
+          severity: 'error',
+          msg: 'Erro ao carregar perfil.',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProfile();
+  }, [token]);
+
   const set =
     (key: keyof AdminProfileForm) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       let value = e.target.value;
-
-      if (key === 'birthDate') {
-        value = value.replace(/\D/g, '').slice(0, 8);
-
-        if (value.length > 4) {
-          value = `${value.slice(0, 2)}/${value.slice(2, 4)}/${value.slice(4)}`;
-        } else if (value.length > 2) {
-          value = `${value.slice(0, 2)}/${value.slice(2)}`;
-        }
-      }
 
       if (key === 'cpf') {
         value = maskCPF(value);
@@ -78,6 +129,7 @@ const AdminProfileForm = () => {
     };
 
   const handleSave = async () => {
+    if (!token) return;
     setFieldErrors({});
 
     const errors: Partial<Record<keyof AdminProfileForm, string>> = {};
@@ -104,27 +156,31 @@ const AdminProfileForm = () => {
       errors.phone = 'Telefone inválido';
     }
 
-    if (!form.birthDate.trim()) {
-      errors.birthDate = 'Data de nascimento é obrigatória';
-    } else if (!isValidBirthDate(form.birthDate)) {
-      errors.birthDate = 'Data de nascimento inválida';
-    }
-
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
 
+    if (!profile) return;
     setSaving(true);
     try {
-      await new Promise((r) => setTimeout(r, 800));
+      const { id } = profile;
+
+      await accessControlUpdateUser({ id, ...form, token });
+
       setEditing(false);
+
       setSnack({
         open: true,
         severity: 'success',
         msg: 'Perfil atualizado com sucesso!',
       });
+
+      setOriginalForm(form);
     } catch {
+      setForm(originalForm);
+      setEditing(false);
+
       setSnack({
         open: true,
         severity: 'error',
@@ -155,7 +211,7 @@ const AdminProfileForm = () => {
         {/* Header */}
         <Stack
           direction="row"
-          sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+          sx={{ alignItems: 'center', justifyContent: 'flex-end' }}
         >
           {!editing && (
             <Button
@@ -225,15 +281,27 @@ const AdminProfileForm = () => {
           <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
             Dados Pessoais
           </Typography>
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12 }}>{f('Nome Completo', 'fullName')}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              {f('Data de Nascimento', 'birthDate')}
+          {loading ? (
+            <Stack sx={{ alignItems: 'center', py: 4 }}>
+              <CircularProgress />
+            </Stack>
+          ) : (
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid size={{ xs: 12 }}>{f('Nome Completo', 'fullName')}</Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>{f('Telefone', 'phone')}</Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>{f('CPF', 'cpf')}</Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>{f('E-mail', 'email')}</Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Tipo de Acesso"
+                  value={form.role}
+                  disabled
+                  size="small"
+                  fullWidth
+                />
+              </Grid>
             </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{f('CPF', 'cpf')}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{f('Telefone', 'phone')}</Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>{f('E-mail', 'email')}</Grid>
-          </Grid>
+          )}
 
           {/* Segurança */}
           <Divider sx={{ mb: 3 }} />
@@ -271,7 +339,7 @@ const AdminProfileForm = () => {
                   variant="outlined"
                   onClick={() => {
                     setEditing(false);
-                    setForm({ ...MOCK_PROFILE });
+                    setForm(originalForm);
                     setFieldErrors({});
                   }}
                   sx={{

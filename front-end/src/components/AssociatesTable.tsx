@@ -37,7 +37,6 @@ import type {
   AssociateCategory,
 } from '../services/associate/associate.types';
 
-import { normalizeCategoryView } from '../services/associate/associate.types';
 import { maskCPF } from '../utils/masks.util';
 
 type ChipColor = 'success' | 'warning' | 'default' | 'error';
@@ -203,7 +202,8 @@ const AssociatesTable = () => {
     const matchStatus = filters.status === 'Todos' || status === filters.status;
 
     const matchCategoria =
-      filters.categoria === 'Todas' || workCategory === filters.categoria;
+      filters.categoria === 'Todas' ||
+      (workCategory as string) === filters.categoria;
 
     return matchSearch && matchStatus && matchCategoria;
   });
@@ -435,7 +435,7 @@ const AssociatesTable = () => {
 
                       <TableCell sx={{ py: 2 }}>
                         <Typography variant="body2" color="text.secondary">
-                          {normalizeCategoryView(u.workCategory)}
+                          {u.workCategory?.name ?? '-'}
                         </Typography>
                       </TableCell>
 

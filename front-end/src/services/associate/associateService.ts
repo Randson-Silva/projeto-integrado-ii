@@ -1,66 +1,7 @@
 import api from '../api';
-import type { Associate, AssociateCategory } from './associate.types';
+import type { Associate, AssociateCategoryResponse, CreateAssociatePayload, UpdateAssociatePayload } from './associate.types';
+import type { SelfDeclarationResponse, UpdateSelfDeclarationPayload } from './selfDeclaration/selfDeclaration.types';
 
-export interface CreateAssociatePayload {
-  baseData: {
-    email: string;
-    password: string;
-    fullName: string;
-    cpf: string;
-    phone: string;
-  };
-
-  socialName?: string;
-  artisticName?: string;
-
-  birthDate: string;
-
-  workCategory: AssociateCategory;
-
-  availableHours?: string;
-
-  postalCode: string;
-  street: string;
-  number: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-
-  race?: string;
-  gender?: string;
-  sexualOrientation?: string;
-  education?: string;
-  income?: string;
-  disability?: string;
-
-  additionalInfo?: string;
-  legalGuardianName?: string;
-}
-
-export interface UpdateAssociatePayload {
-  cpf?: string;
-  birthDate?: string;
-  phone?: string;
-
-  workCategory?: AssociateCategory;
-
-  fullName?: string;
-  email?: string;
-
-  postalCode?: string;
-  street?: string;
-  number?: string;
-  neighborhood?: string;
-  city?: string;
-  state?: string;
-
-  race?: string;
-  gender?: string;
-  sexualOrientation?: string;
-  education?: string;
-  income?: string;
-  disability?: string;
-}
 
 export interface GetAssociatesParams {
   page?: number;
@@ -87,6 +28,18 @@ export async function getAssociateById(
   id: string
 ): Promise<Associate> {
   const res = await api.get(`/associates/${id}`, {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`,
+    },
+  });
+
+  return res.data;
+}
+
+export async function getMyAssociate(
+  bearerToken: string
+): Promise<Associate> {
+  const res = await api.get('/associates/me', {
     headers: {
       Authorization: `Bearer ${bearerToken}`,
     },
@@ -131,4 +84,29 @@ export async function deleteAssociate(
       Authorization: `Bearer ${bearerToken}`,
     },
   });
+}
+
+export async function updateMySelfDeclaration(
+  bearerToken: string,
+  data: UpdateSelfDeclarationPayload
+): Promise<SelfDeclarationResponse> {
+  const res = await api.patch('/associates/me/self-declaration', data, {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`,
+    },
+  });
+
+  return res.data;
+}
+
+export async function getCategories(
+  bearerToken: string
+): Promise<AssociateCategoryResponse[]> {
+  const res = await api.get('/categories', {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`,
+    },
+  });
+
+  return res.data;
 }

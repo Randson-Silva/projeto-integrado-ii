@@ -39,11 +39,12 @@ import {
   mapFormToUpdatePayload,
 } from '../services/associate/associate.mappers';
 
-import type { AssociateProfileForm } from '../services/associate/associate.types';
+import type { AssociateCategoryResponse, AssociateProfileForm, IAssociateProfileForm } from '../services/associate/associate.types';
 
 import {
   deleteAssociate,
   getAssociateById,
+  getCategories,
   updateAssociate,
 } from '../services/associate/associateService';
 
@@ -76,7 +77,7 @@ type Snack = {
   msg: string;
 };
 
-const EMPTY: AssociateProfileForm = {
+const EMPTY: IAssociateProfileForm = {
   id: '',
   fullName: '',
   cpf: '',
@@ -90,12 +91,14 @@ const EMPTY: AssociateProfileForm = {
   addressNeighborhood: '',
   addressStreet: '',
   addressNumber: '',
+  addressComplement: '',
   race: '',
   gender: '',
   sexualOrientation: '',
   education: '',
   income: '',
   disability: '',
+  availableHours: '',
 };
 
 const AssociateProfile = () => {
@@ -111,7 +114,9 @@ const AssociateProfile = () => {
 
   const [saving, setSaving] = useState(false);
 
-  const [form, setForm] = useState<AssociateProfileForm>(EMPTY);
+  const [form, setForm] = useState<IAssociateProfileForm>(EMPTY);
+
+  const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
 
   const [inactivateOpen, setInactivateOpen] = useState(false);
 
@@ -156,9 +161,14 @@ const AssociateProfile = () => {
         setLoading(false);
       }
     };
-
     load();
   }, [id, token]);
+  useEffect(() => {
+    if (!token) return;
+    getCategories(token)
+      .then((data) => setCategories(data))
+      .catch(() => {});
+  }, [token]);
 
   useEffect(() => {
     const loadStates = async () => {
@@ -307,7 +317,7 @@ const AssociateProfile = () => {
 
   const tf = (
     label: string,
-    key: keyof AssociateProfileForm,
+    key: keyof IAssociateProfileForm,
     type = 'text'
   ) => (
     <TextField
@@ -354,7 +364,7 @@ const AssociateProfile = () => {
 
   const sf = (
     label: string,
-    key: keyof AssociateProfileForm,
+    key: keyof IAssociateProfileForm,
     options: {
       value: string;
       label: string;
@@ -722,45 +732,9 @@ const AssociateProfile = () => {
 
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, sm: 4 }}>
-              {sf('Disponibilidade de Horário', 'disability', [
-                {
-                  value: 'MANHA',
-                  label: 'Matutino',
-                },
-                {
-                  value: 'TARDE',
-                  label: 'Vespertino',
-                },
-                {
-                  value: 'NOITE',
-                  label: 'Noturno',
-                },
-                {
-                  value: 'FLEXIVEL',
-                  label: 'Flexível',
-                },
-              ])}
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 3 }}>
-              {sf('Categoria', 'category', [
-                {
-                  value: 'ARTISTA',
-                  label: 'Artista',
-                },
-                {
-                  value: 'PRODUTOR',
-                  label: 'Produtor',
-                },
-                {
-                  value: 'TECNICO',
-                  label: 'Técnico',
-                },
-                {
-                  value: 'OUTRO',
-                  label: 'Outro',
-                },
-              ])}
+              {sf('Categoria', 'category',
+                categories.map((c) => ({ value: c.id, label: c.name }))
+              )}
             </Grid>
           </Grid>
 

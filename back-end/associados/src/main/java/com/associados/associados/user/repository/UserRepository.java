@@ -1,4 +1,6 @@
 package com.associados.associados.user.repository;
+
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,4 +15,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
     Optional<User> findByRole(RoleEnum role);
     Page<User> findByRole(RoleEnum role, Pageable pageable);
+    List<User> findByRoleIn(List<RoleEnum> roles);
 }

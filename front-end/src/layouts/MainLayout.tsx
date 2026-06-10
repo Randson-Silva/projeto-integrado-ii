@@ -12,29 +12,65 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar, { type SidebarItem } from '../components/Sidebar';
+import { adminItems } from '../config/sidebarItems/adminItems';
+import { associateItems } from '../config/sidebarItems/associateItems';
+import { consultantItems } from '../config/sidebarItems/consultantItems';
+import { superAdminItems } from '../config/sidebarItems/superAdminItems';
 import { useAuth } from '../hooks/useAuth';
+import { authGetProfile } from '../services/auth/authService';
+import { decodeJwt } from '../services/auth/jwt.config';
+import { normalizeRoleView } from '../services/auth/roles';
 
 const DRAWER_WIDTH = 224;
 
 const UserMenu = () => {
-  const { user, logout } = useAuth();
+  const { logout, token } = useAuth();
   const navigate = useNavigate();
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
 
-  const displayName =
-    (user as unknown as { fullName?: string; name?: string })?.fullName ??
-    (user as unknown as { name?: string })?.name ??
-    'Usuário';
-  const role = (user as unknown as { role?: string })?.role ?? '';
-  const initial = displayName.charAt(0).toUpperCase();
+  const [displayName, setDisplayName] = useState('');
+  const [role, setRole] = useState('');
+  const [rawRole, setRawRole] = useState('');
+
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        if (!token) {
+          setDisplayName('Usuário');
+          setRole('Indefinido');
+          return;
+        }
+
+        const user = await authGetProfile({ token });
+
+        if (!user) {
+          setDisplayName('Usuário');
+          setRole('Indefinido');
+          setRawRole('');
+          return;
+        }
+
+        setDisplayName(user.name?.split(' ')[0] ?? 'Usuário');
+        setRole(normalizeRoleView(user.role));
+        setRawRole(user.role);
+      } catch {
+        setDisplayName('Usuário');
+        setRole('Indefinido');
+        setRawRole('');
+      }
+    };
+
+    loadUserInfo();
+  }, [token]);
+
+  const initial = displayName ? displayName.charAt(0).toUpperCase() : '?';
 
   const handleLogout = () => {
     setAnchor(null);
     logout();
-    navigate('/login');
   };
 
   return (
@@ -88,7 +124,13 @@ const UserMenu = () => {
         <MenuItem
           onClick={() => {
             setAnchor(null);
-            navigate('/meu-perfil');
+            if (rawRole === 'ASSOCIATE') {
+              navigate('/meu-cadastro');
+            } else if (rawRole === 'CONSULTANT' || rawRole === 'ADMIN') {
+              navigate('/meu-perfil');
+            } else if (rawRole === 'SUPER_ADMIN') {
+              navigate('/controle-de-acesso/meu-perfil');
+            }
           }}
         >
           Meu Perfil
@@ -103,13 +145,33 @@ const UserMenu = () => {
 
 interface MainLayoutProps {
   children: React.ReactNode;
-  menuItems: SidebarItem[];
+  menuItems?: SidebarItem[];
   pageTitle?: string;
 }
 
 const MainLayout = ({ children, menuItems, pageTitle }: MainLayoutProps) => {
+  const { token } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const drawer = <Sidebar items={menuItems} />;
+
+  let activeItems: SidebarItem[] = [];
+  if (menuItems) {
+    activeItems = menuItems;
+  } else if (token) {
+    const user = decodeJwt(token);
+    if (user?.role === 'SUPER_ADMIN') {
+      activeItems = superAdminItems;
+    } else if (user?.role === 'CONSULTANT') {
+      activeItems = consultantItems;
+    } else if (user?.role === 'ASSOCIATE') {
+      activeItems = associateItems;
+    } else if (user?.role === 'ADMIN') {
+      activeItems = adminItems;
+    } else {
+      activeItems = [];
+    }
+  }
+
+  const drawer = <Sidebar items={activeItems} />;
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'grey.50' }}>

@@ -1,3 +1,4 @@
+import { ArrowBackIos } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -59,7 +60,7 @@ const LoginForm = () => {
 
       setAuthToken(token);
 
-      navigate('/dashboard');
+      navigate('/associados');
     } catch {
       setEmailError('Credenciais inválidas. Verifique e tente novamente.');
     } finally {
@@ -89,6 +90,22 @@ const LoginForm = () => {
           <br />
           DE CARTEIRINHA
         </Typography>
+
+        <Button
+          component={RouterLink}
+          to="/"
+          startIcon={<ArrowBackIos sx={{ fontSize: 14 }} />}
+          sx={{
+            alignSelf: 'flex-start',
+            color: 'text.secondary',
+            fontWeight: 600,
+            textTransform: 'none',
+            p: 0,
+            '&:hover': { bgcolor: 'transparent', color: 'primary.main' },
+          }}
+        >
+          Voltar para tela inicial
+        </Button>
 
         <TextField
           label="E-mail"
@@ -141,6 +158,7 @@ const LoginForm = () => {
             textTransform: 'none',
             minWidth: 120,
             width: { xs: '100%', sm: 'auto' },
+            mb: 1,
           }}
         >
           {loading ? <CircularProgress size={22} color="inherit" /> : 'Entrar'}

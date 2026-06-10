@@ -61,7 +61,7 @@ const AccessControlCreateForm = () => {
 
     if (!phone.trim()) {
       newErrors.phone = 'Telefone é obrigatório';
-    } else if (phone.replace(/\D/g, '').length !== 11) {
+    } else if (phone.replace(/\D/g, '').length < 10) {
       newErrors.phone = 'Telefone inválido';
     }
 
@@ -79,6 +79,8 @@ const AccessControlCreateForm = () => {
 
     if (!password.trim()) {
       newErrors.password = 'Senha é obrigatória';
+    } else if (password.length < 8) {
+      newErrors.password = 'Senha deve ter pelo menos 8 caracteres';
     }
 
     if (!role) {
@@ -113,7 +115,7 @@ const AccessControlCreateForm = () => {
 
   const roleLabels = {
     ADMIN: 'Administrador',
-    CONSULTANT: 'Circulador',
+    CONSULTANT: 'Consultor',
   };
 
   return (

@@ -145,10 +145,8 @@ const AccessControlSearchTable = () => {
             }}
           >
             <MenuItem value="Todos">Todos</MenuItem>
-            <MenuItem value="SUPER_ADMIN">Controle de Acesso</MenuItem>
             <MenuItem value="ADMIN">Admin</MenuItem>
             <MenuItem value="CONSULTANT">Consultor</MenuItem>
-            <MenuItem value="ASSOCIATE">Associado</MenuItem>
           </Select>
         </FormControl>
       </Stack>

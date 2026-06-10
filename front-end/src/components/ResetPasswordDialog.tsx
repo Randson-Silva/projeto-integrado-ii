@@ -19,7 +19,6 @@ interface Props {
 const ResetPasswordDialog = ({ open, onClose }: Props) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -27,17 +26,12 @@ const ResetPasswordDialog = ({ open, onClose }: Props) => {
     if (loading) return;
     setCurrentPassword('');
     setNewPassword('');
-    setConfirmPassword('');
     setError('');
     onClose();
   };
 
   const handleConfirm = async () => {
     setError('');
-    if (newPassword !== confirmPassword) {
-      setError('As senhas não coincidem.');
-      return;
-    }
     if (newPassword.length < 8) {
       setError('A nova senha deve ter pelo menos 8 caracteres.');
       return;
@@ -70,19 +64,14 @@ const ResetPasswordDialog = ({ open, onClose }: Props) => {
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 0.5 }}>
           <PasswordField
-            label="Senha atual"
+            label="Informe a senha anterior"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
           />
           <PasswordField
-            label="Nova senha"
+            label="Informe a nova senha"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-          />
-          <PasswordField
-            label="Confirme a nova senha"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
           />
           {error && (
             <Typography variant="caption" color="error">
@@ -110,7 +99,7 @@ const ResetPasswordDialog = ({ open, onClose }: Props) => {
         <Button
           onClick={handleConfirm}
           disabled={
-            loading || !currentPassword || !newPassword || !confirmPassword
+            loading || !currentPassword || !newPassword
           }
           variant="contained"
           color="primary"

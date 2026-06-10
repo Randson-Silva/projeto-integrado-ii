@@ -1,17 +1,22 @@
-export interface SelfDeclaration {
-  id: string;
-  race: string;
-  gender: string;
-  sexualOrientation: string;
-  education: LevelEducationEnum;
-  income: IncomeEnum;
-  disability: string;
+
+import type { AssociateEducation } from '../associate.types';
+
+export interface SelfDeclarationResponse {
+  socialName?: string;
+  race?: string;
+  gender?: string;
+  sexualOrientation?: string;
+  education?: AssociateEducation;
+  income?: number | null;
+  acceptedDataSharingTerm?: boolean;
 }
 
-type LevelEducationEnum =
-  | 'FUNDAMENTAL'
-  | 'MEDIO'
-  | 'SUPERIOR'
-  | 'POS_GRADUACAO';
-
-type IncomeEnum = 'BAIXA' | 'MEDIA' | 'ALTA';
+export interface UpdateSelfDeclarationPayload {
+  socialName?: string | null;
+  race?: string | null;
+  gender?: string | null;
+  sexualOrientation?: string | null;
+  education?: AssociateEducation | null;
+  income?: number | null;
+  acceptedDataSharingTerm?: boolean;
+}

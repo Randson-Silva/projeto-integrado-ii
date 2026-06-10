@@ -2,35 +2,86 @@ export type AssociateStatus = 'ATIVO' | 'PENDENTE' | 'INATIVADO' | 'INATIVO';
 
 export type AssociateCategory = 'ARTISTA' | 'PRODUTOR' | 'TECNICO' | 'OUTRO';
 
-export type AssociateIncome = 'BAIXA' | 'MEDIA' | 'ALTA';
+export interface AssociateCategoryResponse {
+  id: string;
+  name: string;
+}
+
+// income agora é BigDecimal no backend (número)
+export type AssociateIncome = number | null;
+
+export type DisponibilidadeHorarioEnum =
+  | 'MATUTINO'
+  | 'VESPERTINO'
+  | 'NOTURNO'
+  | 'TODOS';
 
 export type AssociateEducation =
-  | 'FUNDAMENTAL'
-  | 'MEDIO'
-  | 'SUPERIOR'
-  | 'POS_GRADUACAO'
-  | 'MESTRADO'
-  | 'DOUTORADO';
+  | 'PREFIRO_NAO_INFORMAR'
+  | 'FUNDAMENTAL_INCOMPLETO'
+  | 'FUNDAMENTAL_COMPLETO'
+  | 'MEDIO_INCOMPLETO'
+  | 'MEDIO_COMPLETO'
+  | 'SUPERIOR_INCOMPLETO'
+  | 'SUPERIOR_COMPLETO'
+  | 'ESPECIALIZACAO_INCOMPLETA'
+  | 'ESPECIALIZACAO_COMPLETA'
+  | 'MESTRADO_INCOMPLETO'
+  | 'MESTRADO_COMPLETO'
+  | 'DOUTORADO_INCOMPLETO'
+  | 'DOUTORADO_COMPLETO';
 
-export interface AssociateProfileForm {
+export interface IAssociateProfileForm {
   id: string;
   fullName: string;
   cpf: string;
   email: string;
   phone: string;
   birthDate: string;
-  category: AssociateCategory | '';
+  category: string; // UUID from categories table
   addressZipCode: string;
   addressState: string;
   addressCity: string;
   addressNeighborhood: string;
   addressStreet: string;
   addressNumber: string;
+  addressComplement?: string;
+  race?: string;
+  gender?: string;
+  sexualOrientation?: string;
+  education?: AssociateEducation | '';
+  income?: string; // mantido como string no form para facilitar input mascarado
+  disability?: string;
+  availableHours: DisponibilidadeHorarioEnum | '';
+}
+
+export interface IAdminAssociateProfileForm {
+  id: string;
+  fullName: string;
+  cpf: string;
+  email: string;
+  phone: string;
+  birthDate: string;
+  category: string; // UUID from categories table
+  addressZipCode: string;
+  addressState: string;
+  addressCity: string;
+  addressNeighborhood: string;
+  addressStreet: string;
+  addressNumber: string;
+  addressComplement?: string;
+  availableHours: DisponibilidadeHorarioEnum | '';
+}
+
+// Alias sem prefixo para compatibilidade com o padrão do develop
+export type AssociateProfileForm = IAssociateProfileForm;
+
+export interface IAssociateSelfDeclarationForm {
+  education: AssociateEducation;
   race: string;
   gender: string;
   sexualOrientation: string;
-  education: AssociateEducation | '';
-  income: AssociateIncome | '';
+  income: string; // string para input mascarado, convertido para número no envio
   disability: string;
 }
 
@@ -38,7 +89,7 @@ export interface AssociateResponse {
   id: string;
   cpf: string;
   birthDate?: string;
-  workCategory?: AssociateCategory;
+  workCategory?: AssociateCategoryResponse;
   phone?: string;
   legalGuardianName?: string;
   user: {
@@ -53,7 +104,7 @@ export interface AssociateResponse {
     createdAt?: string;
     updatedAt?: string;
     enabled?: boolean;
-    active?: boolean;
+    active: boolean;
     username?: string;
     authorities?: { authority: string }[];
     accountNonExpired?: boolean;
@@ -65,19 +116,22 @@ export interface AssociateResponse {
     postalCode?: string;
     street?: string;
     number?: string;
+    complement?: string;
     neighborhood?: string;
     city?: string;
     state?: string;
   };
   selfDeclaration?: {
     id?: string;
+    socialName?: string;
     race?: string;
     gender?: string;
     sexualOrientation?: string;
     education?: AssociateEducation;
-    income?: AssociateIncome;
-    disability?: string;
+    income?: number | null; // BigDecimal do backend
+    acceptedDataSharingTerm?: boolean;
   };
+  availableHours?: DisponibilidadeHorarioEnum;
   status?: AssociateStatus;
 }
 
@@ -107,11 +161,12 @@ export interface CreateAssociatePayload {
   socialName?: string;
   artisticName?: string;
   birthDate: string;
-  workCategory: AssociateCategory;
-  availableHours?: string;
+  workCategoryId?: string;
+  availableHours: DisponibilidadeHorarioEnum;
   postalCode: string;
   street: string;
   number: string;
+  complement?: string;
   neighborhood: string;
   city: string;
   state: string;
@@ -119,31 +174,32 @@ export interface CreateAssociatePayload {
   gender?: string;
   sexualOrientation?: string;
   education?: AssociateEducation;
-  income?: AssociateIncome;
-  disability?: string;
-  additionalInfo?: string;
+  income?: number;
   legalGuardianName?: string;
+  acceptedDataSharingTerm?: boolean;
 }
 
 export interface UpdateAssociatePayload {
   cpf?: string;
   birthDate?: string;
   phone?: string;
-  workCategory?: AssociateCategory;
+  workCategoryId?: string;
+  availableHours?: DisponibilidadeHorarioEnum;
   fullName?: string;
   email?: string;
   postalCode?: string;
   street?: string;
   number?: string;
+  complement?: string;
   neighborhood?: string;
   city?: string;
   state?: string;
-  race?: string;
-  gender?: string;
-  sexualOrientation?: string;
-  education?: AssociateEducation;
-  income?: AssociateIncome;
-  disability?: string;
+  race?: string | null;
+  gender?: string | null;
+  sexualOrientation?: string | null;
+  education?: AssociateEducation | null;
+  income?: number | null;
+  acceptedDataSharingTerm?: boolean;
 }
 
 export type Associate = AssociateResponse;
@@ -169,34 +225,39 @@ export const normalizeCategoryView = (category?: AssociateCategory) => {
   }
 };
 
-export const normalizeIncomeView = (income?: AssociateIncome) => {
-  switch (income) {
-    case 'BAIXA':
-      return 'Baixa';
-    case 'MEDIA':
-      return 'Média';
-    case 'ALTA':
-      return 'Alta';
-    default:
-      return '-';
-  }
+export const normalizeIncomeView = (income?: number | null): string => {
+  if (income == null) return '-';
+  return income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
-export const normalizeEducationView = (education?: AssociateEducation) => {
-  switch (education) {
-    case 'FUNDAMENTAL':
-      return 'Fundamental';
-    case 'MEDIO':
-      return 'Médio';
-    case 'SUPERIOR':
-      return 'Superior';
-    case 'POS_GRADUACAO':
-      return 'Pós-graduação';
-    case 'MESTRADO':
-      return 'Mestrado';
-    case 'DOUTORADO':
-      return 'Doutorado';
-    default:
-      return '-';
-  }
+export const normalizeEducationView = (
+  education?: AssociateEducation | string
+): string => {
+  const map: Record<string, string> = {
+    FUNDAMENTAL_INCOMPLETO: 'Fund. Incompleto',
+    FUNDAMENTAL_COMPLETO: 'Fund. Completo',
+    MEDIO_INCOMPLETO: 'Médio Incompleto',
+    MEDIO_COMPLETO: 'Médio Completo',
+    SUPERIOR_INCOMPLETO: 'Superior Incompleto',
+    SUPERIOR_COMPLETO: 'Superior Completo',
+    ESPECIALIZACAO_INCOMPLETA: 'Espec. Incompleta',
+    ESPECIALIZACAO_COMPLETA: 'Espec. Completa',
+    MESTRADO_INCOMPLETO: 'Mestrado Incompleto',
+    MESTRADO_COMPLETO: 'Mestrado Completo',
+    DOUTORADO_INCOMPLETO: 'Doutorado Incompleto',
+    DOUTORADO_COMPLETO: 'Doutorado Completo',
+  };
+  return (education && map[education]) ?? '-';
+};
+
+export const normalizeAvailabilityView = (
+  availability?: DisponibilidadeHorarioEnum | string
+): string => {
+  const map: Record<string, string> = {
+    MATUTINO: 'Matutino',
+    VESPERTINO: 'Vespertino',
+    NOTURNO: 'Noturno',
+    TODOS: 'Todos os turnos',
+  };
+  return (availability && map[availability]) ?? '-';
 };

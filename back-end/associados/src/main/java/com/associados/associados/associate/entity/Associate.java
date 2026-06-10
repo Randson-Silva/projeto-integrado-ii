@@ -3,7 +3,7 @@ package com.associados.associados.associate.entity;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import com.associados.associados.associate.enums.CategoriaEnum;
+import com.associados.associados.associate.enums.DisponibilidadeHorarioEnum;
 import com.associados.associados.user.entity.User;
 
 import jakarta.persistence.CascadeType;
@@ -14,6 +14,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
@@ -40,8 +41,13 @@ public class Associate {
     private LocalDate birthDate;
 
     @NotNull(message = "Work category is required")
+    @ManyToOne
+    @JoinColumn(name = "work_category_id")
+    private Category workCategory;
+
+    @NotNull(message = "Available hours are required")
     @Enumerated(EnumType.STRING)
-    private CategoriaEnum workCategory;
+    private DisponibilidadeHorarioEnum availableHours;
 
     @NotBlank(message = "Phone is required")
     @Pattern(regexp = "\\d{10,11}", message = "Phone must contain 10-11 digits")
@@ -70,4 +76,3 @@ public class Associate {
         }
     }
 }
-

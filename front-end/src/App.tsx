@@ -23,6 +23,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import SettingsPage from './pages/SettingsPage';
 import TokenPage from './pages/TokenPage';
 import PrivateRoute from './routes/PrivateRoute';
+import AssociateSelfSupplementPage from './pages/AssociateSelfSupplementPage';
 
 function App() {
   return (
@@ -69,6 +70,9 @@ function App() {
             <Route path="/associados" element={<AssociatesTablePage />} />
             <Route path="/associados/novo" element={<AssociateCreatePage />} />
             <Route path="/associados/:id" element={<AssociateProfilePage />} />
+
+            {/* Meu cadastro (associado) */}
+            <Route path="/meu-cadastro" element={<AssociateSelfSupplementPage />} />
 
             {/* Comunicação */}
             <Route path="/comunicacao" element={<CommunicationPage />} />

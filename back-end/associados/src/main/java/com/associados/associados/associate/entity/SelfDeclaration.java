@@ -1,9 +1,9 @@
 package com.associados.associados.associate.entity;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import com.associados.associados.associate.enums.EscolaridadeEnum;
-import com.associados.associados.associate.enums.RendaEnum;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,6 +25,9 @@ public class SelfDeclaration {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(length = 100)
+    private String socialName;
+
     @Column(length = 50)
     private String race;
 
@@ -37,10 +40,8 @@ public class SelfDeclaration {
     @Enumerated(EnumType.STRING)
     private EscolaridadeEnum education;
 
-    @Enumerated(EnumType.STRING)
-    private RendaEnum income;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal income;
 
-    @Column(length = 255)
-    private String disability;
+    private boolean acceptedDataSharingTerm = false;
 }
-
