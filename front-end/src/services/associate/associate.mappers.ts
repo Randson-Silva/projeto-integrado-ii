@@ -106,7 +106,7 @@ export const mapFormToUpdatePayload = (
     !form.education ||
     form.education === 'PREFIRO_NAO_INFORMAR' ||
     (!VALID_EDUCATION.has(form.education) && form.education !== 'NÃO_SELECIONADO')
-      ? 'NÃO_SELECIONADO'
+      ? ('' as UpdateAssociatePayload['education'])
       : (form.education as UpdateAssociatePayload['education']),
   income: parseMaskedIncome(String(form.income ?? '')),
 });
@@ -138,8 +138,8 @@ export const mapFormToCreatePayload = (
   gender: form.gender || undefined,
   sexualOrientation: form.sexualOrientation || undefined,
   education:
-    !form.education || form.education === 'PREFIRO_NAO_INFORMAR'
-      ? 'NÃO_SELECIONADO'
+    !form.education || form.education === 'PREFIRO_NAO_INFORMAR' || form.education === 'NÃO_SELECIONADO'
+      ? ('' as CreateAssociatePayload['education'])
       : (form.education as CreateAssociatePayload['education']),
   income: parseMaskedIncome(String(form.income ?? '')) ?? undefined,
   legalGuardianName: undefined,

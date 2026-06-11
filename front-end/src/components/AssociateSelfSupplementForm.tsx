@@ -225,8 +225,8 @@ const AssociateSelfSupplementForm = () => {
         race: mapVal(selfDeclDraft.race),
         gender: mapVal(selfDeclDraft.gender),
         sexualOrientation: mapVal(selfDeclDraft.sexualOrientation),
-        education: (selfDeclDraft.education === '' || selfDeclDraft.education === 'PREFIRO_NAO_INFORMAR'
-          ? 'NÃO_SELECIONADO'
+        education: (selfDeclDraft.education === '' || selfDeclDraft.education === 'NÃO_SELECIONADO'
+          ? ''
           : selfDeclDraft.education) as AssociateEducation,
         income: parsedIncome,
         acceptedDataSharingTerm: selfDeclDraft.dataSharing,

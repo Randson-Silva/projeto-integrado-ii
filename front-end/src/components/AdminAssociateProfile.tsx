@@ -952,7 +952,7 @@ const AssociateProfile = () => {
                       label: 'Doutorado Completo',
                     },
                     {
-                      value: 'PREFIRO_NAO_INFORMAR',
+                      value: 'NÃO_SELECIONADO',
                       label: 'Prefiro não informar',
                     },
                   ])}
