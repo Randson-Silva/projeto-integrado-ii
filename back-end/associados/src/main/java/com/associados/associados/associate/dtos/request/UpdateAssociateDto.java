@@ -26,6 +26,9 @@ public record UpdateAssociateDto(
 
         DisponibilidadeHorarioEnum availableHours,
 
+        @Size(max = 150, message = "Legal guardian name must be at most 150 characters")
+        String legalGuardianName,
+
         // User fields
         @Pattern(regexp = "^[A-Za-zÀ-ÿ ]+$", message = "Full name must contain only letters")
         String fullName,

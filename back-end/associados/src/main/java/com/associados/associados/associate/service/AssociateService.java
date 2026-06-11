@@ -135,6 +135,14 @@ public class AssociateService {
             associate.setBirthDate(data.birthDate());
         }
 
+        if (associate.getBirthDate().isAfter(java.time.LocalDate.now().minusYears(18))) {
+            if (data.legalGuardianName() != null) {
+                associate.setLegalGuardianName(data.legalGuardianName());
+            }
+        } else {
+            associate.setLegalGuardianName("");
+        }
+
         if (data.phone() != null) {
             associate.setPhone(data.phone());
         }
@@ -223,29 +231,14 @@ public class AssociateService {
             associate.setSelfDeclaration(declaration);
         }
 
-        if (data.socialName() != null) {
-            declaration.setSocialName(data.socialName());
-        }
+        declaration.setSocialName(data.socialName());
+        declaration.setRace(data.race());
+        declaration.setGender(data.gender());
+        declaration.setSexualOrientation(data.sexualOrientation());
+        
+        declaration.setEducation(data.education());
 
-        if (data.race() != null) {
-            declaration.setRace(data.race());
-        }
-
-        if (data.gender() != null) {
-            declaration.setGender(data.gender());
-        }
-
-        if (data.sexualOrientation() != null) {
-            declaration.setSexualOrientation(data.sexualOrientation());
-        }
-
-        if (data.education() != null) {
-            declaration.setEducation(data.education());
-        }
-
-        if (data.income() != null) {
-            declaration.setIncome(data.income());
-        }
+        declaration.setIncome(data.income());
 
         if (data.acceptedDataSharingTerm() != null) {
             declaration.setAcceptedDataSharingTerm(data.acceptedDataSharingTerm());

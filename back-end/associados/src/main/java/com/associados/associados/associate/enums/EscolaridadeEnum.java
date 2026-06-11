@@ -1,11 +1,15 @@
 package com.associados.associados.associate.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
 public enum EscolaridadeEnum {
+
+    NÃO_SELECIONADO("Não selecionado"),
 
     FUNDAMENTAL_INCOMPLETO("Ensino Fundamental Incompleto"),
     FUNDAMENTAL_COMPLETO("Ensino Fundamental Completo"),
@@ -24,6 +28,19 @@ public enum EscolaridadeEnum {
 
     DOUTORADO_INCOMPLETO("Doutorado Incompleto"),
     DOUTORADO_COMPLETO("Doutorado Completo");
+
+    @JsonCreator
+    public static EscolaridadeEnum fromString(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return NÃO_SELECIONADO;
+        }
+        
+        try {
+            return EscolaridadeEnum.valueOf(value.toUpperCase().trim());
+        } catch (IllegalArgumentException e) {
+            return NÃO_SELECIONADO; 
+        }
+    }
 
     private final String description;
 }
