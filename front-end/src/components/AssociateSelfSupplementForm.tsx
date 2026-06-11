@@ -244,7 +244,8 @@ const AssociateSelfSupplementForm = () => {
   const declSelect = (
     label: string,
     key: keyof SelfDeclForm,
-    options: { value: string; label: string }[]
+    options: { value: string; label: string }[],
+    clearable = true
   ) => (
     <FormControl size="small" fullWidth>
       <InputLabel
@@ -275,7 +276,7 @@ const AssociateSelfSupplementForm = () => {
           )
         }
       >
-        <MenuItem value="" disabled>
+        <MenuItem value="" disabled={!clearable}>
           <em>Selecione</em>
         </MenuItem>
         {options.map((o) => (
@@ -517,7 +518,6 @@ const AssociateSelfSupplementForm = () => {
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
               {declSelect('Escolaridade', 'education', [
-                { value: '', label: 'Selecione' },
                 {
                   value: 'FUNDAMENTAL_INCOMPLETO',
                   label: 'Fundamental Incompleto',
@@ -542,10 +542,6 @@ const AssociateSelfSupplementForm = () => {
                   label: 'Doutorado Incompleto',
                 },
                 { value: 'DOUTORADO_COMPLETO', label: 'Doutorado Completo' },
-                {
-                  value: 'PREFIRO_NAO_INFORMAR',
-                  label: 'Prefiro não informar',
-                },
               ])}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 150 }}>
@@ -553,7 +549,6 @@ const AssociateSelfSupplementForm = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 150 }}>
               {declSelect('Etnia', 'race', [
-                { value: '', label: 'Selecione' },
                 { value: 'BRANCO', label: 'Branco (a)' },
                 { value: 'PARDO', label: 'Pardo (a)' },
                 { value: 'PRETO', label: 'Preto (a)' },
@@ -568,7 +563,6 @@ const AssociateSelfSupplementForm = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
               {declSelect('Identidade de Gênero', 'gender', [
-                { value: '', label: 'Selecione' },
                 { value: 'HOMEM_CIS', label: 'Homem Cis' },
                 { value: 'HOMEM_TRANS', label: 'Homem Trans' },
                 { value: 'MULHER_CIS', label: 'Mulher Cis' },
@@ -584,7 +578,6 @@ const AssociateSelfSupplementForm = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
               {declSelect('Orientação Sexual', 'sexualOrientation', [
-                { value: '', label: 'Selecione' },
                 { value: 'HETEROSSEXUAL', label: 'Heterossexual' },
                 { value: 'HOMOSSEXUAL', label: 'Homossexual' },
                 { value: 'BISSEXUAL', label: 'Bissexual' },
