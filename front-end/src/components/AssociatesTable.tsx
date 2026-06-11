@@ -255,6 +255,8 @@ const AssociatesTable = () => {
 
   return (
     <Stack spacing={2.5}>
+
+
       {/* Actions row */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.associados.associados.auth.infra.exceptions.BusinessException;
+import com.associados.associados.user.dtos.request.PatchUserContactDto;
 import com.associados.associados.user.dtos.request.UpdateProfileDto;
 import com.associados.associados.user.dtos.response.UserResponseDto;
 import com.associados.associados.user.entity.User;
@@ -29,10 +30,10 @@ public class AccessManagementService {
         validateAdminAccess(requester);
 
         if (requester.getRole() == RoleEnum.SUPER_ADMIN) {
-            log.info("SUPER_ADMIN {} listing all users", requester.getId());
-            return userRepository.findAll(pageable).map(UserResponseDto::new);
-        } else if (requester.getRole() == RoleEnum.ADMIN) {
-            log.info("ADMIN {} listing ASSOCIATE users", requester.getId());
+            log.info("SUPER_ADMIN {} listing all users except SUPER_ADMIN", requester.getId());
+            return userRepository.findByRoleNot(RoleEnum.SUPER_ADMIN, pageable).map(UserResponseDto::new);
+        } else if (requester.getRole() == RoleEnum.ADMIN || requester.getRole() == RoleEnum.CONSULTANT) {
+            log.info("{} {} listing ASSOCIATE users", requester.getRole(), requester.getId());
             return userRepository.findByRole(RoleEnum.ASSOCIATE, pageable).map(UserResponseDto::new);
         }
 
@@ -81,17 +82,39 @@ public class AccessManagementService {
     }
 
     @Transactional
-    public UserResponseDto updateProfile(UUID userId, UpdateProfileDto data) {
+    public UserResponseDto updateProfile(UUID requesterId, UUID targetUserId, UpdateProfileDto data) {
+        User requester = findUserOrThrow(requesterId);
+        User targetUser = findUserOrThrow(targetUserId);
+
+        if (requester.getRole() != RoleEnum.SUPER_ADMIN) {
+            throw new BusinessException("Only SUPER_ADMIN can update full user profiles");
+        }
+
+        if (!targetUser.getEmail().equals(data.email()) && userRepository.findByEmail(data.email()).isPresent()) {
+            throw new BusinessException("Email is already in use");
+        }
+
+        log.info("SUPER_ADMIN {} updating profile of user {}", requesterId, targetUserId);
+
+        targetUser.setName(data.fullName());
+        targetUser.setEmail(data.email());
+        targetUser.setPhone(data.phone());
+
+        return new UserResponseDto(userRepository.save(targetUser));
+    }
+
+    @Transactional
+    public UserResponseDto updateOwnContact(UUID userId, PatchUserContactDto data) {
         User user = findUserOrThrow(userId);
 
         if (!user.getEmail().equals(data.email()) && userRepository.findByEmail(data.email()).isPresent()) {
             throw new BusinessException("Email is already in use");
         }
 
-        log.info("User {} updating profile", userId);
+        log.info("User {} updating own contact information", userId);
 
-        user.setName(data.fullName());
         user.setEmail(data.email());
+        user.setPhone(data.phone());
 
         return new UserResponseDto(userRepository.save(user));
     }
@@ -113,7 +136,7 @@ public class AccessManagementService {
     }
 
     private void validateAdminAccess(User requester) {
-        if (requester.getRole() != RoleEnum.SUPER_ADMIN && requester.getRole() != RoleEnum.ADMIN) {
+        if (requester.getRole() != RoleEnum.SUPER_ADMIN && requester.getRole() != RoleEnum.ADMIN && requester.getRole() != RoleEnum.CONSULTANT) {
             throw new BusinessException("User does not have permission to access management features");
         }
     }
@@ -138,9 +161,9 @@ public class AccessManagementService {
             return;
         }
 
-        if (requester.getRole() == RoleEnum.ADMIN) {
+        if (requester.getRole() == RoleEnum.ADMIN || requester.getRole() == RoleEnum.CONSULTANT) {
             if (targetUser.getRole() != RoleEnum.ASSOCIATE) {
-                throw new BusinessException("ADMIN can only view ASSOCIATE users");
+                throw new BusinessException("Only ASSOCIATE users can be viewed");
             }
             return;
         }

@@ -16,13 +16,13 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { authGetProfile } from '../services/auth/authService';
-import { normalizeRoleView } from '../services/auth/roles';
 import type { User } from '../services/user/user.types';
 import { accessControlUpdateUser } from '../services/user/userService';
 import { maskCPF, maskPhone } from '../utils/masks.util';
 import ResetPasswordDialog from './ResetPasswordDialog';
+import { useAuth } from '../hooks/useAuth';
+import { authGetProfile } from '../services/auth/authService';
+import { normalizeRoleView } from '../services/auth/roles';
 
 interface AdminProfileForm {
   fullName: string;

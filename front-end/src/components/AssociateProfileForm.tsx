@@ -267,6 +267,13 @@ const AssociateProfile = () => {
     }
   };
 
+  useEffect(() => {
+    if (!token) return;
+    getCategories(token)
+      .then((data) => setCategories(data))
+      .catch(() => {});
+  }, [token]);
+
   const handleSave = async () => {
     if (!validateForm()) {
       toast('error', 'Preencha os campos obrigatórios.');
