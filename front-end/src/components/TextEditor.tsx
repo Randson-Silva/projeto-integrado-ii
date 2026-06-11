@@ -24,7 +24,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 const ToolbarBtn = ({
   title,
@@ -54,11 +54,11 @@ const TextEditor = ({
   placeholder = 'Digite sua mensagem aqui...',
   onInput,
 }: TextEditorProps) => {
-  const savedSelection = useRef<Range | null>(null);
   const [linkAnchor, setLinkAnchor] = useState<HTMLElement | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkText, setLinkText] = useState('');
-  const [editingLink, setEditingLink] = useState<HTMLAnchorElement | null>(null);
+  const [isEditingLink, setIsEditingLink] = useState(false);
+  const editingLinkRef = useRef<HTMLAnchorElement | null>(null);
 
   const [linkTooltipAnchor, setLinkTooltipAnchor] = useState<HTMLElement | null>(null);
   const [hoveredLink, setHoveredLink] = useState<HTMLAnchorElement | null>(null);
@@ -155,11 +155,13 @@ const TextEditor = ({
 
   const openLinkPopover = (anchor: HTMLElement, existing?: HTMLAnchorElement) => {
     if (existing) {
-      setEditingLink(existing);
+      editingLinkRef.current = existing;
+      setIsEditingLink(true);
       setLinkUrl(existing.href);
       setLinkText(existing.textContent || '');
     } else {
-      setEditingLink(null);
+      editingLinkRef.current = null;
+      setIsEditingLink(false);
       const marker = editorRef.current?.querySelector('#link-marker');
       setLinkText(marker ? marker.textContent || '' : '');
       setLinkUrl('');
@@ -172,7 +174,8 @@ const TextEditor = ({
     setLinkAnchor(null);
     setLinkUrl('');
     setLinkText('');
-    setEditingLink(null);
+    editingLinkRef.current = null;
+    setIsEditingLink(false);
   };
 
   const confirmLink = () => {
@@ -184,9 +187,9 @@ const TextEditor = ({
     const normalizedUrl =
       /^(https?:\/\/|mailto:)/i.test(linkUrl) ? linkUrl : `https://${linkUrl}`;
 
-    if (editingLink) {
-      editingLink.href = normalizedUrl;
-      if (linkText) editingLink.textContent = linkText;
+    if (editingLinkRef.current) {
+      editingLinkRef.current.href = normalizedUrl;
+      if (linkText) editingLinkRef.current.textContent = linkText;
       onInput?.();
       closeLinkPopover();
       return;
@@ -329,7 +332,7 @@ const TextEditor = ({
       >
         <Stack spacing={1.5}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-            {editingLink ? 'Editar Link' : 'Inserir Link'}
+            {isEditingLink ? 'Editar Link' : 'Inserir Link'}
           </Typography>
           <TextField label="URL" placeholder="https://exemplo.com" size="small" fullWidth
             value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} autoFocus onKeyDown={handleEnter} />
@@ -344,7 +347,7 @@ const TextEditor = ({
             <Button size="small" variant="contained" onClick={confirmLink} disabled={!linkUrl}
               startIcon={<CheckIcon sx={{ fontSize: 16 }} />}
               sx={{ textTransform: 'none', borderRadius: 6 }}>
-              {editingLink ? 'Salvar' : 'Inserir'}
+              {isEditingLink ? 'Salvar' : 'Inserir'}
             </Button>
           </Stack>
         </Stack>
