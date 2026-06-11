@@ -16,6 +16,7 @@ public record AssociateResponseDto(
         String phone,
         CategoryResponseDto workCategory,
         DisponibilidadeHorarioEnum availableHours,
+        String legalGuardianName,
         UserResponseDto user,
         Address address,
         SelfDeclaration selfDeclaration
@@ -28,6 +29,7 @@ public record AssociateResponseDto(
                 associate.getPhone(),
                 associate.getWorkCategory() == null ? null : new CategoryResponseDto(associate.getWorkCategory()),
                 associate.getAvailableHours(),
+                associate.getLegalGuardianName(),
                 new UserResponseDto(associate.getUser()),
                 associate.getAddress(),
                 associate.getSelfDeclaration()
