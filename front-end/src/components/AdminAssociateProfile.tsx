@@ -61,7 +61,7 @@ import {
 } from '../services/address/ibgeService';
 import { activateUser, inactivateUser } from '../services/user/userService';
 import { isValidBirthDate } from '../utils/dates.util';
-import { maskCEP, maskCPF, maskPhone } from '../utils/masks.util';
+import { maskCEP, maskCPF, maskIncome, maskPhone } from '../utils/masks.util';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import InactivateAssociateDialog from './InactivateAssociateDialog';
 
@@ -127,6 +127,14 @@ const AssociateProfile = () => {
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
 
+  const [declaratoryData, setDeclaratoryData] = useState({
+    education: '',
+    income: '',
+    race: '',
+    gender: '',
+    sexualOrientation: '',
+  });
+
   const [isActive, setIsActive] = useState<boolean>();
 
   const [errors, setErrors] = useState<
@@ -162,6 +170,14 @@ const AssociateProfile = () => {
 
         setForm(data);
         setOriginalForm(data);
+
+        setDeclaratoryData({
+          education: res.selfDeclaration?.education ?? '',
+          income: res.selfDeclaration?.income?.toString() ?? '',
+          race: res.selfDeclaration?.race ?? '',
+          gender: res.selfDeclaration?.gender ?? '',
+          sexualOrientation: res.selfDeclaration?.sexualOrientation ?? '',
+        });
       } catch {
         toast('error', 'Erro ao carregar associado.');
       } finally {
@@ -468,6 +484,32 @@ const AssociateProfile = () => {
         ))}
       </Select>
       <FormHelperText>{errors[key]}</FormHelperText>
+    </FormControl>
+  );
+
+  const sdf = (
+    label: string,
+    key: keyof typeof declaratoryData,
+    options: {
+      value: string;
+      label: string;
+    }[]
+  ) => (
+    <FormControl size="small" fullWidth>
+      <InputLabel shrink>{label}</InputLabel>
+
+      <Select
+        value={String(declaratoryData[key] ?? '')}
+        label={label}
+        notched
+        disabled
+      >
+        {options.map((o) => (
+          <MenuItem key={o.value} value={o.value}>
+            {o.label}
+          </MenuItem>
+        ))}
+      </Select>
     </FormControl>
   );
 
@@ -834,117 +876,133 @@ const AssociateProfile = () => {
             </Grid>
           </Grid>
 
-          <Divider sx={{ mb: 3 }} />
-          {/* 
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 700,
-              mb: 2,
-            }}
-          >
-            Dados Autodeclaratórios
-          </Typography>
+          {!editing && (
+            <>
+              <Divider sx={{ mb: 3 }} />
 
-          <Grid
-            container
-            spacing={2}
-            sx={{
-              mb: editing ? 0 : 1,
-            }}
-          >
-            <Grid size={{ xs: 12, sm: 3 }}>
-              {sf('Escolaridade', 'education', [
-                { value: '', label: 'Selecione' },
-                {
-                  value: 'FUNDAMENTAL_INCOMPLETO',
-                  label: 'Fundamental Incompleto',
-                },
-                {
-                  value: 'FUNDAMENTAL_COMPLETO',
-                  label: 'Fundamental Completo',
-                },
-                { value: 'MEDIO_INCOMPLETO', label: 'Médio Incompleto' },
-                { value: 'MEDIO_COMPLETO', label: 'Médio Completo' },
-                { value: 'SUPERIOR_INCOMPLETO', label: 'Superior Incompleto' },
-                { value: 'SUPERIOR_COMPLETO', label: 'Superior Completo' },
-                {
-                  value: 'ESPECIALIZACAO_INCOMPLETA',
-                  label: 'Espec. Incompleta',
-                },
-                { value: 'ESPECIALIZACAO_COMPLETA', label: 'Espec. Completa' },
-                { value: 'MESTRADO_INCOMPLETO', label: 'Mestrado Incompleto' },
-                { value: 'MESTRADO_COMPLETO', label: 'Mestrado Completo' },
-                {
-                  value: 'DOUTORADO_INCOMPLETO',
-                  label: 'Doutorado Incompleto',
-                },
-                { value: 'DOUTORADO_COMPLETO', label: 'Doutorado Completo' },
-                {
-                  value: 'PREFIRO_NAO_INFORMAR',
-                  label: 'Prefiro não informar',
-                },
-              ])}
-            </Grid>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  mb: 2,
+                }}
+              >
+                Dados Autodeclaratórios
+              </Typography>
 
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <TextField
-                label="Renda Pessoal"
-                value={String(form.income ?? '')}
-                disabled
-                size="small"
-                fullWidth
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-            </Grid>
+              <Grid
+                container
+                spacing={2}
+                sx={{
+                  mb: editing ? 0 : 1,
+                }}
+              >
+                <Grid size={{ xs: 12, sm: 3 }}>
+                  {sdf('Escolaridade', 'education', [
+                    { value: '', label: 'Selecione' },
+                    {
+                      value: 'FUNDAMENTAL_INCOMPLETO',
+                      label: 'Fundamental Incompleto',
+                    },
+                    {
+                      value: 'FUNDAMENTAL_COMPLETO',
+                      label: 'Fundamental Completo',
+                    },
+                    { value: 'MEDIO_INCOMPLETO', label: 'Médio Incompleto' },
+                    { value: 'MEDIO_COMPLETO', label: 'Médio Completo' },
+                    {
+                      value: 'SUPERIOR_INCOMPLETO',
+                      label: 'Superior Incompleto',
+                    },
+                    { value: 'SUPERIOR_COMPLETO', label: 'Superior Completo' },
+                    {
+                      value: 'ESPECIALIZACAO_INCOMPLETA',
+                      label: 'Espec. Incompleta',
+                    },
+                    {
+                      value: 'ESPECIALIZACAO_COMPLETA',
+                      label: 'Espec. Completa',
+                    },
+                    {
+                      value: 'MESTRADO_INCOMPLETO',
+                      label: 'Mestrado Incompleto',
+                    },
+                    { value: 'MESTRADO_COMPLETO', label: 'Mestrado Completo' },
+                    {
+                      value: 'DOUTORADO_INCOMPLETO',
+                      label: 'Doutorado Incompleto',
+                    },
+                    {
+                      value: 'DOUTORADO_COMPLETO',
+                      label: 'Doutorado Completo',
+                    },
+                    {
+                      value: 'PREFIRO_NAO_INFORMAR',
+                      label: 'Prefiro não informar',
+                    },
+                  ])}
+                </Grid>
 
-            <Grid size={{ xs: 12, sm: 2 }}>
-              {sf('Etnia', 'race', [
-                { value: '', label: 'Selecione' },
-                { value: 'BRANCO', label: 'Branco (a)' },
-                { value: 'PARDO', label: 'Pardo (a)' },
-                { value: 'PRETO', label: 'Preto (a)' },
-                { value: 'AMARELO', label: 'Amarelo (a)' },
-                { value: 'INDIGENA', label: 'Indígena' },
-                { value: 'QUILOMBOLA', label: 'Quilombola' },
-                {
-                  value: 'PREFIRO_NAO_INFORMAR',
-                  label: 'Prefiro não informar',
-                },
-              ])}
-            </Grid>
+                <Grid size={{ xs: 12, sm: 3 }}>
+                  <TextField
+                    label="Renda Pessoal"
+                    value={maskIncome(declaratoryData.income)}
+                    disabled
+                    size="small"
+                    fullWidth
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                </Grid>
 
-            <Grid size={{ xs: 12, sm: 2 }}>
-              {sf('Identidade de Gênero', 'gender', [
-                { value: '', label: 'Selecione' },
-                { value: 'HOMEM_CIS', label: 'Homem Cis' },
-                { value: 'HOMEM_TRANS', label: 'Homem Trans' },
-                { value: 'MULHER_CIS', label: 'Mulher Cis' },
-                { value: 'MULHER_TRANS', label: 'Mulher Trans' },
-                { value: 'NAO_BINARIO', label: 'Não Binário' },
-                { value: 'GENERO_FLUIDO', label: 'Gênero Fluído' },
-                { value: 'OUTRO', label: 'Outro' },
-                {
-                  value: 'PREFIRO_NAO_INFORMAR',
-                  label: 'Prefiro não informar',
-                },
-              ])}
-            </Grid>
+                <Grid size={{ xs: 12, sm: 2 }}>
+                  {sdf('Etnia', 'race', [
+                    { value: '', label: 'Selecione' },
+                    { value: 'BRANCO', label: 'Branco (a)' },
+                    { value: 'PARDO', label: 'Pardo (a)' },
+                    { value: 'PRETO', label: 'Preto (a)' },
+                    { value: 'AMARELO', label: 'Amarelo (a)' },
+                    { value: 'INDIGENA', label: 'Indígena' },
+                    { value: 'QUILOMBOLA', label: 'Quilombola' },
+                    {
+                      value: 'PREFIRO_NAO_INFORMAR',
+                      label: 'Prefiro não informar',
+                    },
+                  ])}
+                </Grid>
 
-            <Grid size={{ xs: 12, sm: 2 }}>
-              {sf('Orientação Sexual', 'sexualOrientation', [
-                { value: '', label: 'Selecione' },
-                { value: 'HETEROSSEXUAL', label: 'Heterosexual' },
-                { value: 'HOMOSSEXUAL', label: 'Homossexual' },
-                { value: 'BISSEXUAL', label: 'Bissexual' },
-                { value: 'OUTRO', label: 'Outro' },
-                {
-                  value: 'PREFIRO_NAO_INFORMAR',
-                  label: 'Prefiro não informar',
-                },
-              ])}
-            </Grid>
-          </Grid> */}
+                <Grid size={{ xs: 12, sm: 2 }}>
+                  {sdf('Identidade de Gênero', 'gender', [
+                    { value: '', label: 'Selecione' },
+                    { value: 'HOMEM_CIS', label: 'Homem Cis' },
+                    { value: 'HOMEM_TRANS', label: 'Homem Trans' },
+                    { value: 'MULHER_CIS', label: 'Mulher Cis' },
+                    { value: 'MULHER_TRANS', label: 'Mulher Trans' },
+                    { value: 'NAO_BINARIO', label: 'Não Binário' },
+                    { value: 'GENERO_FLUIDO', label: 'Gênero Fluído' },
+                    { value: 'OUTRO', label: 'Outro' },
+                    {
+                      value: 'PREFIRO_NAO_INFORMAR',
+                      label: 'Prefiro não informar',
+                    },
+                  ])}
+                </Grid>
+
+                <Grid size={{ xs: 12, sm: 2 }}>
+                  {sdf('Orientação Sexual', 'sexualOrientation', [
+                    { value: '', label: 'Selecione' },
+                    { value: 'HETEROSSEXUAL', label: 'Heterosexual' },
+                    { value: 'HOMOSSEXUAL', label: 'Homossexual' },
+                    { value: 'BISSEXUAL', label: 'Bissexual' },
+                    { value: 'OUTRO', label: 'Outro' },
+                    {
+                      value: 'PREFIRO_NAO_INFORMAR',
+                      label: 'Prefiro não informar',
+                    },
+                  ])}
+                </Grid>
+              </Grid>
+            </>
+          )}
 
           {editing && (
             <Stack
