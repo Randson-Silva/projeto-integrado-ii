@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import type { User } from '../services/user/user.types';
-import { accessControlUpdateUser } from '../services/user/userService';
+import { updateOwnContact } from '../services/user/userService';
 import { maskCPF, maskPhone } from '../utils/masks.util';
 import ResetPasswordDialog from './ResetPasswordDialog';
 import { useAuth } from '../hooks/useAuth';
@@ -164,9 +164,11 @@ const AdminProfileForm = () => {
     if (!profile) return;
     setSaving(true);
     try {
-      const { id } = profile;
-
-      await accessControlUpdateUser({ id, ...form, token });
+      await updateOwnContact({
+        token,
+        email: form.email,
+        phone: form.phone.replace(/\D/g, ''),
+      });
 
       setEditing(false);
 

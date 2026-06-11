@@ -196,7 +196,7 @@ const AssociateCreateForm = () => {
           'addressCity',
         ].includes(key)
       ) {
-        value = value.replace(/[^a-zA-Z0-9À-ÿ\s]/g, '');
+        value = value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '');
       }
 
       setForm((p) => ({
@@ -215,6 +215,8 @@ const AssociateCreateForm = () => {
 
     if (!form.fullName.trim()) {
       errors.fullName = 'Nome é obrigatório';
+    } else if (/\d/.test(form.fullName)) {
+      errors.fullName = 'O nome não pode conter números';
     }
 
     if (!form.cpf.trim()) {
@@ -231,6 +233,8 @@ const AssociateCreateForm = () => {
 
     if (isUnder18 && !form.guardianName.trim()) {
       errors.guardianName = 'Responsável é obrigatório';
+    } else if (isUnder18 && /\d/.test(form.guardianName)) {
+      errors.guardianName = 'O nome do responsável não pode conter números';
     }
 
     if (!form.email.trim()) {

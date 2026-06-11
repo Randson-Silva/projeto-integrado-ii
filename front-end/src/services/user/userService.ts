@@ -81,6 +81,25 @@ export async function accessControlUpdateUser({
   return res.data;
 }
 
+interface UpdateOwnContactRequest {
+  token: string;
+  email: string;
+  phone: string;
+}
+
+export async function updateOwnContact({
+  token,
+  email,
+  phone,
+}: UpdateOwnContactRequest) {
+  const res = await api.patch(
+    `/management/users/me/contact`,
+    { email, phone },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return res.data;
+}
+
 interface accessControlUpdateUserRoleRequest {
   id: string;
   newRole: Role;

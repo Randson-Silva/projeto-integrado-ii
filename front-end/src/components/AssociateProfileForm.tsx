@@ -364,7 +364,7 @@ const AssociateProfile = () => {
             'addressCity',
           ].includes(key)
         ) {
-          value = value.replace(/[^a-zA-Z0-9À-ÿ\s]/g, '');
+          value = value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '');
         }
 
         setForm((p) => ({
