@@ -24,7 +24,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 const ToolbarBtn = ({
   title,
@@ -54,11 +54,10 @@ const TextEditor = ({
   placeholder = 'Digite sua mensagem aqui...',
   onInput,
 }: TextEditorProps) => {
-  const savedSelection = useRef<Range | null>(null);
   const [linkAnchor, setLinkAnchor] = useState<HTMLElement | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkText, setLinkText] = useState('');
-  const [editingLink, setEditingLink] = useState<HTMLAnchorElement | null>(null);
+  const editingLinkRef = useRef<HTMLAnchorElement | null>(null);
 
   const [linkTooltipAnchor, setLinkTooltipAnchor] = useState<HTMLElement | null>(null);
   const [hoveredLink, setHoveredLink] = useState<HTMLAnchorElement | null>(null);
@@ -155,11 +154,11 @@ const TextEditor = ({
 
   const openLinkPopover = (anchor: HTMLElement, existing?: HTMLAnchorElement) => {
     if (existing) {
-      setEditingLink(existing);
+      editingLinkRef.current = existing;
       setLinkUrl(existing.href);
       setLinkText(existing.textContent || '');
     } else {
-      setEditingLink(null);
+      editingLinkRef.current = null;
       const marker = editorRef.current?.querySelector('#link-marker');
       setLinkText(marker ? marker.textContent || '' : '');
       setLinkUrl('');
@@ -168,25 +167,22 @@ const TextEditor = ({
   };
 
   const closeLinkPopover = () => {
-    unwrapMarker('link-marker');
     setLinkAnchor(null);
     setLinkUrl('');
     setLinkText('');
-    setEditingLink(null);
+    editingLinkRef.current = null;
+    unwrapMarker('link-marker');
   };
 
   const confirmLink = () => {
-    if (!linkUrl) {
-      unwrapMarker('link-marker');
-      return;
+    let normalizedUrl = linkUrl;
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      normalizedUrl = `https://${normalizedUrl}`;
     }
 
-    const normalizedUrl =
-      /^(https?:\/\/|mailto:)/i.test(linkUrl) ? linkUrl : `https://${linkUrl}`;
-
-    if (editingLink) {
-      editingLink.href = normalizedUrl;
-      if (linkText) editingLink.textContent = linkText;
+    if (editingLinkRef.current) {
+      editingLinkRef.current.href = normalizedUrl;
+      if (linkText) editingLinkRef.current.textContent = linkText;
       onInput?.();
       closeLinkPopover();
       return;

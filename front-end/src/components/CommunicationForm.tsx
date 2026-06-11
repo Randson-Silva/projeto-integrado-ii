@@ -35,8 +35,14 @@ type AudienceOption = 'todos' | 'associados' | 'gerenciadores';
 const SCOPE_MAP: Record<AudienceOption, MailingRecipientScope> = {
   todos: 'ALL',
   associados: 'ASSOCIATES',
-  gerenciadores: 'ADMINS_AND_CONSULTANTS',
 };
+
+const INITIAL_BIRTHDAY_HTML =
+    '<p style="text-align:center"><b style="color:#E36D3B">Feliz Aniversário! 🎂</b></p>' +
+    '<p style="text-align:center">Olá {name},</p>' +
+    '<p style="text-align:center">Parabéns pelo seu aniversário!<br>' +
+    'O Grupo Cultural Dom Maurício deseja a você um dia incrível e cheio de alegria!</p>' +
+    '<p style="text-align:center"><em>Grupo Cultural de Dom Maurício</em></p>';
 
 /* ── aba "Enviar Mensagem" ─────────────────────────────────────────── */
 
@@ -150,26 +156,20 @@ const BirthdayTemplateTab = () => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [previewHtml, setPreviewHtml] = useState('');
 
-  const initialHtml =
-    '<p style="text-align:center"><b style="color:#E36D3B">Feliz Aniversário! 🎂</b></p>' +
-    '<p style="text-align:center">Olá {name},</p>' +
-    '<p style="text-align:center">Parabéns pelo seu aniversário!<br>' +
-    'O Grupo Cultural Dom Maurício deseja a você um dia incrível e cheio de alegria!</p>' +
-    '<p style="text-align:center"><em>Grupo Cultural de Dom Maurício</em></p>';
   useEffect(() => {
     const fetchTemplate = async () => {
       if (!token) return;
       try {
         const msg = await getBirthdayTemplate(token);
-        const content = msg?.trim() ? msg : initialHtml;
+        const content = msg?.trim() ? msg : INITIAL_BIRTHDAY_HTML;
         if (editorRef.current) {
           editorRef.current.innerHTML = content;
           setPreviewHtml(content);
         }
-      } catch (error) {
+      } catch {
         if (editorRef.current) {
-          editorRef.current.innerHTML = initialHtml;
-          setPreviewHtml(initialHtml);
+          editorRef.current.innerHTML = INITIAL_BIRTHDAY_HTML;
+          setPreviewHtml(INITIAL_BIRTHDAY_HTML);
         }
       }
     };
@@ -180,7 +180,7 @@ const BirthdayTemplateTab = () => {
     setPreviewHtml(editorRef.current?.innerHTML ?? '');
   };
 
-  const previewHtmlWithName = previewHtml.replace(/\{name\}/gi, 'Maria Silva');
+  const previewHtmlWithName = previewHtml.replace(/\{name\}/gi, '{nome do associado}');
 
   const handleSave = async () => {
     if (!token) return;
@@ -201,8 +201,8 @@ const BirthdayTemplateTab = () => {
 
   const handleCancel = () => {
     if (editorRef.current) {
-      editorRef.current.innerHTML = initialHtml;
-      setPreviewHtml(initialHtml);
+      editorRef.current.innerHTML = INITIAL_BIRTHDAY_HTML;
+      setPreviewHtml(INITIAL_BIRTHDAY_HTML);
     }
   };
 
