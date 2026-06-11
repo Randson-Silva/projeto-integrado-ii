@@ -18,26 +18,69 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import {
+  getMailingRecipients,
+  sendMailing,
+  updateBirthdayTemplate,
+  type MailingRecipientScope,
+} from '../services/mailing/mailingService';
 import TextEditor from './TextEditor';
 
 type Snack = { open: boolean; severity: 'success' | 'error'; msg: string };
 
+type AudienceOption = 'todos' | 'associados' | 'gerenciadores';
+
+const SCOPE_MAP: Record<AudienceOption, MailingRecipientScope> = {
+  todos: 'ALL',
+  associados: 'ASSOCIATES',
+  gerenciadores: 'ADMINS_AND_CONSULTANTS',
+};
+
 /* ── aba "Enviar Mensagem" ─────────────────────────────────────────── */
 
 const SendMessageTab = () => {
+  const { token } = useAuth();
   const [subject, setSubject] = useState('');
-  const [audience, setAudience] = useState('todos');
+  const [audience, setAudience] = useState<AudienceOption | null>(null);
   const [sending, setSending] = useState(false);
   const [snack, setSnack] = useState<Snack>({ open: false, severity: 'success', msg: '' });
   const editorRef = useRef<HTMLDivElement>(null);
+  const [hasBodyContent, setHasBodyContent] = useState(false);
+
+  const checkBodyContent = () => {
+    const hasText = !!editorRef.current?.textContent?.trim();
+    const hasImg = !!editorRef.current?.querySelector('img');
+    return hasText || hasImg;
+  };
 
   const handleSend = async () => {
+    if (!token) return;
+
+    const body = editorRef.current?.innerHTML ?? '';
+    if (!subject.trim() || !checkBodyContent()) return;
+
     setSending(true);
     try {
-      // TODO: endpoint POST /communication/send — manda subject, body (HTML) e audience
-      await new Promise((r) => setTimeout(r, 1000));
-      setSnack({ open: true, severity: 'success', msg: 'Mensagem enviada com sucesso!' });
+      // 1. busca a lista de destinatários pelo escopo selecionado
+      const recipients = await getMailingRecipients(token, SCOPE_MAP[audience!]);
+      const emails = recipients.map((r) => r.email);
+
+      if (emails.length === 0) {
+        setSnack({ open: true, severity: 'error', msg: 'Nenhum destinatário encontrado para o público selecionado.' });
+        return;
+      }
+
+      // 2. envia a mensagem
+      const result = await sendMailing(token, { subject, message: body, emails });
+      setSnack({
+        open: true,
+        severity: 'success',
+        msg: `Mensagem enviada com sucesso para ${result.sentCount} destinatário(s)!`,
+      });
+
       setSubject('');
+      setHasBodyContent(false);
       if (editorRef.current) editorRef.current.innerHTML = '';
     } catch {
       setSnack({ open: true, severity: 'error', msg: 'Erro ao tentar enviar mensagem!' });
@@ -46,7 +89,6 @@ const SendMessageTab = () => {
     }
   };
 
-  const hasBody = editorRef.current?.textContent?.trim();
 
   return (
     <>
@@ -60,10 +102,13 @@ const SendMessageTab = () => {
           fullWidth
         />
 
-        <TextEditor editorRef={editorRef} />
+        <TextEditor
+          editorRef={editorRef}
+          onInput={() => setHasBodyContent(checkBodyContent())}
+        />
 
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-          <RadioGroup row value={audience} onChange={(e) => setAudience(e.target.value)}>
+          <RadioGroup row value={audience ?? ''} onChange={(e) => setAudience(e.target.value as AudienceOption)}>
             <FormControlLabel value="todos" control={<Radio size="small" />} label="Todos" />
             <FormControlLabel value="associados" control={<Radio size="small" />} label="Associados" />
             <FormControlLabel value="gerenciadores" control={<Radio size="small" />} label="Administradores e Consultores" />
@@ -73,7 +118,7 @@ const SendMessageTab = () => {
             color="primary"
             startIcon={sending ? undefined : <SendIcon sx={{ fontSize: 16 }} />}
             onClick={handleSend}
-            disabled={sending || !subject || !hasBody}
+            disabled={sending || !subject.trim() || !hasBodyContent || !audience}
             sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 600, px: 3 }}
           >
             {sending ? <CircularProgress size={20} color="inherit" /> : 'Enviar Mensagem'}
@@ -98,13 +143,12 @@ const SendMessageTab = () => {
 /* ── aba "Mensagem de Aniversário" ─────────────────────────────────── */
 
 const BirthdayTemplateTab = () => {
-  const [subject, setSubject] = useState('Feliz Aniversário! 🎂');
+  const { token } = useAuth();
   const [saving, setSaving] = useState(false);
   const [snack, setSnack] = useState<Snack>({ open: false, severity: 'success', msg: '' });
   const editorRef = useRef<HTMLDivElement>(null);
   const [previewHtml, setPreviewHtml] = useState('');
 
-  // TODO: buscar do banco — GET /communication/birthday-template — e jogar no editor
   const initialHtml =
     '<p style="text-align:center"><b style="color:#E36D3B">Feliz Aniversário! 🎂</b></p>' +
     '<p style="text-align:center">Olá {Nome},</p>' +
@@ -126,15 +170,26 @@ const BirthdayTemplateTab = () => {
   const previewHtmlWithName = previewHtml.replace(/\{Nome\}/g, 'Maria Silva');
 
   const handleSave = async () => {
+    if (!token) return;
+
+    const message = editorRef.current?.innerHTML ?? '';
+    if (!message.trim()) return;
+
     setSaving(true);
     try {
-      // TODO: endpoint PUT /communication/birthday-template — manda subject e body (HTML)
-      await new Promise((r) => setTimeout(r, 800));
+      await updateBirthdayTemplate(token, message);
       setSnack({ open: true, severity: 'success', msg: 'Mensagem de aniversário salva com sucesso!' });
     } catch {
       setSnack({ open: true, severity: 'error', msg: 'Erro ao salvar mensagem de aniversário.' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = initialHtml;
+      setPreviewHtml(initialHtml);
     }
   };
 
@@ -146,14 +201,6 @@ const BirthdayTemplateTab = () => {
             Configurar Mensagem Padrão de Aniversário
           </Typography>
 
-          <TextField
-            label="Assunto do e-mail"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            size="small"
-            fullWidth
-          />
-
           <TextEditor
             editorRef={editorRef}
             placeholder="Digite a mensagem aqui..."
@@ -163,12 +210,13 @@ const BirthdayTemplateTab = () => {
           <Stack direction="row" spacing={1.5} sx={{ justifyContent: 'flex-end' }}>
             <Button
               variant="outlined"
+              onClick={handleCancel}
               sx={{
                 borderRadius: 10, textTransform: 'none', fontWeight: 600,
                 borderColor: 'text.secondary', color: 'text.secondary',
               }}
             >
-              Cancelar
+              Restaurar padrão
             </Button>
             <Button
               variant="contained"

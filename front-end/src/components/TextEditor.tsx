@@ -11,7 +11,6 @@ import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
 import InsertLinkIcon from '@mui/icons-material/InsertLink';
-import InsertPhotoOutlinedIcon from '@mui/icons-material/InsertPhotoOutlined';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import {
   Box,
@@ -25,7 +24,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const ToolbarBtn = ({
   title,
@@ -56,8 +55,6 @@ const TextEditor = ({
   onInput,
 }: TextEditorProps) => {
   const savedSelection = useRef<Range | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [linkAnchor, setLinkAnchor] = useState<HTMLElement | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkText, setLinkText] = useState('');
@@ -67,25 +64,55 @@ const TextEditor = ({
   const [hoveredLink, setHoveredLink] = useState<HTMLAnchorElement | null>(null);
 
 
-  const saveSelection = () => {
+  const wrapSelectionWithMarker = (markerId: string) => {
     const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0) {
-      savedSelection.current = sel.getRangeAt(0).cloneRange();
+    if (!sel || sel.rangeCount === 0) return false;
+    const range = sel.getRangeAt(0);
+    if (!editorRef.current?.contains(range.commonAncestorContainer)) return false;
+
+    unwrapMarker(markerId);
+
+    const marker = document.createElement('span');
+    marker.id = markerId;
+
+    try {
+      range.surroundContents(marker);
+    } catch {
+      const fragment = range.extractContents();
+      marker.appendChild(fragment);
+      range.insertNode(marker);
     }
+    sel.removeAllRanges();
+    return true;
   };
 
-  const restoreSelection = () => {
-    const sel = window.getSelection();
-    if (sel && savedSelection.current) {
-      sel.removeAllRanges();
-      sel.addRange(savedSelection.current.cloneRange());
+  const unwrapMarker = (markerId: string) => {
+    const marker = editorRef.current?.querySelector(`#${markerId}`);
+    if (!marker) return;
+    const parent = marker.parentNode;
+    if (!parent) return;
+    while (marker.firstChild) {
+      parent.insertBefore(marker.firstChild, marker);
     }
+    parent.removeChild(marker);
+  };
+
+  const restoreSelectionFromMarker = (markerId: string) => {
+    const marker = editorRef.current?.querySelector(`#${markerId}`);
+    if (!marker) return false;
+    
+    editorRef.current?.focus();
+    const sel = window.getSelection();
+    const newRange = document.createRange();
+    newRange.selectNodeContents(marker);
+    sel?.removeAllRanges();
+    sel?.addRange(newRange);
+    return true;
   };
 
 
   const exec = (cmd: string, value?: string) => {
     editorRef.current?.focus();
-    restoreSelection();
     document.execCommand(cmd, false, value);
     onInput?.();
   };
@@ -93,36 +120,36 @@ const TextEditor = ({
   const changeFontSize = (dir: 'up' | 'down') => {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
-    const el = sel.anchorNode?.parentElement;
+
+    const range = sel.getRangeAt(0);
+
+    // Detecta o tamanho atual do elemento sob a seleção
+    const ancestor = range.commonAncestorContainer;
+    const el =
+      ancestor instanceof Element ? ancestor : ancestor.parentElement;
     const cur = el ? parseInt(window.getComputedStyle(el).fontSize) : 14;
     const next = dir === 'up' ? Math.min(cur + 2, 96) : Math.max(cur - 2, 8);
-    document.execCommand('fontSize', false, '1');
-    const editor = editorRef.current;
-    if (editor) {
-      editor.querySelectorAll('font[size="1"]').forEach((f) => {
-        f.removeAttribute('size');
-        (f as HTMLElement).style.fontSize = `${next}px`;
-      });
-      editor.querySelectorAll('span').forEach((s) => {
-        if (s.style.fontSize === 'x-small') s.style.fontSize = `${next}px`;
-      });
+
+    const span = document.createElement('span');
+    span.style.fontSize = `${next}px`;
+
+    try {
+      // surroundContents funciona quando a seleção não cruza elementos de bloco
+      range.surroundContents(span);
+    } catch {
+      // Fallback para seleções que cruzam múltiplos elementos
+      const fragment = range.extractContents();
+      span.appendChild(fragment);
+      range.insertNode(span);
     }
+
+    // Mantém a seleção sobre o span inserido
+    const newRange = document.createRange();
+    newRange.selectNodeContents(span);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+
     onInput?.();
-  };
-
-
-  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      editorRef.current?.focus();
-      restoreSelection();
-      document.execCommand('insertImage', false, reader.result as string);
-      onInput?.();
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
   };
 
 
@@ -133,14 +160,15 @@ const TextEditor = ({
       setLinkText(existing.textContent || '');
     } else {
       setEditingLink(null);
-      const sel = window.getSelection();
-      setLinkText(sel && !sel.isCollapsed ? sel.toString() : '');
+      const marker = editorRef.current?.querySelector('#link-marker');
+      setLinkText(marker ? marker.textContent || '' : '');
       setLinkUrl('');
     }
     setLinkAnchor(anchor);
   };
 
   const closeLinkPopover = () => {
+    unwrapMarker('link-marker');
     setLinkAnchor(null);
     setLinkUrl('');
     setLinkText('');
@@ -148,24 +176,35 @@ const TextEditor = ({
   };
 
   const confirmLink = () => {
-    if (!linkUrl) return;
-    if (editingLink) {
-      editingLink.href = linkUrl;
-      if (linkText) editingLink.textContent = linkText;
-    } else {
-      editorRef.current?.focus();
-      restoreSelection();
-      const sel = window.getSelection();
-      if (sel && !sel.isCollapsed) {
-        document.execCommand('createLink', false, linkUrl);
-      } else {
-        const text = linkText || linkUrl;
-        document.execCommand(
-          'insertHTML', false,
-          `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer">${text}</a>`,
-        );
-      }
+    if (!linkUrl) {
+      unwrapMarker('link-marker');
+      return;
     }
+
+    const normalizedUrl =
+      /^(https?:\/\/|mailto:)/i.test(linkUrl) ? linkUrl : `https://${linkUrl}`;
+
+    if (editingLink) {
+      editingLink.href = normalizedUrl;
+      if (linkText) editingLink.textContent = linkText;
+      onInput?.();
+      closeLinkPopover();
+      return;
+    }
+
+    const linkEl = document.createElement('a');
+    linkEl.href = normalizedUrl;
+    linkEl.textContent = linkText || normalizedUrl;
+    linkEl.target = '_blank';
+    linkEl.rel = 'noopener noreferrer';
+
+    const marker = editorRef.current?.querySelector('#link-marker');
+    if (marker && marker.parentNode) {
+      marker.parentNode.replaceChild(linkEl, marker);
+    } else {
+      editorRef.current?.appendChild(linkEl);
+    }
+
     onInput?.();
     closeLinkPopover();
   };
@@ -228,11 +267,12 @@ const TextEditor = ({
               <Box
                 component="input"
                 type="color"
-                onMouseDown={saveSelection}
+                onMouseDown={() => wrapSelectionWithMarker('color-marker')}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  restoreSelection();
-                  exec('foreColor', e.target.value);
-                  saveSelection();
+                  if (restoreSelectionFromMarker('color-marker')) {
+                    exec('foreColor', e.target.value);
+                    unwrapMarker('color-marker');
+                  }
                 }}
                 sx={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
               />
@@ -246,9 +286,8 @@ const TextEditor = ({
 
           <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
-          <ToolbarBtn title="Inserir imagem" icon={<InsertPhotoOutlinedIcon fontSize="small" />} onAction={() => { saveSelection(); fileInputRef.current?.click(); }} />
           <Tooltip title="Inserir link">
-            <IconButton size="small" onMouseDown={(e) => { e.preventDefault(); saveSelection(); openLinkPopover(e.currentTarget); }}>
+            <IconButton size="small" onMouseDown={(e) => { e.preventDefault(); wrapSelectionWithMarker('link-marker'); openLinkPopover(e.currentTarget); }}>
               <InsertLinkIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -260,9 +299,9 @@ const TextEditor = ({
           contentEditable
           suppressContentEditableWarning
           onInput={onInput}
-          onBlur={saveSelection}
-          onKeyUp={saveSelection}
-          onMouseUp={saveSelection}
+          onBlur={() => {}}
+          onKeyUp={() => {}}
+          onMouseUp={() => {}}
           onClick={handleEditorClick}
           sx={{
             minHeight: 200, p: 1.5,
@@ -336,7 +375,6 @@ const TextEditor = ({
         </Tooltip>
       </Popover>
 
-      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelected} style={{ display: 'none' }} />
     </>
   );
 };
