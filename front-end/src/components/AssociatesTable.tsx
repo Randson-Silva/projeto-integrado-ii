@@ -214,7 +214,7 @@ const AssociatesTable = () => {
 
     const cpf = u.cpf ?? '';
 
-    const status = u.user.active ? 'Ativo' : 'Inativo';
+    const status = u.user?.active ? 'Ativo' : 'Inativo';
 
     const matchSearch =
       name.includes(search.toLowerCase()) || cpf.includes(search);
@@ -406,7 +406,7 @@ const AssociatesTable = () => {
                 </TableRow>
               ) : (
                 paginated.map((u, idx) => {
-                  const st = u.user.active
+                  const st = u.user?.active
                     ? {
                         label: 'Ativo',
                         color: 'success' as ChipColor,
@@ -442,7 +442,7 @@ const AssociatesTable = () => {
                           </Avatar>
 
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {u.user.name ?? '-'}
+                            {u.user?.name ?? '-'}
                           </Typography>
                         </Stack>
                       </TableCell>

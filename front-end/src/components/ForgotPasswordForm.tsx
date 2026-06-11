@@ -9,6 +9,8 @@ import {
   Stack,
   TextField,
   Typography,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -22,6 +24,11 @@ const ForgotPasswordForm = () => {
   
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [snack, setSnack] = useState<{ open: boolean; severity: 'success' | 'error'; msg: string }>({
+    open: false,
+    severity: 'success',
+    msg: '',
+  });
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
@@ -47,7 +54,7 @@ const ForgotPasswordForm = () => {
 
       setAuthUser({ email, role: 'CONSULTANT' });
     } catch {
-      return;
+      setSnack({ open: true, severity: 'error', msg: 'Erro ao enviar o e-mail. Verifique se o endereço está correto e tente novamente.' });
     } finally {
       setLoading(false);
     }
@@ -149,12 +156,7 @@ const ForgotPasswordForm = () => {
             maxWidth: 430,
           }}
         >
-          <Box
-            component="img"
-            src="/system-logo.png"
-            alt="Logo Grupo Cultural"
-            sx={{ maxWidth: 242, width: '100%', height: 'auto', maxHeight: 95 }}
-          />
+
           <MailOutlineIcon color="primary" sx={{ fontSize: 48 }} />
           <Typography variant="h6" color="primary" sx={{ fontWeight: 700 }}>
             Redefinição de Senha
@@ -165,6 +167,21 @@ const ForgotPasswordForm = () => {
           </Typography>
         </Paper>
       </Backdrop>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          sx={{ borderRadius: 2, fontWeight: 600 }}
+        >
+          {snack.msg}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

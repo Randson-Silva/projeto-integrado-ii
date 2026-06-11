@@ -22,9 +22,11 @@ import {
   TableRow,
   TextField,
   Typography,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { normalizeRoleView, type Role } from '../services/auth/roles';
 import type { User } from '../services/user/user.types';
@@ -41,6 +43,22 @@ const AccessControlSearchTable = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
+  const [snack, setSnack] = useState<{ open: boolean; severity: 'success' | 'error'; msg: string }>({
+    open: false,
+    severity: 'success',
+    msg: '',
+  });
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.snack) {
+      setTimeout(() => {
+        setSnack({ open: true, ...location.state.snack });
+      }, 0);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -285,6 +303,21 @@ const AccessControlSearchTable = () => {
           </Button>
         </Stack>
       </Stack>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          sx={{ borderRadius: 2, fontWeight: 600 }}
+        >
+          {snack.msg}
+        </Alert>
+      </Snackbar>
     </Stack>
   );
 };

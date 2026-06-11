@@ -183,7 +183,20 @@ const AssociateCreateForm = () => {
       }
 
       if (key === 'addressNumber') {
-        value = value.replace(/\W /g, '').slice(0, 10);
+        value = value.replace(/\D/g, '').slice(0, 10);
+      }
+
+      if (
+        [
+          'fullName',
+          'socialName',
+          'guardianName',
+          'addressStreet',
+          'addressNeighborhood',
+          'addressCity',
+        ].includes(key)
+      ) {
+        value = value.replace(/[^a-zA-Z0-9À-ÿ\s]/g, '');
       }
 
       setForm((p) => ({
