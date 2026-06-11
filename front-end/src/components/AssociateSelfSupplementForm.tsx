@@ -315,6 +315,7 @@ const AssociateSelfSupplementForm = () => {
           },
         },
         htmlInput: {
+          maxLength: 16, // ? 16 counting the special caracters that does not goes to backend, yk?
           inputMode: 'numeric',
         },
       }}
