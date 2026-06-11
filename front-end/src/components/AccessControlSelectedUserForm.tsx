@@ -15,12 +15,15 @@ import {
   Paper,
   Select,
   Skeleton,
+  Snackbar,
+  Alert,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { normalizeRoleView, type Role } from '../services/auth/roles';
 import {
   accessControlDeleteUser,
@@ -41,6 +44,7 @@ const AccessControlSelectedUserForm = () => {
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { token } = useAuth();
 
   const [originalForm, setOriginalForm] = useState<FormState | null>(null);
 
@@ -50,6 +54,11 @@ const AccessControlSelectedUserForm = () => {
   const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [error, setError] = useState('');
+  const [snack, setSnack] = useState<{ open: boolean; severity: 'success' | 'error'; msg: string }>({
+    open: false,
+    severity: 'success',
+    msg: '',
+  });
 
   useEffect(() => {
     if (!id) return;
@@ -124,7 +133,6 @@ const AccessControlSelectedUserForm = () => {
     setError('');
 
     const {
-      cpf,
       email,
       id: formId,
       name: fullName,
@@ -137,8 +145,8 @@ const AccessControlSelectedUserForm = () => {
         id: formId,
         fullName,
         email,
-        cpf: cpf.replace(/\D/g, ''),
         phone: phone.replace(/\D/g, ''),
+        token: token ?? '',
       });
 
       await accessControlUpdateUserRole({
@@ -148,8 +156,10 @@ const AccessControlSelectedUserForm = () => {
 
       setOriginalForm({ ...form });
       setEditing(false);
-    } catch {
-      setError('Erro ao salvar alterações');
+      setSnack({ open: true, severity: 'success', msg: 'Usuário atualizado com sucesso!' });
+    } catch (err: unknown) {
+      const apiMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setSnack({ open: true, severity: 'error', msg: apiMsg || 'Erro ao salvar alterações. Verifique as credenciais.' });
     } finally {
       setSaving(false);
     }
@@ -163,9 +173,11 @@ const AccessControlSelectedUserForm = () => {
 
       await accessControlDeleteUser({ id });
 
-      navigate('/controle-de-acesso');
+      navigate('/controle-de-acesso', {
+        state: { snack: { severity: 'success', msg: 'Usuário excluído com sucesso!' } }
+      });
     } catch {
-      setError('Erro ao deletar usuário');
+      setSnack({ open: true, severity: 'error', msg: 'Erro ao excluir o perfil do usuário. Tente novamente.' });
     } finally {
       setLoadingData(false);
       setDeleteOpen(false);
@@ -377,7 +389,7 @@ const AccessControlSelectedUserForm = () => {
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               {field('Nome Completo', 'name')}
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>{field('CPF', 'cpf')}</Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>{field('CPF', 'cpf', true)}</Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               {field('Telefone', 'phone')}
             </Grid>
@@ -511,6 +523,21 @@ const AccessControlSelectedUserForm = () => {
         onClose={() => setDeleteOpen(false)}
         onConfirm={handleDeleteConfirm}
       />
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          sx={{ borderRadius: 2, fontWeight: 600 }}
+        >
+          {snack.msg}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

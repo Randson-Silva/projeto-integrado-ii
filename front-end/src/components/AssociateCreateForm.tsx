@@ -183,7 +183,20 @@ const AssociateCreateForm = () => {
       }
 
       if (key === 'addressNumber') {
-        value = value.replace(/\W /g, '').slice(0, 10);
+        value = value.replace(/\D/g, '').slice(0, 10);
+      }
+
+      if (
+        [
+          'fullName',
+          'socialName',
+          'guardianName',
+          'addressStreet',
+          'addressNeighborhood',
+          'addressCity',
+        ].includes(key)
+      ) {
+        value = value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '');
       }
 
       setForm((p) => ({
@@ -202,6 +215,8 @@ const AssociateCreateForm = () => {
 
     if (!form.fullName.trim()) {
       errors.fullName = 'Nome é obrigatório';
+    } else if (/\d/.test(form.fullName)) {
+      errors.fullName = 'O nome não pode conter números';
     }
 
     if (!form.cpf.trim()) {
@@ -218,6 +233,8 @@ const AssociateCreateForm = () => {
 
     if (isUnder18 && !form.guardianName.trim()) {
       errors.guardianName = 'Responsável é obrigatório';
+    } else if (isUnder18 && /\d/.test(form.guardianName)) {
+      errors.guardianName = 'O nome do responsável não pode conter números';
     }
 
     if (!form.email.trim()) {

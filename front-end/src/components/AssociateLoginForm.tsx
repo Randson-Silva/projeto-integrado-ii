@@ -6,8 +6,10 @@ import {
   Stack,
   TextField,
   Typography,
+  Backdrop,
+  Paper,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { authSendToken } from '../services/auth/authService';
@@ -15,6 +17,7 @@ import { authSendToken } from '../services/auth/authService';
 const AssociateLoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [sent, setSent] = useState(false);
   const navigate = useNavigate();
   const { setAuthUser } = useAuth();
 
@@ -33,13 +36,19 @@ const AssociateLoginForm = () => {
 
       setAuthUser({ email, role: 'ASSOCIATE' });
 
-      navigate('/token-associado');
+      setSent(true);
     } catch {
       setEmailError('Credenciais inválidas. Verifique e tente novamente.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!sent) return;
+    const timer = setTimeout(() => navigate('/token-associado'), 5000);
+    return () => clearTimeout(timer);
+  }, [sent, navigate]);
 
   return (
     <Box
@@ -116,6 +125,30 @@ const AssociateLoginForm = () => {
           )}
         </Button>
       </Stack>
+
+      <Backdrop open={sent} sx={{ zIndex: (theme) => theme.zIndex.modal + 1 }}>
+        <Paper
+          elevation={8}
+          sx={{
+            p: { xs: 3, sm: 5 },
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+            borderRadius: 3,
+            width: { xs: '90%', sm: 430 },
+            maxWidth: 430,
+          }}
+        >
+          <Typography variant="h6" color="primary" sx={{ fontWeight: 700 }}>
+            Token Enviado!
+          </Typography>
+          <Typography sx={{ textAlign: 'center' }} color="text.secondary">
+            Um token de acesso foi enviado para o seu e-mail.
+            Você será redirecionado em instantes para informá-lo.
+          </Typography>
+        </Paper>
+      </Backdrop>
     </Box>
   );
 };

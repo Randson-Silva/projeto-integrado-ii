@@ -5,6 +5,8 @@ import {
   CircularProgress,
   Stack,
   Typography,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -15,6 +17,11 @@ import PasswordField from './PasswordField';
 const ResetPasswordForm = () => {
   const [loading, setLoading] = useState(false);
   const [confirmError, setConfirmError] = useState('');
+  const [snack, setSnack] = useState<{ open: boolean; severity: 'success' | 'error'; msg: string }>({
+    open: false,
+    severity: 'success',
+    msg: '',
+  });
 
   const navigate = useNavigate();
 
@@ -52,14 +59,17 @@ const ResetPasswordForm = () => {
         confirmPassword: confirm,
         bearerToken: token,
       });
+      
+      setSnack({ open: true, severity: 'success', msg: 'Senha alterada com sucesso!' });
+      
+      setTimeout(() => {
+        logout();
+        navigate('/login');
+      }, 2000);
     } catch {
-      setConfirmError(
-        'Falha ao atualizar senhas, verifique os campos e tente novamente'
-      );
+      setSnack({ open: true, severity: 'error', msg: 'Falha ao atualizar a senha. O link pode ter expirado.' });
     } finally {
       setLoading(false);
-      logout();
-      navigate('/login');
     }
   };
 
@@ -145,6 +155,21 @@ const ResetPasswordForm = () => {
           )}
         </Button>
       </Stack>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          sx={{ borderRadius: 2, fontWeight: 600 }}
+        >
+          {snack.msg}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

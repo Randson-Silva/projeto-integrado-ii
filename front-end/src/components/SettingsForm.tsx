@@ -13,6 +13,8 @@ import {
   Stack,
   TextField,
   Typography,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
@@ -134,6 +136,11 @@ const SettingsForm = () => {
   const [validityDate, setValidityDate] = useState('');
 
   const [error, setError] = useState('');
+  const [snack, setSnack] = useState<{ open: boolean; severity: 'success' | 'error'; msg: string }>({
+    open: false,
+    severity: 'success',
+    msg: '',
+  });
 
   useEffect(() => {
     if (!token) {
@@ -181,8 +188,9 @@ const SettingsForm = () => {
 
       setCategories((prev) => [...prev, created]);
       setNewCategory('');
+      setSnack({ open: true, severity: 'success', msg: 'Categoria adicionada com sucesso!' });
     } catch {
-      logout();
+      setSnack({ open: true, severity: 'error', msg: 'Erro ao adicionar a categoria. Tente novamente.' });
     }
   };
 
@@ -195,13 +203,14 @@ const SettingsForm = () => {
       const res = await deleteCategory(token, cat.id);
 
       if (res !== null) {
-        setError(res);
+        setSnack({ open: true, severity: 'error', msg: res });
         return;
       }
 
       setCategories((p) => p.filter((c) => c.id !== cat.id));
+      setSnack({ open: true, severity: 'success', msg: 'Categoria removida!' });
     } catch {
-      setError('Não foi possível remover a categoria');
+      setSnack({ open: true, severity: 'error', msg: 'Não foi possível remover a categoria.' });
     }
   };
 
@@ -244,7 +253,7 @@ const SettingsForm = () => {
               value={newCategory}
               onChange={(e) => {
                 setError('');
-                setNewCategory(e.target.value);
+                setNewCategory(e.target.value.replace(/[^a-zA-Z0-9À-ÿ\s]/g, ''));
               }}
               onKeyDown={(e) => e.key === 'Enter' && addCategory()}
               size="small"
@@ -368,6 +377,21 @@ const SettingsForm = () => {
           </Stack>
         </Paper>
       </Grid>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          sx={{ borderRadius: 2, fontWeight: 600 }}
+        >
+          {snack.msg}
+        </Alert>
+      </Snackbar>
     </Grid>
   );
 };

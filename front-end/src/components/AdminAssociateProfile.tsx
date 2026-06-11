@@ -164,7 +164,7 @@ const AssociateProfile = () => {
 
         const res = await getAssociateById(token, id);
 
-        setIsActive(res.user.active);
+        setIsActive(res.user?.active ?? false);
 
         const data = mapAssociateResponseToForm(res);
 
@@ -172,7 +172,7 @@ const AssociateProfile = () => {
         setOriginalForm(data);
 
         setDeclaratoryData({
-          education: res.selfDeclaration?.education ?? '',
+          education: res.selfDeclaration?.education === 'NÃO_SELECIONADO' ? '' : (res.selfDeclaration?.education ?? ''),
           income: res.selfDeclaration?.income?.toString() ?? '',
           race: res.selfDeclaration?.race ?? '',
           gender: res.selfDeclaration?.gender ?? '',
@@ -351,7 +351,10 @@ const AssociateProfile = () => {
 
       await deleteAssociate(token, id);
 
-      navigate('/associados');
+      toast('success', 'Associado excluído com sucesso!');
+      setTimeout(() => {
+        navigate('/associados');
+      }, 1500);
     } catch {
       toast('error', 'Erro ao excluir associado.');
     }
@@ -375,6 +378,18 @@ const AssociateProfile = () => {
       }
       if (fieldKey === 'addressNumber') {
         return v.slice(0, 10);
+      }
+      if (
+        [
+          'fullName',
+          'socialName',
+          'guardianName',
+          'addressStreet',
+          'addressNeighborhood',
+          'addressCity',
+        ].includes(fieldKey)
+      ) {
+        return value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '');
       }
       return value;
     };

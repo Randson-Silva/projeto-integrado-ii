@@ -39,8 +39,8 @@ const AssociateDashboard = () => {
               !!sd.race ||
               !!sd.gender ||
               !!sd.sexualOrientation ||
-              !!sd.education ||
-              (sd.income !== undefined && sd.income !== null));
+              (!!sd.education && sd.education !== 'NÃO_SELECIONADO') ||
+              (sd.income !== undefined && sd.income !== null && sd.income !== 0));
 
           setHasProfile(hasCompletedComplementaryData);
           setStatus(associate.user?.active ? 'Ativo' : 'Inativo');

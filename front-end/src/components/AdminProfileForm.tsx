@@ -1,4 +1,5 @@
 import EditIcon from '@mui/icons-material/Edit';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 import {
   Alert,
@@ -6,6 +7,11 @@ import {
   Badge,
   Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   Grid,
   IconButton,
@@ -17,7 +23,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import type { User } from '../services/user/user.types';
-import { accessControlUpdateUser } from '../services/user/userService';
+import { updateOwnContact } from '../services/user/userService';
 import { maskCPF, maskPhone } from '../utils/masks.util';
 import ResetPasswordDialog from './ResetPasswordDialog';
 import { useAuth } from '../hooks/useAuth';
@@ -47,7 +53,7 @@ const AdminProfileForm = () => {
     Partial<Record<keyof AdminProfileForm, string>>
   >({});
 
-  const { token } = useAuth();
+  const { token, logout } = useAuth();
   const [originalForm, setOriginalForm] = useState<AdminProfileForm>({
     ...blank,
   });
@@ -59,6 +65,7 @@ const AdminProfileForm = () => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [confirmEmailOpen, setConfirmEmailOpen] = useState(false);
   const [snack, setSnack] = useState<Snack>({
     open: false,
     severity: 'success',
@@ -162,11 +169,35 @@ const AdminProfileForm = () => {
     }
 
     if (!profile) return;
+    
+    if (
+      form.email.trim().toLocaleLowerCase() !==
+      originalForm.email.trim().toLocaleLowerCase()
+    ) {
+      setConfirmEmailOpen(true);
+      return;
+    }
+
+    await performSave();
+  };
+
+  const performSave = async () => {
+    setConfirmEmailOpen(false);
     setSaving(true);
     try {
-      const { id } = profile;
+      await updateOwnContact({
+        token: token!,
+        email: form.email,
+        phone: form.phone.replace(/\D/g, ''),
+      });
 
-      await accessControlUpdateUser({ id, ...form, token });
+      if (
+        form.email.trim().toLocaleLowerCase() !==
+        originalForm.email.trim().toLocaleLowerCase()
+      ) {
+        logout();
+        return;
+      }
 
       setEditing(false);
 
@@ -191,12 +222,12 @@ const AdminProfileForm = () => {
     }
   };
 
-  const f = (label: string, key: keyof AdminProfileForm) => (
+  const f = (label: string, key: keyof AdminProfileForm, isAlwaysDisabled = false) => (
     <TextField
       label={label}
       value={form[key]}
       onChange={set(key)}
-      disabled={!editing}
+      disabled={isAlwaysDisabled || !editing}
       size="small"
       fullWidth
       required
@@ -287,9 +318,9 @@ const AdminProfileForm = () => {
             </Stack>
           ) : (
             <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid size={{ xs: 12 }}>{f('Nome Completo', 'fullName')}</Grid>
+              <Grid size={{ xs: 12 }}>{f('Nome Completo', 'fullName', true)}</Grid>
               <Grid size={{ xs: 12, sm: 6 }}>{f('Telefone', 'phone')}</Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>{f('CPF', 'cpf')}</Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>{f('CPF', 'cpf', true)}</Grid>
               <Grid size={{ xs: 12, sm: 6 }}>{f('E-mail', 'email')}</Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
@@ -397,6 +428,54 @@ const AdminProfileForm = () => {
           {snack.msg}
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={confirmEmailOpen}
+        onClose={() => setConfirmEmailOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+      >
+        <DialogTitle>
+          <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1.5}>
+            <WarningAmberIcon color="warning" sx={{ fontSize: 28 }} />
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              Alteração de E-mail
+            </Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Você alterou o seu e-mail. Para sua segurança, se confirmar esta alteração, 
+            você será desconectado automaticamente e precisará fazer login novamente 
+            com o novo e-mail. Deseja continuar?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            onClick={() => setConfirmEmailOpen(false)}
+            variant="outlined"
+            sx={{
+              borderRadius: 10,
+              textTransform: 'none',
+              fontWeight: 600,
+              color: 'text.secondary',
+              borderColor: 'text.secondary',
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={performSave}
+            variant="contained"
+            color="primary"
+            sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 600, px: 3 }}
+            disabled={saving}
+          >
+            {saving ? <CircularProgress size={20} color="inherit" /> : 'Confirmar e Sair'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

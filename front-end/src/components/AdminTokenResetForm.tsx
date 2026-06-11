@@ -7,6 +7,8 @@ import {
   Stack,
   TextField,
   Typography,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { useRef, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
@@ -23,7 +25,12 @@ const AdminTokenResetForm = () => {
 
   const [digits, setDigits] = useState<string[]>(Array(TOKEN_LENGTH).fill(''));
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(false);
+  const [snack, setSnack] = useState<{ open: boolean; severity: 'success' | 'error'; msg: string }>({
+    open: false,
+    severity: 'success',
+    msg: '',
+  });
   const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -36,7 +43,7 @@ const AdminTokenResetForm = () => {
     const updated = [...digits];
     updated[index] = char;
     setDigits(updated);
-    setError('');
+    setError(false);
     if (char && index < TOKEN_LENGTH - 1) focusAt(index + 1);
   };
 
@@ -59,7 +66,7 @@ const AdminTokenResetForm = () => {
       updated[i] = char;
     });
     setDigits(updated);
-    setError('');
+    setError(false);
     focusAt(Math.min(pasted.length, TOKEN_LENGTH - 1));
   };
 
@@ -68,7 +75,8 @@ const AdminTokenResetForm = () => {
 
     const token = digits.join('');
     if (token.length < TOKEN_LENGTH) {
-      setError('Preencha todos os campos do token.');
+      setError(true);
+      setSnack({ open: true, severity: 'error', msg: 'Preencha todos os campos do token.' });
       return;
     }
 
@@ -83,7 +91,9 @@ const AdminTokenResetForm = () => {
       });
 
       if (!valid) {
-        setError('Token não é válido');
+        setError(true);
+        setSnack({ open: true, severity: 'error', msg: 'Token não é válido.' });
+        return;
       }
 
       setAuthToken(resetToken);
@@ -92,7 +102,8 @@ const AdminTokenResetForm = () => {
 
       navigate('/reset-password');
     } catch {
-      setError('Token inválido ou expirado. Tente novamente.');
+      setError(true);
+      setSnack({ open: true, severity: 'error', msg: 'Token inválido ou expirado. Tente novamente.' });
       setDigits(Array(TOKEN_LENGTH).fill(''));
       focusAt(0);
     } finally {
@@ -107,18 +118,24 @@ const AdminTokenResetForm = () => {
 
     if (resendCooldown > 0) return;
 
-    await authPasswordForgot({ email });
+    try {
+      await authPasswordForgot({ email });
 
-    setResendCooldown(60);
-    const interval = setInterval(() => {
-      setResendCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      setSnack({ open: true, severity: 'success', msg: 'Novo token enviado para o seu e-mail!' });
+
+      setResendCooldown(60);
+      const interval = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch {
+      setSnack({ open: true, severity: 'error', msg: 'Falha ao reenviar o token. Tente novamente mais tarde.' });
+    }
   };
 
   return (
@@ -188,7 +205,7 @@ const AdminTokenResetForm = () => {
               value={digit}
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              error={!!error}
+              error={error}
               slotProps={{
                 htmlInput: {
                   maxLength: 1,
@@ -221,16 +238,6 @@ const AdminTokenResetForm = () => {
             />
           ))}
         </Box>
-
-        {error && (
-          <Typography
-            variant="caption"
-            color="error"
-            sx={{ textAlign: 'center' }}
-          >
-            {error}
-          </Typography>
-        )}
 
         <Typography
           variant="body2"
@@ -275,6 +282,21 @@ const AdminTokenResetForm = () => {
           {loading ? <CircularProgress size={22} color="inherit" /> : 'Entrar'}
         </Button>
       </Stack>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          sx={{ borderRadius: 2, fontWeight: 600 }}
+        >
+          {snack.msg}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

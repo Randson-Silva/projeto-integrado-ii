@@ -8,12 +8,15 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Snackbar,
+  Alert,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import DuplicateCPFDialog from './DuplicateCPFDialog';
 import PasswordField from '../components/PasswordField';
 import { accessControlCreate } from '../services/auth/authService';
 import { type Role } from '../services/auth/roles';
@@ -30,9 +33,15 @@ const AccessControlCreateForm = () => {
   });
   const [phone, setPhone] = useState('');
   const [cpf, setCpf] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [duplicateOpen, setDuplicate] = useState(false);
+  const [snack, setSnack] = useState<{ open: boolean; severity: 'success' | 'error'; msg: string }>({
+    open: false,
+    severity: 'success',
+    msg: '',
+  });
 
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -107,7 +116,32 @@ const AccessControlCreateForm = () => {
         role: role as Role,
       });
 
-      navigate('/controle-de-acesso');
+      setSnack({
+        open: true,
+        severity: 'success',
+        msg: 'Usuário cadastrado com sucesso!',
+      });
+
+      setTimeout(() => navigate('/controle-de-acesso'), 1500);
+    } catch (err: unknown) {
+      const apiMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const msgLower = (apiMsg || '').toLowerCase();
+      
+      if (
+        msgLower.includes('cpf') ||
+        msgLower.includes('email') ||
+        msgLower.includes('already') ||
+        msgLower.includes('unexpected error') // Fallback para o erro 500 gerado pela falta de tratamento no back
+      ) {
+        setDuplicate(true);
+      } else {
+        const finalMsg = apiMsg || 'Erro ao cadastrar usuário. Verifique as credenciais.';
+        setSnack({
+          open: true,
+          severity: 'error',
+          msg: finalMsg,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -309,6 +343,26 @@ const AccessControlCreateForm = () => {
           </Button>
         </Stack>
       </Stack>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          sx={{ borderRadius: 2, fontWeight: 600 }}
+        >
+          {snack.msg}
+        </Alert>
+      </Snackbar>
+
+      <DuplicateCPFDialog
+        open={duplicateOpen}
+        onClose={() => setDuplicate(false)}
+      />
     </Box>
   );
 };

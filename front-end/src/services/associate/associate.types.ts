@@ -17,6 +17,7 @@ export type DisponibilidadeHorarioEnum =
   | 'TODOS';
 
 export type AssociateEducation =
+  | 'NÃO_SELECIONADO'
   | 'PREFIRO_NAO_INFORMAR'
   | 'FUNDAMENTAL_INCOMPLETO'
   | 'FUNDAMENTAL_COMPLETO'

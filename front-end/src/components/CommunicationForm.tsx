@@ -143,33 +143,33 @@ const SendMessageTab = () => {
 
 /* ── aba "Mensagem de Aniversário" ─────────────────────────────────── */
 
+const BIRTHDAY_INITIAL_HTML =
+  '<p style="text-align:center"><b style="color:#E36D3B">Feliz Aniversário! 🎂</b></p>' +
+  '<p style="text-align:center">Olá {name},</p>' +
+  '<p style="text-align:center">Parabéns pelo seu aniversário!<br>' +
+  'O Grupo Cultural Dom Maurício deseja a você um dia incrível e cheio de alegria!</p>' +
+  '<p style="text-align:center"><em>Grupo Cultural de Dom Maurício</em></p>';
+
 const BirthdayTemplateTab = () => {
   const { token } = useAuth();
   const [saving, setSaving] = useState(false);
   const [snack, setSnack] = useState<Snack>({ open: false, severity: 'success', msg: '' });
   const editorRef = useRef<HTMLDivElement>(null);
-  const [previewHtml, setPreviewHtml] = useState('');
-
-  const initialHtml =
-    '<p style="text-align:center"><b style="color:#E36D3B">Feliz Aniversário! 🎂</b></p>' +
-    '<p style="text-align:center">Olá {name},</p>' +
-    '<p style="text-align:center">Parabéns pelo seu aniversário!<br>' +
-    'O Grupo Cultural Dom Maurício deseja a você um dia incrível e cheio de alegria!</p>' +
-    '<p style="text-align:center"><em>Grupo Cultural de Dom Maurício</em></p>';
+  const [previewHtml, setPreviewHtml] = useState(BIRTHDAY_INITIAL_HTML);
   useEffect(() => {
     const fetchTemplate = async () => {
       if (!token) return;
       try {
         const msg = await getBirthdayTemplate(token);
-        const content = msg?.trim() ? msg : initialHtml;
+        const content = msg?.trim() ? msg : BIRTHDAY_INITIAL_HTML;
         if (editorRef.current) {
           editorRef.current.innerHTML = content;
           setPreviewHtml(content);
         }
-      } catch (error) {
+      } catch {
         if (editorRef.current) {
-          editorRef.current.innerHTML = initialHtml;
-          setPreviewHtml(initialHtml);
+          editorRef.current.innerHTML = BIRTHDAY_INITIAL_HTML;
+          setPreviewHtml(BIRTHDAY_INITIAL_HTML);
         }
       }
     };
@@ -201,8 +201,8 @@ const BirthdayTemplateTab = () => {
 
   const handleCancel = () => {
     if (editorRef.current) {
-      editorRef.current.innerHTML = initialHtml;
-      setPreviewHtml(initialHtml);
+      editorRef.current.innerHTML = BIRTHDAY_INITIAL_HTML;
+      setPreviewHtml(BIRTHDAY_INITIAL_HTML);
     }
   };
 
