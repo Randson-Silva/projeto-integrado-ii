@@ -28,7 +28,7 @@ const blank: AccessControlProfileData = {
 };
 
 const AccessControlProfileForm = () => {
-  const { token } = useAuth();
+  const { token, logout } = useAuth();
 
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
@@ -41,6 +41,9 @@ const AccessControlProfileForm = () => {
   });
 
   const [profile, setProfile] = useState<User | null>(null);
+
+  const [nameError, setNameError] = useState('');
+  const [emailError, setEmailError] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [keyDialogOpen, setKeyDialogOpen] = useState(false);
@@ -87,6 +90,18 @@ const AccessControlProfileForm = () => {
 
     if (!profile) return;
 
+    if (!form.email.trim()) {
+      setEmailError('Email é obrigatório');
+      return;
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      setEmailError('E-mail inválido');
+      return;
+    }
+
+    if (!form.association) {
+      setNameError('Nome é obrigatório');
+      return;
+    }
     setLoading(true);
 
     try {
@@ -95,8 +110,22 @@ const AccessControlProfileForm = () => {
       const email = form.email;
       const fullName = form.association;
 
-      await accessControlUpdateUser({ email, fullName, id, phone, token });
+      const updated = await accessControlUpdateUser({
+        email,
+        fullName,
+        id,
+        phone,
+        token,
+      });
 
+      if (
+        form.email.trim().toLocaleLowerCase() !==
+        originalForm.email.trim().toLocaleLowerCase()
+      ) {
+        logout();
+      }
+
+      setProfile(updated);
       setOriginalForm(form);
       setForm(form);
       setEditing(false);
@@ -106,6 +135,8 @@ const AccessControlProfileForm = () => {
   };
 
   const handleCancel = () => {
+    setEmailError('');
+    setNameError('');
     setEditing(false);
     setForm(originalForm);
   };
@@ -168,10 +199,15 @@ const AccessControlProfileForm = () => {
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
               <TextField
+                error={!!nameError}
+                helperText={nameError}
                 label="Nome do perfil"
                 value={form.association}
                 onChange={(e) =>
-                  setForm((prev) => ({ ...prev, association: e.target.value }))
+                  setForm((prev) => {
+                    setNameError('');
+                    return { ...prev, association: e.target.value };
+                  })
                 }
                 disabled={!editing}
                 size="small"
@@ -180,10 +216,18 @@ const AccessControlProfileForm = () => {
             </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField
+                error={!!emailError}
+                helperText={
+                  emailError ||
+                  'Ao mudar o email você será deslogado, para sua segurança'
+                }
                 label="E-mail"
                 value={form.email}
                 onChange={(e) =>
-                  setForm((prev) => ({ ...prev, email: e.target.value }))
+                  setForm((prev) => {
+                    setEmailError('');
+                    return { ...prev, email: e.target.value };
+                  })
                 }
                 disabled={!editing}
                 size="small"
