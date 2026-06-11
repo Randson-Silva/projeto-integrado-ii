@@ -1,9 +1,15 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Grid,
   Paper,
   Stack,
@@ -47,6 +53,7 @@ const AccessControlProfileForm = () => {
 
   const [loading, setLoading] = useState(false);
   const [keyDialogOpen, setKeyDialogOpen] = useState(false);
+  const [confirmEmailOpen, setConfirmEmailOpen] = useState(false);
 
   useEffect(() => {
     async function fetchProfile() {
@@ -102,10 +109,23 @@ const AccessControlProfileForm = () => {
       setNameError('Nome é obrigatório');
       return;
     }
+    if (
+      form.email.trim().toLocaleLowerCase() !==
+      originalForm.email.trim().toLocaleLowerCase()
+    ) {
+      setConfirmEmailOpen(true);
+      return;
+    }
+
+    await performSave();
+  };
+
+  const performSave = async () => {
+    setConfirmEmailOpen(false);
     setLoading(true);
 
     try {
-      const { id, phone } = profile;
+      const { id, phone } = profile!;
 
       const email = form.email;
       const fullName = form.association;
@@ -115,7 +135,7 @@ const AccessControlProfileForm = () => {
         fullName,
         id,
         phone,
-        token,
+        token: token!,
       });
 
       if (
@@ -123,6 +143,7 @@ const AccessControlProfileForm = () => {
         originalForm.email.trim().toLocaleLowerCase()
       ) {
         logout();
+        return;
       }
 
       setProfile(updated);
@@ -311,6 +332,54 @@ const AccessControlProfileForm = () => {
         open={keyDialogOpen}
         onClose={() => setKeyDialogOpen(false)}
       />
+
+      <Dialog
+        open={confirmEmailOpen}
+        onClose={() => setConfirmEmailOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+      >
+        <DialogTitle>
+          <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1.5}>
+            <WarningAmberIcon color="warning" sx={{ fontSize: 28 }} />
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              Alteração de E-mail
+            </Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Você alterou o seu e-mail. Para sua segurança, se confirmar esta alteração, 
+            você será desconectado automaticamente e precisará fazer login novamente 
+            com o novo e-mail. Deseja continuar?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            onClick={() => setConfirmEmailOpen(false)}
+            variant="outlined"
+            sx={{
+              borderRadius: 10,
+              textTransform: 'none',
+              fontWeight: 600,
+              color: 'text.secondary',
+              borderColor: 'text.secondary',
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={performSave}
+            variant="contained"
+            color="primary"
+            sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 600, px: 3 }}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={20} color="inherit" /> : 'Confirmar e Sair'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
