@@ -161,7 +161,10 @@ const AssociateSelfSupplementForm = () => {
       try {
         const data = await getMyAssociate(token);
         const decl: SelfDeclForm = {
-          education: data.selfDeclaration?.education ?? '',
+          education:
+            data.selfDeclaration?.education === 'NÃO_SELECIONADO'
+              ? ''
+              : data.selfDeclaration?.education ?? '',
           income:
             data.selfDeclaration?.income != null
               ? data.selfDeclaration.income.toLocaleString('pt-BR', {
@@ -222,7 +225,9 @@ const AssociateSelfSupplementForm = () => {
         race: mapVal(selfDeclDraft.race),
         gender: mapVal(selfDeclDraft.gender),
         sexualOrientation: mapVal(selfDeclDraft.sexualOrientation),
-        education: mapEnum(selfDeclDraft.education) as AssociateEducation, // Cast ou mapeamento necessário dependendo do enum
+        education: (selfDeclDraft.education === '' || selfDeclDraft.education === 'PREFIRO_NAO_INFORMAR'
+          ? 'NÃO_SELECIONADO'
+          : selfDeclDraft.education) as AssociateEducation,
         income: parsedIncome,
         acceptedDataSharingTerm: selfDeclDraft.dataSharing,
       });

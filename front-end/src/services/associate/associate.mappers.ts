@@ -36,8 +36,9 @@ export const mapAssociateResponseToForm = (
     gender: associate.selfDeclaration?.gender ?? '',
     sexualOrientation: associate.selfDeclaration?.sexualOrientation ?? '',
     education:
-      (associate.selfDeclaration
-        ?.education as AssociateProfileForm['education']) ?? '',
+      associate.selfDeclaration?.education === 'NÃO_SELECIONADO'
+        ? ''
+        : (associate.selfDeclaration?.education as AssociateProfileForm['education']) ?? '',
     income:
       associate.selfDeclaration?.income != null
         ? associate.selfDeclaration.income.toLocaleString('pt-BR', {
@@ -104,8 +105,8 @@ export const mapFormToUpdatePayload = (
   education:
     !form.education ||
     form.education === 'PREFIRO_NAO_INFORMAR' ||
-    !VALID_EDUCATION.has(form.education)
-      ? null
+    (!VALID_EDUCATION.has(form.education) && form.education !== 'NÃO_SELECIONADO')
+      ? 'NÃO_SELECIONADO'
       : (form.education as UpdateAssociatePayload['education']),
   income: parseMaskedIncome(String(form.income ?? '')),
 });
@@ -137,8 +138,8 @@ export const mapFormToCreatePayload = (
   gender: form.gender || undefined,
   sexualOrientation: form.sexualOrientation || undefined,
   education:
-    form.education === ''
-      ? undefined
+    !form.education || form.education === 'PREFIRO_NAO_INFORMAR'
+      ? 'NÃO_SELECIONADO'
       : (form.education as CreateAssociatePayload['education']),
   income: parseMaskedIncome(String(form.income ?? '')) ?? undefined,
   legalGuardianName: undefined,

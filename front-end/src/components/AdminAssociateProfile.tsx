@@ -172,7 +172,7 @@ const AssociateProfile = () => {
         setOriginalForm(data);
 
         setDeclaratoryData({
-          education: res.selfDeclaration?.education ?? '',
+          education: res.selfDeclaration?.education === 'NÃO_SELECIONADO' ? '' : (res.selfDeclaration?.education ?? ''),
           income: res.selfDeclaration?.income?.toString() ?? '',
           race: res.selfDeclaration?.race ?? '',
           gender: res.selfDeclaration?.gender ?? '',
