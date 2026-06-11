@@ -51,3 +51,10 @@ export async function updateBirthdayTemplate(
   );
   return res.data;
 }
+
+export async function getBirthdayTemplate(token: string): Promise<string> {
+  const res = await api.get<{ message: string }>('/mailing/birthday-template', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data.message;
+}

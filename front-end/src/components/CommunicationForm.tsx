@@ -23,6 +23,7 @@ import {
   getMailingRecipients,
   sendMailing,
   updateBirthdayTemplate,
+  getBirthdayTemplate,
   type MailingRecipientScope,
 } from '../services/mailing/mailingService';
 import TextEditor from './TextEditor';
@@ -151,23 +152,35 @@ const BirthdayTemplateTab = () => {
 
   const initialHtml =
     '<p style="text-align:center"><b style="color:#E36D3B">Feliz Aniversário! 🎂</b></p>' +
-    '<p style="text-align:center">Olá {Nome},</p>' +
+    '<p style="text-align:center">Olá {name},</p>' +
     '<p style="text-align:center">Parabéns pelo seu aniversário!<br>' +
-    'O Grupo Cultural Dom Mauricio deseja a você um dia incrível e cheio de alegria!</p>' +
-    '<p style="text-align:center"><em>Grupo Cultural de Dom Mauricio</em></p>';
-
+    'O Grupo Cultural Dom Maurício deseja a você um dia incrível e cheio de alegria!</p>' +
+    '<p style="text-align:center"><em>Grupo Cultural de Dom Maurício</em></p>';
   useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.innerHTML = initialHtml;
-      setPreviewHtml(initialHtml);
-    }
-  }, []);
+    const fetchTemplate = async () => {
+      if (!token) return;
+      try {
+        const msg = await getBirthdayTemplate(token);
+        const content = msg?.trim() ? msg : initialHtml;
+        if (editorRef.current) {
+          editorRef.current.innerHTML = content;
+          setPreviewHtml(content);
+        }
+      } catch (error) {
+        if (editorRef.current) {
+          editorRef.current.innerHTML = initialHtml;
+          setPreviewHtml(initialHtml);
+        }
+      }
+    };
+    fetchTemplate();
+  }, [token]);
 
   const handleInput = () => {
     setPreviewHtml(editorRef.current?.innerHTML ?? '');
   };
 
-  const previewHtmlWithName = previewHtml.replace(/\{Nome\}/g, 'Maria Silva');
+  const previewHtmlWithName = previewHtml.replace(/\{name\}/gi, 'Maria Silva');
 
   const handleSave = async () => {
     if (!token) return;
