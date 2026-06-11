@@ -27,6 +27,7 @@ import {
   updateMySelfDeclaration,
 } from '../services/associate/associateService';
 import type { AssociateEducation } from '../services/associate/associate.types';
+import { maskCEP } from '../utils/masks.util';
 
 interface SelfDeclForm {
   education: string;
@@ -423,7 +424,7 @@ const AssociateSelfSupplementForm = () => {
           </Typography>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 2 }}>
-              {ptf('CEP', profile.addressZipCode)}
+              {ptf('CEP', maskCEP(profile.addressZipCode))}
             </Grid>
             <Grid size={{ xs: 12, sm: 3 }}>
               <FormControl size="small" fullWidth>
