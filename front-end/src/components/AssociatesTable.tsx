@@ -40,6 +40,7 @@ import type {
 import { useAuth } from '../hooks/useAuth';
 import { getCategories } from '../services/associate/associateService';
 import { maskCPF } from '../utils/masks.util';
+import { decodeJwt } from '../services/auth/jwt.config';
 
 type ChipColor = 'success' | 'warning' | 'default' | 'error';
 
@@ -166,6 +167,8 @@ const FilterPopover = ({ anchor, onClose, onApply }: FilterPopoverProps) => {
 
 const AssociatesTable = () => {
   const navigate = useNavigate();
+  const { token } = useAuth();
+  const user = token ? decodeJwt(token) : null;
 
   const filterBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -281,20 +284,22 @@ const AssociatesTable = () => {
         spacing={1.5}
         sx={{ justifyContent: 'flex-end' }}
       >
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/associados/novo')}
-          sx={{
-            fontWeight: 600,
-            borderRadius: 10,
-            textTransform: 'none',
-            px: 3,
-          }}
-        >
-          Adicionar Associado
-        </Button>
+        {user?.role !== 'CONSULTANT' && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/associados/novo')}
+            sx={{
+              fontWeight: 600,
+              borderRadius: 10,
+              textTransform: 'none',
+              px: 3,
+            }}
+          >
+            Adicionar Associado
+          </Button>
+        )}
 
         <Button
           ref={filterBtnRef}
