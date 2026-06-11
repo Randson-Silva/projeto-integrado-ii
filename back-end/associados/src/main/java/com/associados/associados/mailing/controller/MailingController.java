@@ -72,4 +72,16 @@ public class MailingController {
         return ResponseEntity.ok("Mensagem de aniversário atualizada com sucesso!");
     }   
 
+    @GetMapping("/birthday-template")
+    @SecurityRequirement(name = "bearerAuth")   
+    @Operation(summary = "Get Birthday Template", description = "Retrieves the current daily scheduled birthday email message.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Template retrieved successfully")
+    })
+    public ResponseEntity<BirthDayMessageDto> getBirthdayTemplate() {
+        String currentMessage = emailService.getBirthdayMessageTemplate();
+        
+        return ResponseEntity.ok(new BirthDayMessageDto(currentMessage));
+    }
+
 }

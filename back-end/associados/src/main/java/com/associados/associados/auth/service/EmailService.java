@@ -32,6 +32,10 @@ public class EmailService {
         this.birthdayMessageTemplate = newTemplate;
     }
 
+    public String getBirthdayMessageTemplate() {
+        return this.birthdayMessageTemplate;
+    }
+
     public void sendPasswordResetEmail(String to, String token) {
         String subject = "Password Recovery - Associates System";
         String body = "Hello!\n\nYour password recovery code is: " + token + "\n\nThis code expires in 15 minutes.";
