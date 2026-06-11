@@ -389,7 +389,7 @@ const AccessControlSelectedUserForm = () => {
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               {field('Nome Completo', 'name')}
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>{field('CPF', 'cpf')}</Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>{field('CPF', 'cpf', true)}</Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               {field('Telefone', 'phone')}
             </Grid>
