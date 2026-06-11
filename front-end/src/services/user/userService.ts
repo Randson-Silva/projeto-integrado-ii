@@ -11,12 +11,23 @@ export async function getUsers({
   page,
   size = 10,
 }: GetUsersParams): Promise<PageableResponse<User>> {
-  const response = await api.get<PageableResponse<User>>('/management/users', {
+  let response = await api.get<PageableResponse<User>>('/management/users', {
     params: {
       page,
       size,
     },
   });
+
+  const allUsers = response.data.content;
+
+  const filteredUsers = allUsers.filter((user) => {
+    return user.role === 'CONSULTANT' || user.role === 'ADMIN';
+  });
+
+  response = {
+    ...response,
+    data: { ...response.data, content: filteredUsers },
+  };
 
   return response.data;
 }
@@ -46,23 +57,26 @@ interface AccessControlUpdateUserRequest {
   id: string;
   email: string;
   fullName: string;
-  cpf: string;
   phone: string;
+  token: string;
 }
 
 export async function accessControlUpdateUser({
   id,
   email,
   fullName,
-  cpf,
   phone,
+  token,
 }: AccessControlUpdateUserRequest) {
-  const res = await api.put(`/management/users/${id}`, {
-    email,
-    fullName,
-    cpf,
-    phone,
-  });
+  const res = await api.put(
+    `/management/users/${id}`,
+    {
+      email,
+      fullName,
+      phone,
+    },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
 
   return res.data;
 }
@@ -87,6 +101,26 @@ export async function accessControlDeleteUser({
   id,
 }: AccessControlGetUserByIdRequest) {
   const res = await api.delete(`/management/users/${id}`);
+
+  return res.data;
+}
+
+export async function activateUser(token: string, id: string) {
+  const res = await api.patch(
+    `/management/users/${id}/active`,
+    { active: true },
+    { headers: { Authrization: `Bearer ${token}` } }
+  );
+
+  return res.data;
+}
+
+export async function inactivateUser(token: string, id: string) {
+  const res = await api.patch(
+    `/management/users/${id}/active`,
+    { active: false },
+    { headers: { Authrization: `Bearer ${token}` } }
+  );
 
   return res.data;
 }

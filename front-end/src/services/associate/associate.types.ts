@@ -17,6 +17,7 @@ export type DisponibilidadeHorarioEnum =
   | 'TODOS';
 
 export type AssociateEducation =
+  | 'PREFIRO_NAO_INFORMAR'
   | 'FUNDAMENTAL_INCOMPLETO'
   | 'FUNDAMENTAL_COMPLETO'
   | 'MEDIO_INCOMPLETO'
@@ -45,18 +46,35 @@ export interface IAssociateProfileForm {
   addressStreet: string;
   addressNumber: string;
   addressComplement?: string;
-  race: string;
-  gender: string;
-  sexualOrientation: string;
-  education: AssociateEducation | '';
-  income: string; // mantido como string no form para facilitar input mascarado
-  disability: string;
+  race?: string;
+  gender?: string;
+  sexualOrientation?: string;
+  education?: AssociateEducation | '';
+  income?: string; // mantido como string no form para facilitar input mascarado
+  disability?: string;
+  availableHours: DisponibilidadeHorarioEnum | '';
+}
+
+export interface IAdminAssociateProfileForm {
+  id: string;
+  fullName: string;
+  cpf: string;
+  email: string;
+  phone: string;
+  birthDate: string;
+  category: string; // UUID from categories table
+  addressZipCode: string;
+  addressState: string;
+  addressCity: string;
+  addressNeighborhood: string;
+  addressStreet: string;
+  addressNumber: string;
+  addressComplement?: string;
   availableHours: DisponibilidadeHorarioEnum | '';
 }
 
 // Alias sem prefixo para compatibilidade com o padrão do develop
 export type AssociateProfileForm = IAssociateProfileForm;
-
 
 export interface IAssociateSelfDeclarationForm {
   education: AssociateEducation;
@@ -212,7 +230,9 @@ export const normalizeIncomeView = (income?: number | null): string => {
   return income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
-export const normalizeEducationView = (education?: AssociateEducation | string): string => {
+export const normalizeEducationView = (
+  education?: AssociateEducation | string
+): string => {
   const map: Record<string, string> = {
     FUNDAMENTAL_INCOMPLETO: 'Fund. Incompleto',
     FUNDAMENTAL_COMPLETO: 'Fund. Completo',
@@ -230,7 +250,9 @@ export const normalizeEducationView = (education?: AssociateEducation | string):
   return (education && map[education]) ?? '-';
 };
 
-export const normalizeAvailabilityView = (availability?: DisponibilidadeHorarioEnum | string): string => {
+export const normalizeAvailabilityView = (
+  availability?: DisponibilidadeHorarioEnum | string
+): string => {
   const map: Record<string, string> = {
     MATUTINO: 'Matutino',
     VESPERTINO: 'Vespertino',

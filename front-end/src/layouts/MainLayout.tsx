@@ -15,14 +15,14 @@ import {
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar, { type SidebarItem } from '../components/Sidebar';
-import { useAuth } from '../hooks/useAuth';
-import { authGetProfile } from '../services/auth/authService';
-import { normalizeRoleView } from '../services/auth/roles';
-import { decodeJwt } from '../services/auth/jwt.config';
 import { adminItems } from '../config/sidebarItems/adminItems';
+import { associateItems } from '../config/sidebarItems/associateItems';
 import { consultantItems } from '../config/sidebarItems/consultantItems';
 import { superAdminItems } from '../config/sidebarItems/superAdminItems';
-import { associateItems } from '../config/sidebarItems/associateItems';
+import { useAuth } from '../hooks/useAuth';
+import { authGetProfile } from '../services/auth/authService';
+import { decodeJwt } from '../services/auth/jwt.config';
+import { normalizeRoleView } from '../services/auth/roles';
 
 const DRAWER_WIDTH = 224;
 
@@ -126,8 +126,10 @@ const UserMenu = () => {
             setAnchor(null);
             if (rawRole === 'ASSOCIATE') {
               navigate('/meu-cadastro');
-            } else {
+            } else if (rawRole === 'CONSULTANT' || rawRole === 'ADMIN') {
               navigate('/meu-perfil');
+            } else if (rawRole === 'SUPER_ADMIN') {
+              navigate('/controle-de-acesso/meu-perfil');
             }
           }}
         >
@@ -162,8 +164,10 @@ const MainLayout = ({ children, menuItems, pageTitle }: MainLayoutProps) => {
       activeItems = consultantItems;
     } else if (user?.role === 'ASSOCIATE') {
       activeItems = associateItems;
-    } else {
+    } else if (user?.role === 'ADMIN') {
       activeItems = adminItems;
+    } else {
+      activeItems = [];
     }
   }
 

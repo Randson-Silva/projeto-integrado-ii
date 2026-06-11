@@ -38,12 +38,15 @@ const ResetPasswordForm = () => {
       return;
     }
 
+    if (!token) {
+      setConfirmError(
+        'Não foi possível validar sua identidade. Volte as etapas desde o login.'
+      );
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!token) {
-        return;
-      }
-
       await authPasswordReset({
         newPassword: password,
         confirmPassword: confirm,

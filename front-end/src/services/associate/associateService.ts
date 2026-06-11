@@ -1,7 +1,14 @@
 import api from '../api';
-import type { Associate, AssociateCategoryResponse, CreateAssociatePayload, UpdateAssociatePayload } from './associate.types';
-import type { SelfDeclarationResponse, UpdateSelfDeclarationPayload } from './selfDeclaration/selfDeclaration.types';
-
+import type {
+  Associate,
+  AssociateCategoryResponse,
+  CreateAssociatePayload,
+  UpdateAssociatePayload,
+} from './associate.types';
+import type {
+  SelfDeclarationResponse,
+  UpdateSelfDeclarationPayload,
+} from './selfDeclaration/selfDeclaration.types';
 
 export interface GetAssociatesParams {
   page?: number;
@@ -36,9 +43,7 @@ export async function getAssociateById(
   return res.data;
 }
 
-export async function getMyAssociate(
-  bearerToken: string
-): Promise<Associate> {
+export async function getMyAssociate(bearerToken: string): Promise<Associate> {
   const res = await api.get('/associates/me', {
     headers: {
       Authorization: `Bearer ${bearerToken}`,
@@ -109,4 +114,38 @@ export async function getCategories(
   });
 
   return res.data;
+}
+
+export async function createCategory(bearerToken: string, name: string) {
+  const res = await api.post(
+    '/categories',
+    { name },
+    {
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+      },
+    }
+  );
+
+  return res.data;
+}
+
+export async function deleteCategory(
+  bearerToken: string,
+  id: string
+): Promise<string | null> {
+  const res = await api.delete(`/categories/${id}`, {
+    headers: {
+      Authorization: `Bearer ${bearerToken}`,
+    },
+  });
+
+  switch (res.status) {
+    case 400:
+      return 'Categoria não existe ou está em uso';
+    case 403:
+      return 'Ocorreu um erro';
+  }
+
+  return null;
 }

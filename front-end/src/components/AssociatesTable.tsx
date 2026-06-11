@@ -1,7 +1,6 @@
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -35,10 +34,12 @@ import { adminFetchAssociates } from '../services/admin/adminService';
 
 import type {
   Associate,
-  AssociateCategory,
+  AssociateCategoryResponse,
 } from '../services/associate/associate.types';
 
-import { normalizeCategoryView } from '../services/associate/associate.types';
+import { useAuth } from '../hooks/useAuth';
+import { getCategories } from '../services/associate/associateService';
+import { maskCPF } from '../utils/masks.util';
 
 type ChipColor = 'success' | 'warning' | 'default' | 'error';
 
@@ -46,7 +47,7 @@ const ROWS_PER_PAGE = 10;
 
 interface FilterState {
   status: 'Ativo' | 'Inativo' | 'Todos';
-  categoria: 'Todas' | AssociateCategory;
+  categoria: string;
 }
 
 const EMPTY_FILTER: FilterState = {
@@ -61,11 +62,29 @@ interface FilterPopoverProps {
 }
 
 const FilterPopover = ({ anchor, onClose, onApply }: FilterPopoverProps) => {
+  const { token, logout } = useAuth();
+
   const [local, setLocal] = useState<FilterState>(EMPTY_FILTER);
+
+  const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
 
   const set = <K extends keyof FilterState>(k: K, v: FilterState[K]) => {
     setLocal((p) => ({ ...p, [k]: v }));
   };
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      if (!token) {
+        logout();
+        return;
+      }
+
+      const categories = await getCategories(token);
+      setCategories(categories);
+    };
+
+    void loadCategories();
+  }, [token, logout]);
 
   return (
     <Popover
@@ -119,10 +138,12 @@ const FilterPopover = ({ anchor, onClose, onApply }: FilterPopoverProps) => {
             }
           >
             <MenuItem value="Todas">Todas</MenuItem>
-            <MenuItem value="ARTISTA">Artista</MenuItem>
-            <MenuItem value="PRODUTOR">Produtor</MenuItem>
-            <MenuItem value="TECNICO">Técnico</MenuItem>
-            <MenuItem value="OUTRO">Outro</MenuItem>
+
+            {categories.map((category) => (
+              <MenuItem key={category.id} value={category.name}>
+                {category.name}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
 
@@ -193,8 +214,6 @@ const AssociatesTable = () => {
 
     const cpf = u.cpf ?? '';
 
-    const workCategory = u.workCategory ?? '';
-
     const status = u.user.active ? 'Ativo' : 'Inativo';
 
     const matchSearch =
@@ -203,7 +222,8 @@ const AssociatesTable = () => {
     const matchStatus = filters.status === 'Todos' || status === filters.status;
 
     const matchCategoria =
-      filters.categoria === 'Todas' || workCategory === filters.categoria;
+      filters.categoria === 'Todas' ||
+      u.workCategory?.name === filters.categoria;
 
     return matchSearch && matchStatus && matchCategoria;
   });
@@ -255,8 +275,6 @@ const AssociatesTable = () => {
 
   return (
     <Stack spacing={2.5}>
-
-
       {/* Actions row */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
@@ -431,13 +449,13 @@ const AssociatesTable = () => {
 
                       <TableCell sx={{ py: 2 }}>
                         <Typography variant="body2" color="text.secondary">
-                          {u.cpf ?? '-'}
+                          {maskCPF(u.cpf) ?? '-'}
                         </Typography>
                       </TableCell>
 
                       <TableCell sx={{ py: 2 }}>
                         <Typography variant="body2" color="text.secondary">
-                          {normalizeCategoryView(u.workCategory)}
+                          {u.workCategory?.name ?? '-'}
                         </Typography>
                       </TableCell>
 

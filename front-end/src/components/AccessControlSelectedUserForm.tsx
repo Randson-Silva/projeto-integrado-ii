@@ -8,6 +8,7 @@ import {
   CircularProgress,
   Divider,
   FormControl,
+  FormHelperText,
   Grid,
   InputLabel,
   MenuItem,
@@ -28,13 +29,20 @@ import {
   accessControlUpdateUserRole,
   type AccessControlGetUserByIdResponse,
 } from '../services/user/userService';
+import { maskCPF, maskPhone } from '../utils/masks.util';
 import { default as DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 type FormState = AccessControlGetUserByIdResponse & { id: string };
 
 const AccessControlSelectedUserForm = () => {
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<keyof FormState, string>>
+  >({});
+
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const [originalForm, setOriginalForm] = useState<FormState | null>(null);
 
   const [form, setForm] = useState<FormState | null>(null);
   const [loadingData, setLoadingData] = useState(true);
@@ -52,7 +60,17 @@ const AccessControlSelectedUserForm = () => {
       try {
         const data = await accessControlGetUserById({ id });
 
-        if (!cancelled) setForm({ ...data, id });
+        const loadedData = {
+          ...data,
+          id,
+          cpf: maskCPF(data.cpf),
+          phone: maskPhone(data.phone),
+        };
+
+        if (!cancelled) {
+          setForm(loadedData);
+          setOriginalForm(loadedData);
+        }
       } catch {
         if (!cancelled) setError('Não foi possível carregar o perfil.');
       } finally {
@@ -68,6 +86,40 @@ const AccessControlSelectedUserForm = () => {
   const handleSave = async () => {
     if (!form || !id) return;
 
+    const errors: Partial<Record<keyof FormState, string>> = {};
+
+    if (!form.name.trim()) {
+      errors.name = 'Nome é obrigatório';
+    }
+
+    if (!form.cpf.trim()) {
+      errors.cpf = 'CPF é obrigatório';
+    } else if (form.cpf.replace(/\D/g, '').length !== 11) {
+      errors.cpf = 'CPF inválido';
+    }
+
+    if (!form.phone.trim()) {
+      errors.phone = 'Telefone é obrigatório';
+    } else if (form.phone.replace(/\D/g, '').length !== 11) {
+      errors.phone = 'Telefone inválido';
+    }
+
+    if (!form.email.trim()) {
+      errors.email = 'E-mail é obrigatório';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      errors.email = 'Formato de e-mail inválido';
+    }
+
+    if (!form.role) {
+      errors.role = 'Selecione um perfil';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
     setSaving(true);
     setError('');
 
@@ -85,14 +137,18 @@ const AccessControlSelectedUserForm = () => {
         id: formId,
         fullName,
         email,
-        cpf,
-        phone,
+        cpf: cpf.replace(/\D/g, ''),
+        phone: phone.replace(/\D/g, ''),
       });
 
-      await accessControlUpdateUserRole({ id: formId, newRole });
+      await accessControlUpdateUserRole({
+        id: formId,
+        newRole,
+      });
 
+      setOriginalForm({ ...form });
       setEditing(false);
-    } catch (err) {
+    } catch {
       setError('Erro ao salvar alterações');
     } finally {
       setSaving(false);
@@ -108,7 +164,7 @@ const AccessControlSelectedUserForm = () => {
       await accessControlDeleteUser({ id });
 
       navigate('/controle-de-acesso');
-    } catch (err) {
+    } catch {
       setError('Erro ao deletar usuário');
     } finally {
       setLoadingData(false);
@@ -116,18 +172,55 @@ const AccessControlSelectedUserForm = () => {
     }
   };
 
-  const field = (label: string, key: keyof FormState, disabled = false) => (
-    <TextField
-      label={label}
-      value={form?.[key] ?? ''}
-      onChange={(e) =>
-        setForm((prev) => (prev ? { ...prev, [key]: e.target.value } : prev))
-      }
-      disabled={disabled || !editing}
-      size="small"
-      fullWidth
-    />
-  );
+  const field = (label: string, key: keyof FormState, disabled = false) => {
+    const value = String(form?.[key] ?? '');
+
+    return (
+      <TextField
+        label={label}
+        value={value}
+        onChange={(e) => {
+          let newValue = e.target.value;
+
+          if (key === 'cpf') {
+            newValue = maskCPF(newValue);
+          }
+
+          if (key === 'phone') {
+            newValue = maskPhone(newValue);
+          }
+
+          setForm((prev) => (prev ? { ...prev, [key]: newValue } : prev));
+
+          setFieldErrors((prev) => ({
+            ...prev,
+            [key]: undefined,
+          }));
+        }}
+        error={Boolean(fieldErrors[key])}
+        helperText={fieldErrors[key]}
+        disabled={disabled || !editing}
+        size="small"
+        fullWidth
+        required={
+          key === 'name' || key === 'cpf' || key === 'phone' || key === 'email'
+        }
+        type={key === 'email' ? 'email' : 'text'}
+        slotProps={{
+          htmlInput: {
+            maxLength:
+              key === 'cpf'
+                ? 14
+                : key === 'phone'
+                  ? 15
+                  : key === 'email'
+                    ? 255
+                    : undefined,
+          },
+        }}
+      />
+    );
+  };
 
   /* ── Loading ── */
   if (loadingData) {
@@ -291,20 +384,31 @@ const AccessControlSelectedUserForm = () => {
             <Grid size={{ xs: 12, sm: 6 }}>{field('E-mail', 'email')}</Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               {editing ? (
-                <FormControl size="small" fullWidth>
+                <FormControl
+                  size="small"
+                  fullWidth
+                  error={Boolean(fieldErrors.role)}
+                >
                   <InputLabel>Tipo de Acesso</InputLabel>
                   <Select
                     value={form.role ?? ''}
                     label="Tipo de Acesso"
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setForm((prev) =>
                         prev ? { ...prev, role: e.target.value as Role } : prev
-                      )
-                    }
+                      );
+
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        role: undefined,
+                      }));
+                    }}
                   >
                     <MenuItem value="ADMIN">Administrador</MenuItem>
                     <MenuItem value="CONSULTANT">Consultor</MenuItem>
                   </Select>
+
+                  <FormHelperText>{fieldErrors.role}</FormHelperText>
                 </FormControl>
               ) : (
                 <TextField
@@ -359,6 +463,11 @@ const AccessControlSelectedUserForm = () => {
                 <Button
                   variant="outlined"
                   onClick={() => {
+                    if (originalForm) {
+                      setForm({ ...originalForm });
+                    }
+
+                    setFieldErrors({});
                     setEditing(false);
                   }}
                   sx={{

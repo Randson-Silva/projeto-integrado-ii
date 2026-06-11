@@ -1,26 +1,29 @@
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import AddIcon from '@mui/icons-material/Add';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CloseIcon from '@mui/icons-material/Close';
-import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import {
   Box,
   Button,
-  Chip,
-  FormControl,
+  Divider,
   Grid,
   IconButton,
-  InputLabel,
-  MenuItem,
+  InputAdornment,
+  OutlinedInput,
   Paper,
-  Select,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import type { AssociateCategoryResponse } from '../services/associate/associate.types';
+import {
+  createCategory,
+  deleteCategory,
+  getCategories,
+} from '../services/associate/associateService';
 
-const DAYS_LABEL = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-const MONTHS = [
+const MONTHS_PT = [
   'Janeiro',
   'Fevereiro',
   'Março',
@@ -35,369 +38,337 @@ const MONTHS = [
   'Dezembro',
 ];
 
-const MiniCalendar = () => {
-  const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
-  const [selected, setSelected] = useState<number | null>(today.getDate());
+const formatDatePT = (iso: string): string => {
+  if (!iso) return '';
+  const [, m, d] = iso.split('-');
+  if (!m || !d) return iso;
+  return `${parseInt(d, 10)} de ${MONTHS_PT[parseInt(m, 10) - 1]}`;
+};
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const prev = () => {
-    if (month === 0) {
-      setMonth(11);
-      setYear((y) => y - 1);
-    } else setMonth((m) => m - 1);
-  };
-  const next = () => {
-    if (month === 11) {
-      setMonth(0);
-      setYear((y) => y + 1);
-    } else setMonth((m) => m + 1);
-  };
-
-  const cells: (number | null)[] = [
-    ...Array(firstDay).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
+interface DateFieldProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}
+const DateField = ({ label, value, onChange }: DateFieldProps) => {
+  const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{ borderRadius: 2, p: 2, display: 'inline-block' }}
-    >
-      {/* Header */}
-      <Stack
-        direction="row"
-        sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1 }}
+    <Box sx={{ position: 'relative', width: '100%' }}>
+      {/* Label flutuante */}
+      <Typography
+        variant="caption"
+        sx={{
+          position: 'absolute',
+          top: -9,
+          left: 12,
+          bgcolor: 'background.paper',
+          px: 0.5,
+          color: 'primary.main',
+          fontWeight: 600,
+          fontSize: 12,
+          zIndex: 1,
+          lineHeight: 1,
+        }}
       >
-        <IconButton size="small" onClick={prev}>
-          <ChevronLeftIcon fontSize="small" />
-        </IconButton>
-        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-          {MONTHS[month]} {year}
-        </Typography>
-        <IconButton size="small" onClick={next}>
-          <ChevronRightIcon fontSize="small" />
-        </IconButton>
-      </Stack>
+        {label}
+      </Typography>
 
-      {/* Day labels */}
-      <Grid container columns={7} sx={{ mb: 0.5 }}>
-        {DAYS_LABEL.map((d) => (
-          <Grid key={d} size={1}>
-            <Typography
-              variant="caption"
-              sx={{ align: 'center', fontWeight: 600, display: 'block' }}
-              color="text.disabled"
+      {/* Campo visível */}
+      <OutlinedInput
+        readOnly
+        value={formatDatePT(value)}
+        onClick={() => inputRef.current?.showPicker?.()}
+        endAdornment={
+          <InputAdornment position="end">
+            <IconButton
+              size="small"
+              onClick={() => inputRef.current?.showPicker?.()}
+              sx={{ color: 'text.secondary' }}
             >
-              {d}
-            </Typography>
-          </Grid>
-        ))}
-      </Grid>
+              <CalendarTodayIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          </InputAdornment>
+        }
+        sx={{
+          width: '100%',
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'primary.main',
+            borderWidth: 2,
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'primary.main',
+          },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'primary.main',
+          },
+          cursor: 'pointer',
+        }}
+      />
 
-      {/* Days */}
-      <Grid container columns={7}>
-        {cells.map((day, i) => (
-          <Grid key={i} size={1}>
-            {day ? (
-              <Box
-                onClick={() => setSelected(day)}
-                sx={{
-                  width: 28,
-                  height: 28,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  bgcolor: selected === day ? 'primary.main' : 'transparent',
-                  color: selected === day ? '#fff' : 'text.primary',
-                  fontSize: 12,
-                  '&:hover': {
-                    bgcolor: selected === day ? 'primary.dark' : 'action.hover',
-                  },
-                }}
-              >
-                {day}
-              </Box>
-            ) : null}
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Footer */}
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{ mt: 1.5, justifyContent: 'flex-end' }}
-      >
-        <Button
-          size="small"
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            color: 'text.secondary',
-          }}
-          onClick={() => setSelected(null)}
-        >
-          Cancelar
-        </Button>
-        <Button
-          size="small"
-          variant="contained"
-          color="primary"
-          sx={{ borderRadius: 10, textTransform: 'none', fontWeight: 600 }}
-        >
-          Confirmar
-        </Button>
-      </Stack>
-    </Paper>
+      {/* Input real escondido */}
+      <input
+        ref={inputRef}
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          position: 'absolute',
+          opacity: 0,
+          pointerEvents: 'none',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+        }}
+      />
+    </Box>
   );
 };
 
-const DEFAULT_COLUMNS = ['Nome', 'CPF', 'Categoria', 'Status'];
-const AVAILABLE_COLUMNS = [
-  'E-mail',
-  'Telefone',
-  'Cidade',
-  'Instituição',
-  'Validade',
-];
-
 const SettingsForm = () => {
-  const [columns, setColumns] = useState<string[]>(DEFAULT_COLUMNS);
-  const [newColumn, setNewColumn] = useState('');
-  const [validityStart, setStart] = useState('');
-  const [validityEnd, setEnd] = useState('');
-  const [cardType, setCardType] = useState('');
+  const { token, logout } = useAuth();
 
-  const addColumn = () => {
-    if (newColumn && !columns.includes(newColumn)) {
-      setColumns((prev) => [...prev, newColumn]);
-      setNewColumn('');
+  const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
+  const [newCategory, setNewCategory] = useState('');
+  const [validityDate, setValidityDate] = useState('');
+
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!token) {
+      logout();
+      return;
+    }
+
+    const loadCategories = async () => {
+      const categories = await getCategories(token);
+      setCategories(categories);
+    };
+
+    loadCategories();
+  }, [token, logout]);
+
+  const addCategory = async () => {
+    const trimmedAndUpper = newCategory.trim().toUpperCase();
+
+    if (!trimmedAndUpper) {
+      setError('Campo obrigatório');
+      return;
+    }
+
+    if (
+      categories.some(
+        (category) => category.name.trim().toUpperCase() === trimmedAndUpper
+      )
+    ) {
+      setError(`A categoria '${trimmedAndUpper}' já foi adicionada`);
+      return;
+    }
+
+    // if (trimmedAndUpper && !categories.includes(trimmedAndUpper)) {
+    //   setCategories((p) => [...p, trimmedAndUpper]);
+    //   setNewCategory('');
+    // }
+
+    if (!token) {
+      setError('Não foi possível adicionar.');
+      return;
+    }
+
+    try {
+      const created = await createCategory(token, trimmedAndUpper);
+
+      setCategories((prev) => [...prev, created]);
+      setNewCategory('');
+    } catch {
+      logout();
     }
   };
-  const removeColumn = (col: string) =>
-    setColumns((prev) => prev.filter((c) => c !== col));
 
-  const remaining = AVAILABLE_COLUMNS.filter((c) => !columns.includes(c));
+  const removeCategory = async (cat: AssociateCategoryResponse) => {
+    if (!token) {
+      logout();
+      return;
+    }
+    try {
+      const res = await deleteCategory(token, cat.id);
+
+      if (res !== null) {
+        setError(res);
+        return;
+      }
+
+      setCategories((p) => p.filter((c) => c.id !== cat.id));
+    } catch {
+      setError('Não foi possível remover a categoria');
+    }
+  };
 
   return (
-    <Stack spacing={2.5}>
-
-
-      <Grid container spacing={3} sx={{ alignItems: 'flex-start' }}>
-        {/* Definições de Colunas */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Paper
-            elevation={0}
-            sx={{
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 2,
-              p: 3,
-            }}
+    <Grid container spacing={3} sx={{ alignItems: 'flex-start' }}>
+      {/* ── Definições de Cadastro ── */}
+      <Grid size={{ xs: 12, md: 6 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2,
+            p: 3,
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Definições de Cadastro
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.5, mb: 2 }}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-              Definições de Colunas
-            </Typography>
+            Definir Categorias de Cadastro
+          </Typography>
+          <Divider sx={{ mb: 3 }} />
 
-            <Typography
-              variant="caption"
-              color="text.secondary"
+          {/* Input + botão + */}
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={{ alignItems: 'center', mb: 3 }}
+          >
+            <TextField
+              error={!!error}
+              helperText={error}
+              label="Nova Categoria"
+              placeholder="Digite o nome da categoria"
+              value={newCategory}
+              onChange={(e) => {
+                setError('');
+                setNewCategory(e.target.value);
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && addCategory()}
+              size="small"
+              fullWidth
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            <IconButton
+              onClick={addCategory}
+              disabled={!newCategory.trim()}
               sx={{
-                fontWeight: 600,
-                display: 'block',
-                mb: 1,
-                letterSpacing: 0.5,
+                bgcolor: 'primary.main',
+                color: '#fff',
+                borderRadius: 1.5,
+                width: 40,
+                height: 40,
+                flexShrink: 0,
+                '&:hover': { bgcolor: 'primary.dark' },
+                '&.Mui-disabled': { bgcolor: 'grey.300', color: 'grey.500' },
               }}
             >
-              COLUNAS ATIVAS
-            </Typography>
-            <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1, mb: 2.5 }}>
-              {columns.map((col) => (
-                <Chip
-                  key={col}
-                  label={col}
-                  onDelete={() => removeColumn(col)}
-                  deleteIcon={
-                    <CloseIcon sx={{ fontSize: '14px !important' }} />
-                  }
-                  size="small"
+              <AddIcon />
+            </IconButton>
+          </Stack>
+
+          <Divider sx={{ mb: 3 }} />
+
+          {/* Lista vertical de categorias */}
+          <Stack spacing={1.5}>
+            {categories.map((cat) => (
+              <Stack
+                key={cat.id}
+                direction="row"
+                sx={{
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  bgcolor: 'grey.200',
+                  borderRadius: 10,
+                  px: 2.5,
+                  py: 1,
+                  width: 'fit-content',
+                  minWidth: 130,
+                }}
+              >
+                <Typography variant="body2" sx={{ mr: 1.5, fontWeight: 600 }}>
+                  {cat.name}
+                </Typography>
+                <CloseIcon
+                  onClick={() => removeCategory(cat)}
                   sx={{
-                    fontWeight: 600,
-                    fontSize: 12,
-                    borderRadius: 1,
-                    bgcolor: 'grey.200',
+                    fontSize: 16,
+                    color: 'text.secondary',
+                    cursor: 'pointer',
+                    '&:hover': { color: 'text.primary' },
                   }}
                 />
-              ))}
-            </Stack>
-
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                fontWeight: 600,
-                letterSpacing: 0.5,
-                display: 'block',
-                mb: 1,
-              }}
-            >
-              ADICIONAR COLUNA
-            </Typography>
-            <Stack direction="row" spacing={1.5}>
-              <FormControl size="small" fullWidth>
-                <InputLabel>Selecione uma coluna</InputLabel>
-                <Select
-                  value={newColumn}
-                  label="Selecione uma coluna"
-                  onChange={(e) => setNewColumn(e.target.value)}
-                >
-                  {remaining.map((c) => (
-                    <MenuItem key={c} value={c}>
-                      {c}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={addColumn}
-                disabled={!newColumn}
-                sx={{
-                  borderRadius: 10,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                  px: 2,
-                }}
-              >
-                Adicionar
-              </Button>
-            </Stack>
-          </Paper>
-        </Grid>
-
-        {/* Definições de Carteirinha */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Paper
-            elevation={0}
-            sx={{
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 2,
-              p: 3,
-              mb: 2,
-            }}
-          >
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-              Definições da Carteirinha
-            </Typography>
-
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                fontWeight: 600,
-                letterSpacing: 0.5,
-                display: 'block',
-                mb: 1,
-              }}
-            >
-              TIPO DE CARTEIRINHA
-            </Typography>
-            <FormControl size="small" fullWidth sx={{ mb: 2.5 }}>
-              <InputLabel>Tipo de card</InputLabel>
-              <Select
-                value={cardType}
-                label="Tipo de card"
-                onChange={(e) => setCardType(e.target.value)}
-              >
-                <MenuItem value="Sócio">Sócio</MenuItem>
-                <MenuItem value="Colaborador">Colaborador</MenuItem>
-              </Select>
-            </FormControl>
-
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                fontWeight: 600,
-                letterSpacing: 0.5,
-                display: 'block',
-                mb: 1,
-              }}
-            >
-              VALIDADE PADRÃO
-            </Typography>
-            <Grid container spacing={1.5} sx={{ mb: 2 }}>
-              <Grid size={{ xs: 6 }}>
-                <TextField
-                  label="Início"
-                  placeholder="dd/mm/aaaa"
-                  value={validityStart}
-                  onChange={(e) => setStart(e.target.value)}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 6 }}>
-                <TextField
-                  label="Fim"
-                  placeholder="dd/mm/aaaa"
-                  value={validityEnd}
-                  onChange={(e) => setEnd(e.target.value)}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
-
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ justifyContent: 'flex-end' }}
-            >
-              <Button
-                variant="outlined"
-                size="small"
-                sx={{
-                  borderRadius: 10,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  borderColor: 'text.secondary',
-                  color: 'text.secondary',
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                size="small"
-                sx={{
-                  borderRadius: 10,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 2,
-                }}
-              >
-                Salvar
-              </Button>
-            </Stack>
-          </Paper>
-
-          {/* Calendar */}
-          <MiniCalendar />
-        </Grid>
+              </Stack>
+            ))}
+          </Stack>
+        </Paper>
       </Grid>
-    </Stack>
+
+      {/* ── Definições da Carteirinha ── */}
+      <Grid size={{ xs: 12, md: 6 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 2,
+            p: 3,
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Definições da Carteirinha
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.5, mb: 2 }}
+          >
+            Definir Data de Validade Anual
+          </Typography>
+          <Divider sx={{ mb: 3 }} />
+
+          {/* Campo data com borda laranja */}
+          <DateField
+            label="Data"
+            value={validityDate}
+            onChange={setValidityDate}
+          />
+
+          {/* Cancelar / Confirmar — texto laranja */}
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ justifyContent: 'flex-end', mt: 3 }}
+          >
+            <Button
+              onClick={() => setValidityDate('')}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                color: 'primary.main',
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                // TODO: salvar data de validade via API
+                console.log('Validade:', validityDate);
+              }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                color: 'primary.main',
+              }}
+            >
+              Confirmar
+            </Button>
+          </Stack>
+        </Paper>
+      </Grid>
+    </Grid>
   );
 };
 

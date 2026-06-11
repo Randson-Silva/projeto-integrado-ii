@@ -16,6 +16,7 @@ import {
   CircularProgress,
   Divider,
   FormControl,
+  FormHelperText,
   Grid,
   InputLabel,
   MenuItem,
@@ -38,7 +39,7 @@ import {
   mapFormToUpdatePayload,
 } from '../services/associate/associate.mappers';
 
-import type { AssociateCategoryResponse, IAssociateProfileForm } from '../services/associate/associate.types';
+import type { AssociateCategoryResponse, AssociateProfileForm, IAssociateProfileForm } from '../services/associate/associate.types';
 
 import {
   deleteAssociate,
@@ -47,38 +48,16 @@ import {
   updateAssociate,
 } from '../services/associate/associateService';
 
+import {
+  getCitiesByState,
+  getStates,
+  type City,
+  type State,
+} from '../services/address/ibgeService';
+import { getAddressByCep } from '../services/address/viaCepService';
+import { maskCEP, maskCPF, maskPhone } from '../utils/masks.util';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import InactivateAssociateDialog from './InactivateAssociateDialog';
-
-const BR_STATES = [
-  'AC',
-  'AL',
-  'AP',
-  'AM',
-  'BA',
-  'CE',
-  'DF',
-  'ES',
-  'GO',
-  'MA',
-  'MT',
-  'MS',
-  'MG',
-  'PA',
-  'PB',
-  'PR',
-  'PE',
-  'PI',
-  'RJ',
-  'RN',
-  'RS',
-  'RO',
-  'RR',
-  'SC',
-  'SP',
-  'SE',
-  'TO',
-];
 
 const DARK_BTN = {
   bgcolor: '#5F5E5E',
@@ -112,12 +91,14 @@ const EMPTY: IAssociateProfileForm = {
   addressNeighborhood: '',
   addressStreet: '',
   addressNumber: '',
+  addressComplement: '',
   race: '',
   gender: '',
   sexualOrientation: '',
   education: '',
   income: '',
   disability: '',
+  availableHours: '',
 };
 
 const AssociateProfile = () => {
@@ -147,6 +128,15 @@ const AssociateProfile = () => {
     msg: '',
   });
 
+  const [states, setStates] = useState<State[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof AssociateProfileForm, string>>
+  >({});
+
+  const [originalForm, setOriginalForm] = useState<AssociateProfileForm>(EMPTY);
+
   const toast = (severity: 'success' | 'error', msg: string) =>
     setSnack({
       open: true,
@@ -160,7 +150,11 @@ const AssociateProfile = () => {
         if (!token || !id) return;
 
         const res = await getAssociateById(token, id);
-        setForm(mapAssociateResponseToForm(res));
+
+        const data = mapAssociateResponseToForm(res);
+
+        setForm(data);
+        setOriginalForm(data);
       } catch {
         toast('error', 'Erro ao carregar associado.');
       } finally {
@@ -169,6 +163,109 @@ const AssociateProfile = () => {
     };
     load();
   }, [id, token]);
+  useEffect(() => {
+    if (!token) return;
+    getCategories(token)
+      .then((data) => setCategories(data))
+      .catch(() => {});
+  }, [token]);
+
+  useEffect(() => {
+    const loadStates = async () => {
+      try {
+        const data = await getStates();
+
+        setStates(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadStates();
+  }, []);
+
+  useEffect(() => {
+    const loadCities = async () => {
+      if (!form.addressState) {
+        setCities([]);
+        return;
+      }
+
+      try {
+        const data = await getCitiesByState(form.addressState);
+
+        setCities(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadCities();
+  }, [form.addressState]);
+
+  const validateForm = () => {
+    const newErrors: Partial<Record<keyof AssociateProfileForm, string>> = {};
+
+    if (!form.fullName.trim()) {
+      newErrors.fullName = 'Nome é obrigatório';
+    }
+
+    if (!form.email.trim()) {
+      newErrors.email = 'E-mail é obrigatório';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      newErrors.email = 'E-mail inválido';
+    }
+
+    if (!form.cpf.trim()) {
+      newErrors.cpf = 'CPF é obrigatório';
+    } else if (form.cpf.replace(/\D/g, '').length !== 11) {
+      newErrors.cpf = 'CPF inválido';
+    }
+
+    if (!form.phone.trim()) {
+      newErrors.phone = 'Telefone é obrigatório';
+    } else if (form.phone.replace(/\D/g, '').length < 10) {
+      newErrors.phone = 'Telefone inválido';
+    }
+
+    if (!form.addressZipCode.trim()) {
+      newErrors.addressZipCode = 'CEP obrigatório';
+    }
+
+    if (!form.addressState) {
+      newErrors.addressState = 'Estado obrigatório';
+    }
+
+    if (!form.addressCity) {
+      newErrors.addressCity = 'Cidade obrigatória';
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleCepBlur = async (zipCode: string) => {
+    const cep = zipCode.replace('-', '');
+
+    if (cep.length !== 8) return;
+
+    try {
+      const data = await getAddressByCep(cep);
+
+      if (data.erro) return;
+
+      setForm((prev) => ({
+        ...prev,
+        addressState: data.uf,
+        addressCity: data.localidade,
+        addressNeighborhood: data.bairro,
+        addressStreet: data.logradouro,
+      }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -178,6 +275,11 @@ const AssociateProfile = () => {
   }, [token]);
 
   const handleSave = async () => {
+    if (!validateForm()) {
+      toast('error', 'Preencha os campos obrigatórios.');
+      return;
+    }
+
     try {
       if (!token || !id) return;
 
@@ -197,6 +299,7 @@ const AssociateProfile = () => {
         })
       );
 
+      setOriginalForm(form);
       setEditing(false);
 
       toast('success', 'Alterações salvas com sucesso!');
@@ -225,14 +328,35 @@ const AssociateProfile = () => {
     type = 'text'
   ) => (
     <TextField
+      error={!!errors[key]}
+      helperText={errors[key]}
       label={label}
       value={String(form[key] ?? '')}
-      onChange={(e) =>
+      onChange={async (e) => {
+        let value = e.target.value;
+
+        if (key === 'addressZipCode') {
+          value = maskCEP(value);
+        }
+
+        if (key === 'cpf') {
+          value = maskCPF(value);
+        }
+
+        if (key === 'phone') {
+          value = maskPhone(value);
+        }
+
         setForm((p) => ({
           ...p,
-          [key]: e.target.value,
-        }))
-      }
+          [key]: value,
+        }));
+      }}
+      onBlur={() => {
+        if (key === 'addressZipCode') {
+          handleCepBlur(form.addressZipCode);
+        }
+      }}
       disabled={!editing}
       type={type}
       size="small"
@@ -257,6 +381,7 @@ const AssociateProfile = () => {
       <InputLabel shrink>{label}</InputLabel>
 
       <Select
+        error={!!errors[key]}
         value={String(form[key] ?? '')}
         label={label}
         notched
@@ -265,6 +390,7 @@ const AssociateProfile = () => {
           setForm((p) => ({
             ...p,
             [key]: e.target.value,
+            ...(key === 'addressState' ? { addressCity: '' } : {}),
           }))
         }
       >
@@ -274,6 +400,7 @@ const AssociateProfile = () => {
           </MenuItem>
         ))}
       </Select>
+      <FormHelperText>{errors[key]}</FormHelperText>
     </FormControl>
   );
 
@@ -567,14 +694,23 @@ const AssociateProfile = () => {
               {sf(
                 'Estado',
                 'addressState',
-                BR_STATES.map((s) => ({
-                  value: s,
-                  label: s,
+                states.map((state) => ({
+                  value: state.sigla,
+                  label: state.nome,
                 }))
               )}
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 3 }}>{tf('Cidade', 'addressCity')}</Grid>
+            <Grid size={{ xs: 12, sm: 3 }}>
+              {sf(
+                'Cidade',
+                'addressCity',
+                cities.map((city) => ({
+                  value: city.nome,
+                  label: city.nome,
+                }))
+              )}
+            </Grid>
 
             <Grid size={{ xs: 12, sm: 4 }}>
               {tf('Bairro', 'addressNeighborhood')}
@@ -611,120 +747,6 @@ const AssociateProfile = () => {
 
           <Divider sx={{ mb: 3 }} />
 
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 700,
-              mb: 2,
-            }}
-          >
-            Dados Autodeclaratórios
-          </Typography>
-
-          <Grid
-            container
-            spacing={2}
-            sx={{
-              mb: editing ? 0 : 1,
-            }}
-          >
-            <Grid size={{ xs: 12, sm: 3 }}>
-              {sf('Escolaridade', 'education', [
-                {
-                  value: 'FUNDAMENTAL',
-                  label: 'Fundamental',
-                },
-                {
-                  value: 'MEDIO',
-                  label: 'Ensino Médio',
-                },
-                {
-                  value: 'SUPERIOR',
-                  label: 'Superior',
-                },
-                {
-                  value: 'POS',
-                  label: 'Pós-graduação',
-                },
-              ])}
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 3 }}>
-              {sf('Renda Pessoal', 'income', [
-                { value: 'BAIXA', label: 'Baixa' },
-                { value: 'MEDIA', label: 'Média' },
-                { value: 'ALTA', label: 'Alta' },
-              ])}
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 2 }}>
-              {sf('Etnia', 'race', [
-                {
-                  value: 'BRANCO',
-                  label: 'Branco (a)',
-                },
-                {
-                  value: 'PARDO',
-                  label: 'Pardo (a)',
-                },
-                {
-                  value: 'PRETO',
-                  label: 'Preto (a)',
-                },
-                {
-                  value: 'AMARELO',
-                  label: 'Amarelo (a)',
-                },
-                {
-                  value: 'INDIGENA',
-                  label: 'Indígena',
-                },
-              ])}
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 2 }}>
-              {sf('Identidade de Gênero', 'gender', [
-                {
-                  value: 'MASCULINO',
-                  label: 'Masculino',
-                },
-                {
-                  value: 'FEMININO',
-                  label: 'Feminino',
-                },
-                {
-                  value: 'NAO_BINARIO',
-                  label: 'Não-binário',
-                },
-                {
-                  value: 'OUTRO',
-                  label: 'Outro',
-                },
-              ])}
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 2 }}>
-              {sf('Orientação Sexual', 'sexualOrientation', [
-                {
-                  value: 'HETEROSSEXUAL',
-                  label: 'Heterosexual',
-                },
-                {
-                  value: 'HOMOSSEXUAL',
-                  label: 'Homossexual',
-                },
-                {
-                  value: 'BISSEXUAL',
-                  label: 'Bissexual',
-                },
-                {
-                  value: 'OUTRO',
-                  label: 'Outro',
-                },
-              ])}
-            </Grid>
-          </Grid>
-
           {editing && (
             <Stack
               sx={{
@@ -739,7 +761,11 @@ const AssociateProfile = () => {
             >
               <Button
                 variant="contained"
-                onClick={() => setEditing(false)}
+                onClick={() => {
+                  setForm(originalForm);
+                  setErrors({});
+                  setEditing(false);
+                }}
                 sx={{
                   bgcolor: 'grey.300',
                   color: 'text.primary',

@@ -1,11 +1,11 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
 import {
   Alert,
   Button,
   CircularProgress,
   Divider,
   FormControl,
+  FormHelperText,
   Grid,
   InputLabel,
   MenuItem,
@@ -19,39 +19,21 @@ import {
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import DuplicateCPFDialog from './DuplicateCPFDialog';
-import { createAssociate, getCategories } from '../services/associate/associateService';
+import {
+  getCitiesByState,
+  getStates,
+  type City,
+  type State,
+} from '../services/address/ibgeService';
+import { getAddressByCep } from '../services/address/viaCepService';
 import type { AssociateCategoryResponse } from '../services/associate/associate.types';
-
-const BR_STATES = [
-  'AC',
-  'AL',
-  'AP',
-  'AM',
-  'BA',
-  'CE',
-  'DF',
-  'ES',
-  'GO',
-  'MA',
-  'MT',
-  'MS',
-  'MG',
-  'PA',
-  'PB',
-  'PR',
-  'PE',
-  'PI',
-  'RJ',
-  'RN',
-  'RS',
-  'RO',
-  'RR',
-  'SC',
-  'SP',
-  'SE',
-  'TO',
-];
+import {
+  createAssociate,
+  getCategories,
+} from '../services/associate/associateService';
+import { isValidBirthDate } from '../utils/dates.util';
+import { maskCEP, maskCPF, maskPhone } from '../utils/masks.util';
+import DuplicateCPFDialog from './DuplicateCPFDialog';
 
 interface AssociateCreateForm {
   fullName: string;
@@ -92,10 +74,9 @@ const EMPTY: AssociateCreateForm = {
 type Snack = { open: boolean; severity: 'success' | 'error'; msg: string };
 
 const AssociateCreateForm = () => {
-  const { token } = useAuth();
-
-  const navigate = useNavigate();
-
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<keyof AssociateCreateForm, string>>
+  >({});
   const [form, setForm] = useState<AssociateCreateForm>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [duplicateOpen, setDuplicate] = useState(false);
@@ -105,76 +86,193 @@ const AssociateCreateForm = () => {
     severity: 'success',
     msg: '',
   });
+  const [states, setStates] = useState<State[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+
+  const { token } = useAuth();
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadStates = async () => {
+      try {
+        const data = await getStates();
+
+        setStates(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadStates();
+  }, []);
+
+  const handleStateChange = async (uf: string) => {
+    try {
+      const citiesData = await getCitiesByState(uf);
+
+      setCities(citiesData);
+
+      setForm((prev) => ({
+        ...prev,
+        addressState: uf,
+        addressCity: '',
+      }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCepBlur = async (zipCode: string) => {
+    const cep = zipCode.replace('-', '');
+    console.log(cep);
+
+    if (cep.length !== 8) return;
+
+    try {
+      const data = await getAddressByCep(cep);
+
+      const citiesData = await getCitiesByState(data.uf);
+
+      setCities(citiesData);
+
+      if (data.erro) return;
+
+      setForm((prev) => ({
+        ...prev,
+        addressState: data.uf,
+        addressCity: data.localidade,
+        addressNeighborhood: data.bairro,
+        addressStreet: data.logradouro,
+        addressComplement: data.complemento || prev.addressComplement,
+      }));
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
     if (!token) return;
     getCategories(token)
       .then((data) => setCategories(data))
-      .catch(() => {/* silently ignore, select fica vazio */});
+      .catch(() => {
+        /* silently ignore, select fica vazio */
+      });
   }, [token]);
 
-  const applyMask = (value: string, key: keyof AssociateCreateForm): string => {
-    const digits = value.replace(/\D/g, '');
-    if (key === 'cpf') {
-      return digits
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-        .slice(0, 14);
-    }
-    if (key === 'phone') {
-      return digits
-        .replace(/(\d{2})(\d)/, '($1) $2')
-        .replace(/(\d{4,5})(\d{4})$/, '$1-$2')
-        .slice(0, 15);
-    }
-    if (key === 'addressZipCode') {
-      return digits.replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
-    }
-    if (key === 'addressNumber') {
-      return digits.slice(0, 10);
-    }
-    return value;
-  };
+  const set =
+    (key: keyof AssociateCreateForm) =>
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      let value = e.target.value;
 
-  const maskedKeys: (keyof AssociateCreateForm)[] = ['cpf', 'phone', 'addressZipCode', 'addressNumber'];
+      if (key === 'cpf') {
+        value = maskCPF(value);
+      }
 
-  const textField = (
-    label: string,
-    key: keyof AssociateCreateForm,
-    placeholder?: string,
-    type = 'text'
-  ) => (
-    <TextField
-      label={label}
-      placeholder={placeholder}
-      value={form[key]}
-      onChange={(e) => {
-        const masked = applyMask(e.target.value, key);
-        e.target.value = masked;
-        setForm((p) => ({ ...p, [key]: masked }));
-      }}
-      type={type}
-      size="small"
-      fullWidth
-      slotProps={{
-        inputLabel: { shrink: true },
-        htmlInput: {
-          maxLength: key === 'cpf' ? 14 : key === 'phone' ? 15 : key === 'addressZipCode' ? 9 : key === 'addressNumber' ? 10 : undefined,
-          inputMode: maskedKeys.includes(key) ? 'numeric' : 'text',
-        },
-      }}
-      onKeyDown={(e) => {
-        if (maskedKeys.includes(key)) {
-          if (e.key.length === 1 && !/[0-9]/.test(e.key) && !e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-          }
+      if (key === 'phone') {
+        value = maskPhone(value);
+      }
+
+      if (key === 'addressZipCode') {
+        value = maskCEP(value);
+
+        if (value.length >= 9) {
+          console.log('dentro do set: ', value);
+          await handleCepBlur(value);
         }
-      }}
-    />
-  );
+      }
+
+      if (key === 'addressNumber') {
+        value = value.replace(/\W /g, '').slice(0, 10);
+      }
+
+      setForm((p) => ({
+        ...p,
+        [key]: value,
+      }));
+
+      setFieldErrors((prev) => ({
+        ...prev,
+        [key]: undefined,
+      }));
+    };
 
   const handleSubmit = async () => {
+    const errors: Partial<Record<keyof AssociateCreateForm, string>> = {};
+
+    if (!form.fullName.trim()) {
+      errors.fullName = 'Nome é obrigatório';
+    }
+
+    if (!form.cpf.trim()) {
+      errors.cpf = 'CPF é obrigatório';
+    } else if (form.cpf.replace(/\D/g, '').length !== 11) {
+      errors.cpf = 'CPF inválido';
+    }
+
+    if (!form.birthDate.trim()) {
+      errors.birthDate = 'Data de nascimento é obrigatória';
+    } else if (!isValidBirthDate(form.birthDate)) {
+      errors.birthDate = 'Data inválida';
+    }
+
+    if (isUnder18 && !form.guardianName.trim()) {
+      errors.guardianName = 'Responsável é obrigatório';
+    }
+
+    if (!form.email.trim()) {
+      errors.email = 'E-mail é obrigatório';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      errors.email = 'E-mail inválido';
+    }
+
+    if (!form.phone.trim()) {
+      errors.phone = 'Telefone é obrigatório';
+    } else if (form.phone.replace(/\D/g, '').length < 10) {
+      errors.phone = 'Telefone inválido';
+    }
+
+    if (!form.addressZipCode.trim()) {
+      errors.addressZipCode = 'CEP é obrigatório';
+    } else if (form.addressZipCode.replace(/\D/g, '').length !== 8) {
+      errors.addressZipCode = 'CEP inválido';
+    }
+
+    if (!form.addressState) {
+      errors.addressState = 'Estado é obrigatório';
+    }
+
+    if (!form.addressCity) {
+      errors.addressCity = 'Cidade é obrigatória';
+    }
+
+    if (!form.category) {
+      errors.category = 'Categoria é obrigatória';
+    }
+
+    if (!form.availability) {
+      errors.availability = 'Disponibilidade é obrigatória';
+    }
+
+    if (!form.addressNeighborhood.trim()) {
+      errors.addressNeighborhood = 'Bairro é obrigatório';
+    }
+
+    if (!form.addressStreet.trim()) {
+      errors.addressStreet = 'Rua é obrigatório';
+    }
+
+    if (!form.addressNumber.trim()) {
+      errors.addressNumber = 'Número é obrigatório';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
+
     setSaving(true);
 
     try {
@@ -193,22 +291,20 @@ const AssociateCreateForm = () => {
 
         workCategoryId: form.category || undefined,
 
-        availableHours: (form.availability as 'MATUTINO' | 'VESPERTINO' | 'NOTURNO' | 'TODOS') || 'TODOS',
+        availableHours:
+          (form.availability as
+            | 'MATUTINO'
+            | 'VESPERTINO'
+            | 'NOTURNO'
+            | 'TODOS') || 'TODOS',
 
         postalCode: form.addressZipCode.replace(/\D/g, ''),
-
         street: form.addressStreet,
-
         number: form.addressNumber || '0',
-
         complement: form.addressComplement || undefined,
-
         neighborhood: form.addressNeighborhood,
-
         city: form.addressCity,
-
         state: form.addressState,
-
         legalGuardianName: isUnder18 ? form.guardianName : '',
 
         acceptedDataSharingTerm: true,
@@ -243,14 +339,34 @@ const AssociateCreateForm = () => {
     }
   };
 
-
+  const textField = (
+    label: string,
+    key: keyof AssociateCreateForm,
+    placeholder?: string,
+    type = 'text'
+  ) => (
+    <TextField
+      label={label}
+      placeholder={placeholder}
+      value={form[key]}
+      onChange={set(key)}
+      type={type}
+      size="small"
+      fullWidth
+      error={Boolean(fieldErrors[key])}
+      helperText={fieldErrors[key]}
+      slotProps={{
+        inputLabel: { shrink: true },
+      }}
+    />
+  );
 
   const selectField = (
     label: string,
     key: keyof AssociateCreateForm,
     options: { value: string; label: string }[]
   ) => (
-    <FormControl size="small" fullWidth>
+    <FormControl size="small" fullWidth error={Boolean(fieldErrors[key])}>
       <InputLabel shrink>{label}</InputLabel>
 
       <Select
@@ -262,10 +378,20 @@ const AssociateCreateForm = () => {
           v === '' ? (
             <span style={{ color: '#9e9e9e' }}>Selecione</span>
           ) : (
-            options.find((o) => o.value === v)?.label ?? String(v)
+            (options.find((o) => o.value === v)?.label ?? String(v))
           )
         }
-        onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
+        onChange={(e) => {
+          setForm((p) => ({
+            ...p,
+            [key]: e.target.value,
+          }));
+
+          setFieldErrors((prev) => ({
+            ...prev,
+            [key]: undefined,
+          }));
+        }}
       >
         <MenuItem value="" disabled>
           <em>Selecione</em>
@@ -276,6 +402,8 @@ const AssociateCreateForm = () => {
           </MenuItem>
         ))}
       </Select>
+
+      <FormHelperText>{fieldErrors[key]}</FormHelperText>
     </FormControl>
   );
 
@@ -303,19 +431,6 @@ const AssociateCreateForm = () => {
   return (
     <>
       <Stack spacing={2.5}>
-        {/* Breadcrumb */}
-        <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
-          <GroupOutlinedIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-
-          <Typography
-            variant="body2"
-            color="primary.main"
-            sx={{ fontWeight: 600 }}
-          >
-            Associados
-          </Typography>
-        </Stack>
-
         {/* Voltar */}
         <Button
           startIcon={<ArrowBackIcon sx={{ fontSize: 18 }} />}
@@ -404,27 +519,68 @@ const AssociateCreateForm = () => {
             </Grid>
 
             <Grid size={{ xs: 12, sm: 3 }}>
-              {selectField(
-                'Estado',
-                'addressState',
-                BR_STATES.map((s) => ({ value: s, label: s }))
-              )}
+              <FormControl
+                size="small"
+                fullWidth
+                error={Boolean(fieldErrors.addressState)}
+              >
+                <InputLabel shrink>Estado</InputLabel>
+
+                <Select
+                  value={form.addressState}
+                  label="Estado"
+                  notched
+                  displayEmpty
+                  onChange={(e) => handleStateChange(String(e.target.value))}
+                >
+                  {states.map((state) => (
+                    <MenuItem key={state.sigla} value={state.sigla}>
+                      {state.sigla} - {state.nome}
+                    </MenuItem>
+                  ))}
+                </Select>
+
+                <FormHelperText>{fieldErrors.addressState}</FormHelperText>
+              </FormControl>
             </Grid>
 
             <Grid size={{ xs: 12, sm: 3 }}>
-              {selectField('Cidade', 'addressCity', [
-                { value: 'Quixadá', label: 'Quixadá' },
-                { value: 'Fortaleza', label: 'Fortaleza' },
-                { value: 'Outras', label: 'Outras' },
-              ])}
+              <FormControl
+                size="small"
+                fullWidth
+                error={Boolean(fieldErrors.addressCity)}
+              >
+                <InputLabel shrink>Cidade</InputLabel>
+
+                <Select
+                  value={form.addressCity}
+                  label="Cidade"
+                  notched
+                  displayEmpty
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      addressCity: String(e.target.value),
+                    }))
+                  }
+                >
+                  {cities.map((city) => (
+                    <MenuItem key={city.nome} value={city.nome}>
+                      {city.nome}
+                    </MenuItem>
+                  ))}
+                </Select>
+
+                <FormHelperText>{fieldErrors.addressCity}</FormHelperText>
+              </FormControl>
             </Grid>
 
             <Grid size={{ xs: 12, sm: 4 }}>
               {textField('Bairro', 'addressNeighborhood', 'Informe o Bairro')}
             </Grid>
 
-            {/* Row 2: Rua, Número, Complemento */}
-            <Grid size={{ xs: 12, sm: 6 }}>
+            {/* Row 2: Rua, Num, Complemento */}
+            <Grid size={{ xs: 12, sm: 4 }}>
               {textField('Rua', 'addressStreet', 'Informe a Rua')}
             </Grid>
 
@@ -433,11 +589,7 @@ const AssociateCreateForm = () => {
             </Grid>
 
             <Grid size={{ xs: 12, sm: 4 }}>
-              {textField(
-                'Complemento',
-                'addressComplement',
-                'Apto, bloco...'
-              )}
+              {textField('Complemento', 'addressComplement', 'Apto, bloco...')}
             </Grid>
           </Grid>
 
@@ -459,7 +611,9 @@ const AssociateCreateForm = () => {
             </Grid>
 
             <Grid size={{ xs: 12, sm: 3 }}>
-              {selectField('Categoria', 'category',
+              {selectField(
+                'Categoria',
+                'category',
                 categories.map((c) => ({ value: c.id, label: c.name }))
               )}
             </Grid>

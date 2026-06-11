@@ -16,6 +16,7 @@ import {
   CircularProgress,
   Divider,
   FormControl,
+  FormHelperText,
   Grid,
   InputLabel,
   MenuItem,
@@ -39,9 +40,10 @@ import {
   mapFormToUpdatePayload,
 } from '../services/associate/associate.mappers';
 
-import type { AssociateCategoryResponse, IAssociateProfileForm } from '../services/associate/associate.types';
-
-import api from '../services/api';
+import type {
+  AssociateCategoryResponse,
+  IAdminAssociateProfileForm,
+} from '../services/associate/associate.types';
 
 import {
   deleteAssociate,
@@ -50,38 +52,18 @@ import {
   updateAssociate,
 } from '../services/associate/associateService';
 
+import { LinkRounded } from '@mui/icons-material';
+import {
+  getCitiesByState,
+  getStates,
+  type City,
+  type State,
+} from '../services/address/ibgeService';
+import { activateUser, inactivateUser } from '../services/user/userService';
+import { isValidBirthDate } from '../utils/dates.util';
+import { maskCEP, maskCPF, maskPhone } from '../utils/masks.util';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import InactivateAssociateDialog from './InactivateAssociateDialog';
-
-const BR_STATES = [
-  'AC',
-  'AL',
-  'AP',
-  'AM',
-  'BA',
-  'CE',
-  'DF',
-  'ES',
-  'GO',
-  'MA',
-  'MT',
-  'MS',
-  'MG',
-  'PA',
-  'PB',
-  'PR',
-  'PE',
-  'PI',
-  'RJ',
-  'RN',
-  'RS',
-  'RO',
-  'RR',
-  'SC',
-  'SP',
-  'SE',
-  'TO',
-];
 
 const DARK_BTN = {
   bgcolor: '#5F5E5E',
@@ -101,7 +83,7 @@ type Snack = {
   msg: string;
 };
 
-const EMPTY: IAssociateProfileForm = {
+const EMPTY: IAdminAssociateProfileForm = {
   id: '',
   fullName: '',
   cpf: '',
@@ -117,12 +99,6 @@ const EMPTY: IAssociateProfileForm = {
   addressStreet: '',
   addressNumber: '',
   addressComplement: '',
-  race: '',
-  gender: '',
-  sexualOrientation: '',
-  education: '',
-  income: '',
-  disability: '',
 };
 
 const AssociateProfile = () => {
@@ -138,13 +114,24 @@ const AssociateProfile = () => {
 
   const [saving, setSaving] = useState(false);
 
-  const [form, setForm] = useState<IAssociateProfileForm>(EMPTY);
+  const [form, setForm] = useState<IAdminAssociateProfileForm>(EMPTY);
 
   const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
 
   const [inactivateOpen, setInactivateOpen] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const [originalForm, setOriginalForm] =
+    useState<IAdminAssociateProfileForm>(EMPTY);
+  const [states, setStates] = useState<State[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+
+  const [isActive, setIsActive] = useState<boolean>();
+
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof IAdminAssociateProfileForm, string>>
+  >({});
 
   const [snack, setSnack] = useState<Snack>({
     open: false,
@@ -168,7 +155,13 @@ const AssociateProfile = () => {
         if (!token || !id) return;
 
         const res = await getAssociateById(token, id);
-        setForm(mapAssociateResponseToForm(res));
+
+        setIsActive(res.user.active);
+
+        const data = mapAssociateResponseToForm(res);
+
+        setForm(data);
+        setOriginalForm(data);
       } catch {
         toast('error', 'Erro ao carregar associado.');
       } finally {
@@ -185,7 +178,127 @@ const AssociateProfile = () => {
       .catch(() => {});
   }, [token]);
 
+  useEffect(() => {
+    const loadStates = async () => {
+      try {
+        const data = await getStates();
+
+        setStates(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadStates();
+  }, []);
+
+  useEffect(() => {
+    const loadCities = async () => {
+      if (!form.addressState) {
+        setCities([]);
+        return;
+      }
+
+      try {
+        const data = await getCitiesByState(form.addressState);
+
+        setCities(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadCities();
+  }, [form.addressState]);
+
+  const validateForm = () => {
+    const newErrors: Partial<Record<keyof IAdminAssociateProfileForm, string>> =
+      {};
+
+    if (!form.fullName.trim()) {
+      newErrors.fullName = 'Nome é obrigatório';
+    }
+
+    if (!form.email.trim()) {
+      newErrors.email = 'E-mail é obrigatório';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      newErrors.email = 'E-mail inválido';
+    }
+
+    if (!form.cpf.trim()) {
+      newErrors.cpf = 'CPF é obrigatório';
+    } else if (form.cpf.replace(/\D/g, '').length !== 11) {
+      newErrors.cpf = 'CPF inválido';
+    }
+
+    if (!form.phone.trim()) {
+      newErrors.phone = 'Telefone é obrigatório';
+    } else if (form.phone.replace(/\D/g, '').length < 10) {
+      newErrors.phone = 'Telefone inválido';
+    }
+
+    if (!form.addressZipCode.trim()) {
+      newErrors.addressZipCode = 'CEP obrigatório';
+    }
+
+    if (!form.addressState) {
+      newErrors.addressState = 'Estado obrigatório';
+    }
+
+    if (!form.addressStreet) {
+      newErrors.addressStreet = 'Rua obrigatória';
+    }
+
+    if (!form.addressCity) {
+      newErrors.addressCity = 'Cidade obrigatória';
+    }
+
+    if (!form.addressNeighborhood) {
+      newErrors.addressNeighborhood = 'Bairro obrigatório';
+    }
+
+    if (!form.addressNumber) {
+      newErrors.addressNumber = 'Número obrigatório';
+    }
+
+    if (!form.category) {
+      newErrors.category = 'Categoria obrigatória';
+    }
+
+    if (!form.availableHours) {
+      newErrors.availableHours = 'Disponibilidade obrigatória';
+    }
+
+    if (!form.birthDate) {
+      newErrors.birthDate = 'Data de nascimento obrigatória';
+    } else if (!isValidBirthDate(form.birthDate)) {
+      newErrors.birthDate = 'Data inválida';
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInactivate = async () => {
+    if (!token) return;
+    if (!isActive) return;
+
+    await inactivateUser(token, form.id);
+  };
+
+  const handleActivate = async () => {
+    if (!token) return;
+    if (isActive) return;
+
+    await activateUser(token, form.id);
+  };
+
   const handleSave = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       if (!token || !id) return;
 
@@ -198,17 +311,18 @@ const AssociateProfile = () => {
           ...form,
 
           cpf: form.cpf.replace(/\D/g, ''),
-
           phone: form.phone.replace(/\D/g, ''),
-
           addressZipCode: form.addressZipCode.replace(/\D/g, ''),
         })
       );
 
       setEditing(false);
 
+      setOriginalForm(form);
+
       toast('success', 'Alterações salvas com sucesso!');
     } catch {
+      setForm(originalForm);
       toast('error', 'Erro ao salvar alterações.');
     } finally {
       setSaving(false);
@@ -229,26 +343,19 @@ const AssociateProfile = () => {
 
   const tf = (
     label: string,
-    key: keyof IAssociateProfileForm,
+    key: keyof IAdminAssociateProfileForm,
     type = 'text'
   ) => {
     const applyMask = (value: string, fieldKey: string) => {
-      let v = String(value ?? '').replace(/\D/g, '');
+      const v = String(value ?? '').replace(/\D/g, '');
       if (fieldKey === 'cpf') {
-        return v
-          .replace(/(\d{3})(\d)/, '$1.$2')
-          .replace(/(\d{3})(\d)/, '$1.$2')
-          .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-          .slice(0, 14);
+        return maskCPF(v);
       }
       if (fieldKey === 'addressZipCode') {
-        return v.replace(/(\d{5})(\d)/, '$1-$2').slice(0, 9);
+        return maskCEP(v);
       }
       if (fieldKey === 'phone') {
-        return v
-          .replace(/(\d{2})(\d)/, '($1) $2')
-          .replace(/(\d{4,5})(\d{4})$/, '$1-$2')
-          .slice(0, 15);
+        return maskPhone(v);
       }
       if (fieldKey === 'addressNumber') {
         return v.slice(0, 10);
@@ -267,11 +374,21 @@ const AssociateProfile = () => {
     return (
       <TextField
         label={label}
-        value={applyMask(String(form[key] ?? ''), key)}
+        value={applyMask(form[key] ?? '', key)}
+        error={!!errors[key]}
+        helperText={errors[key]}
         onChange={(e) => {
           const masked = applyMask(e.target.value, key);
-          e.target.value = masked;
-          setForm((p) => ({ ...p, [key]: masked }));
+
+          setForm((p) => ({
+            ...p,
+            [key]: masked,
+          }));
+
+          setErrors((prev) => ({
+            ...prev,
+            [key]: undefined,
+          }));
         }}
         disabled={!editing}
         type={type}
@@ -283,11 +400,22 @@ const AssociateProfile = () => {
           },
           htmlInput: {
             maxLength: getMaxLength(key),
-            inputMode: ['cpf', 'addressZipCode', 'phone', 'addressNumber'].includes(key) ? 'numeric' : 'text',
+            inputMode: [
+              'cpf',
+              'addressZipCode',
+              'phone',
+              'addressNumber',
+            ].includes(key)
+              ? 'numeric'
+              : 'text',
           },
         }}
         onKeyDown={(e) => {
-          if (['cpf', 'addressZipCode', 'phone', 'addressNumber'].includes(key as string)) {
+          if (
+            ['cpf', 'addressZipCode', 'phone', 'addressNumber'].includes(
+              key as string
+            )
+          ) {
             if (
               e.key.length === 1 &&
               !/[0-9]/.test(e.key) &&
@@ -304,47 +432,42 @@ const AssociateProfile = () => {
 
   const sf = (
     label: string,
-    key: keyof IAssociateProfileForm,
+    key: keyof IAdminAssociateProfileForm,
     options: {
       value: string;
       label: string;
     }[]
   ) => (
-    <FormControl size="small" fullWidth>
+    <FormControl size="small" fullWidth error={!!errors[key]}>
       <InputLabel shrink>{label}</InputLabel>
 
       <Select
+        // error={!!errors[key]}
         value={String(form[key] ?? '')}
         label={label}
         notched
-        disabled={
-          !editing ||
-          ['education', 'income', 'race', 'gender', 'sexualOrientation'].includes(key as string)
-        }
-        onChange={(e) =>
+        disabled={!editing}
+        onChange={(e) => {
           setForm((p) => ({
             ...p,
             [key]: e.target.value,
-          }))
-        }
-        displayEmpty
-        renderValue={(v) =>
-          v === '' ? (
-            <span style={{ color: '#9e9e9e' }}>Selecione</span>
-          ) : (
-            options.find((o) => o.value === v)?.label ?? String(v)
-          )
-        }
+            ...(key === 'addressState' ? { addressCity: '' } : {}),
+          }));
+
+          setErrors((prev) => ({
+            ...prev,
+            [key]: undefined,
+            ...(key === 'addressState' ? { addressCity: undefined } : {}),
+          }));
+        }}
       >
-        <MenuItem value="" disabled>
-          <em>Selecione</em>
-        </MenuItem>
         {options.map((o) => (
           <MenuItem key={o.value} value={o.value}>
             {o.label}
           </MenuItem>
         ))}
       </Select>
+      <FormHelperText>{errors[key]}</FormHelperText>
     </FormControl>
   );
 
@@ -462,7 +585,10 @@ const AssociateProfile = () => {
                   startIcon={<EditIcon sx={{ fontSize: 16 }} />}
                   variant="contained"
                   color="primary"
-                  onClick={() => setEditing(true)}
+                  onClick={() => {
+                    setErrors({});
+                    setEditing(true);
+                  }}
                   sx={{
                     borderRadius: 10,
                     textTransform: 'none',
@@ -511,12 +637,20 @@ const AssociateProfile = () => {
                 </Button>
 
                 <Button
-                  startIcon={<LinkOffIcon sx={{ fontSize: 16 }} />}
+                  startIcon={
+                    isActive ? (
+                      <LinkOffIcon sx={{ fontSize: 16 }} />
+                    ) : (
+                      <LinkRounded sx={{ fontSize: 16 }} />
+                    )
+                  }
                   variant="contained"
-                  onClick={() => setInactivateOpen(true)}
+                  onClick={() => {
+                    setInactivateOpen(true);
+                  }}
                   sx={DARK_BTN}
                 >
-                  Inativar Vínculo
+                  {isActive ? 'Inativar Vínculo' : 'Ativar Vínculo'}
                 </Button>
 
                 <Button
@@ -638,25 +772,29 @@ const AssociateProfile = () => {
               {sf(
                 'Estado',
                 'addressState',
-                [
-                  { value: '', label: 'Selecione' },
-                  ...BR_STATES.map((s) => ({
-                    value: s,
-                    label: s,
-                  })),
-                ]
+                states.map((state) => ({
+                  value: state.sigla,
+                  label: state.nome,
+                }))
               )}
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 3 }}>{tf('Cidade', 'addressCity')}</Grid>
+            <Grid size={{ xs: 12, sm: 3 }}>
+              {sf(
+                'Cidade',
+                'addressCity',
+                cities.map((city) => ({
+                  value: city.nome,
+                  label: city.nome,
+                }))
+              )}
+            </Grid>
 
             <Grid size={{ xs: 12, sm: 4 }}>
               {tf('Bairro', 'addressNeighborhood')}
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 5 }}>
-              {tf('Rua', 'addressStreet')}
-            </Grid>
+            <Grid size={{ xs: 12, sm: 5 }}>{tf('Rua', 'addressStreet')}</Grid>
 
             <Grid size={{ xs: 12, sm: 2 }}>
               {tf('Número', 'addressNumber')}
@@ -682,7 +820,6 @@ const AssociateProfile = () => {
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, sm: 4 }}>
               {sf('Disponibilidade de Horário', 'availableHours', [
-                { value: '', label: 'Selecione' },
                 { value: 'MATUTINO', label: 'Matutino' },
                 { value: 'VESPERTINO', label: 'Vespertino' },
                 { value: 'NOTURNO', label: 'Noturno' },
@@ -692,14 +829,13 @@ const AssociateProfile = () => {
 
             <Grid size={{ xs: 12, sm: 4 }}>
               {sf('Categoria', 'category', [
-                { value: '', label: 'Selecione' },
                 ...categories.map((c) => ({ value: c.id, label: c.name })),
               ])}
             </Grid>
           </Grid>
 
           <Divider sx={{ mb: 3 }} />
-
+          {/* 
           <Typography
             variant="h6"
             sx={{
@@ -720,19 +856,34 @@ const AssociateProfile = () => {
             <Grid size={{ xs: 12, sm: 3 }}>
               {sf('Escolaridade', 'education', [
                 { value: '', label: 'Selecione' },
-                { value: 'FUNDAMENTAL_INCOMPLETO', label: 'Fundamental Incompleto' },
-                { value: 'FUNDAMENTAL_COMPLETO', label: 'Fundamental Completo' },
+                {
+                  value: 'FUNDAMENTAL_INCOMPLETO',
+                  label: 'Fundamental Incompleto',
+                },
+                {
+                  value: 'FUNDAMENTAL_COMPLETO',
+                  label: 'Fundamental Completo',
+                },
                 { value: 'MEDIO_INCOMPLETO', label: 'Médio Incompleto' },
                 { value: 'MEDIO_COMPLETO', label: 'Médio Completo' },
                 { value: 'SUPERIOR_INCOMPLETO', label: 'Superior Incompleto' },
                 { value: 'SUPERIOR_COMPLETO', label: 'Superior Completo' },
-                { value: 'ESPECIALIZACAO_INCOMPLETA', label: 'Espec. Incompleta' },
+                {
+                  value: 'ESPECIALIZACAO_INCOMPLETA',
+                  label: 'Espec. Incompleta',
+                },
                 { value: 'ESPECIALIZACAO_COMPLETA', label: 'Espec. Completa' },
                 { value: 'MESTRADO_INCOMPLETO', label: 'Mestrado Incompleto' },
                 { value: 'MESTRADO_COMPLETO', label: 'Mestrado Completo' },
-                { value: 'DOUTORADO_INCOMPLETO', label: 'Doutorado Incompleto' },
+                {
+                  value: 'DOUTORADO_INCOMPLETO',
+                  label: 'Doutorado Incompleto',
+                },
                 { value: 'DOUTORADO_COMPLETO', label: 'Doutorado Completo' },
-                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
+                {
+                  value: 'PREFIRO_NAO_INFORMAR',
+                  label: 'Prefiro não informar',
+                },
               ])}
             </Grid>
 
@@ -756,7 +907,10 @@ const AssociateProfile = () => {
                 { value: 'AMARELO', label: 'Amarelo (a)' },
                 { value: 'INDIGENA', label: 'Indígena' },
                 { value: 'QUILOMBOLA', label: 'Quilombola' },
-                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
+                {
+                  value: 'PREFIRO_NAO_INFORMAR',
+                  label: 'Prefiro não informar',
+                },
               ])}
             </Grid>
 
@@ -770,7 +924,10 @@ const AssociateProfile = () => {
                 { value: 'NAO_BINARIO', label: 'Não Binário' },
                 { value: 'GENERO_FLUIDO', label: 'Gênero Fluído' },
                 { value: 'OUTRO', label: 'Outro' },
-                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
+                {
+                  value: 'PREFIRO_NAO_INFORMAR',
+                  label: 'Prefiro não informar',
+                },
               ])}
             </Grid>
 
@@ -781,10 +938,13 @@ const AssociateProfile = () => {
                 { value: 'HOMOSSEXUAL', label: 'Homossexual' },
                 { value: 'BISSEXUAL', label: 'Bissexual' },
                 { value: 'OUTRO', label: 'Outro' },
-                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
+                {
+                  value: 'PREFIRO_NAO_INFORMAR',
+                  label: 'Prefiro não informar',
+                },
               ])}
             </Grid>
-          </Grid>
+          </Grid> */}
 
           {editing && (
             <Stack
@@ -800,7 +960,11 @@ const AssociateProfile = () => {
             >
               <Button
                 variant="contained"
-                onClick={() => setEditing(false)}
+                onClick={() => {
+                  setForm(originalForm);
+                  setErrors({});
+                  setEditing(false);
+                }}
                 sx={{
                   bgcolor: 'grey.300',
                   color: 'text.primary',
@@ -854,7 +1018,9 @@ const AssociateProfile = () => {
       <InactivateAssociateDialog
         open={inactivateOpen}
         onClose={() => setInactivateOpen(false)}
-        onConfirm={async () => {}}
+        onConfirm={async () => {
+          await handleInactivate();
+        }}
         associateName={form.fullName}
       />
 

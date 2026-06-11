@@ -18,6 +18,8 @@ import { authPasswordForgot } from '../services/auth/authService';
 const ForgotPasswordForm = () => {
   const { setAuthUser } = useAuth();
 
+  const [emailError, setEmailError] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const navigate = useNavigate();
@@ -26,6 +28,16 @@ const ForgotPasswordForm = () => {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const email = data.get('email') as string;
+
+    if (!email.trim()) {
+      setEmailError('O e-mail é obrigatório!');
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setEmailError('O e-mail deve ser válido!');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -93,7 +105,8 @@ const ForgotPasswordForm = () => {
             placeholder="Digite seu e-mail"
             type="email"
             required
-            helperText="Verifique se seu e-mail está digitado corretamente"
+            error={!!emailError}
+            helperText={emailError || 'Verifique se seu e-mail está digitado corretamente'}
             fullWidth
             autoComplete="email"
           />

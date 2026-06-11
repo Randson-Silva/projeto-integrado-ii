@@ -9,8 +9,12 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { authGetProfile } from '../services/auth/authService';
+import type { User } from '../services/user/user.types';
+import { accessControlUpdateUser } from '../services/user/userService';
 import ChangeAccessKeyDialog from './ChangeAccessKeyDialog';
 
 interface AccessControlProfileData {
@@ -18,26 +22,112 @@ interface AccessControlProfileData {
   email: string;
 }
 
-// TODO: substituir por contexto de autenticação
-const MOCK_PROFILE: AccessControlProfileData = {
-  association: 'Associação com Dom Maurício',
-  email: 'nicolas@email.com',
+const blank: AccessControlProfileData = {
+  association: '',
+  email: '',
 };
 
 const AccessControlProfileForm = () => {
+  const { token, logout } = useAuth();
+
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<AccessControlProfileData>({
-    ...MOCK_PROFILE,
+
+  const [originalForm, setOriginalForm] = useState<AccessControlProfileData>({
+    ...blank,
   });
+  const [form, setForm] = useState<AccessControlProfileData>({
+    ...blank,
+  });
+
+  const [profile, setProfile] = useState<User | null>(null);
+
+  const [nameError, setNameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [keyDialogOpen, setKeyDialogOpen] = useState(false);
 
+  useEffect(() => {
+    async function fetchProfile() {
+      if (!token) return;
+
+      setLoading(true);
+
+      try {
+        const data = await authGetProfile({ token });
+
+        const { email, role, cpf = '', id = '', name = '', phone = '' } = data;
+
+        const userProfile: User = {
+          cpf,
+          email,
+          role,
+          id,
+          name,
+          phone,
+        };
+
+        setProfile(userProfile);
+
+        const profileData = {
+          association: data.name ?? '',
+          email: data.email ?? '',
+        };
+
+        setOriginalForm(profileData);
+        setForm(profileData);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProfile();
+  }, [token]);
+
   const handleSave = async () => {
+    if (!token) return;
+
+    if (!profile) return;
+
+    if (!form.email.trim()) {
+      setEmailError('Email é obrigatório');
+      return;
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      setEmailError('E-mail inválido');
+      return;
+    }
+
+    if (!form.association) {
+      setNameError('Nome é obrigatório');
+      return;
+    }
     setLoading(true);
+
     try {
-      // TODO: API call
-      console.log('Save profile:', form);
+      const { id, phone } = profile;
+
+      const email = form.email;
+      const fullName = form.association;
+
+      const updated = await accessControlUpdateUser({
+        email,
+        fullName,
+        id,
+        phone,
+        token,
+      });
+
+      if (
+        form.email.trim().toLocaleLowerCase() !==
+        originalForm.email.trim().toLocaleLowerCase()
+      ) {
+        logout();
+      }
+
+      setProfile(updated);
+      setOriginalForm(form);
+      setForm(form);
       setEditing(false);
     } finally {
       setLoading(false);
@@ -45,28 +135,18 @@ const AccessControlProfileForm = () => {
   };
 
   const handleCancel = () => {
+    setEmailError('');
+    setNameError('');
     setEditing(false);
-    setForm({ ...MOCK_PROFILE });
+    setForm(originalForm);
   };
 
   return (
     <>
       <Stack spacing={3}>
-        {/* Breadcrumb
-        <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
-          <PeopleOutlineIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-          <Typography
-            variant="body2"
-            color="primary.main"
-            sx={{ fontWeight: 600 }}
-          >
-            Controle de Acesso
-          </Typography>
-        </Stack> */}
-
         <Button
           startIcon={<ArrowBackIcon sx={{ fontSize: 18 }} />}
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/controle-de-acesso')}
           sx={{
             alignSelf: 'flex-start',
             color: 'text.secondary',
@@ -119,10 +199,15 @@ const AccessControlProfileForm = () => {
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
               <TextField
-                label="Associação"
+                error={!!nameError}
+                helperText={nameError}
+                label="Nome do perfil"
                 value={form.association}
                 onChange={(e) =>
-                  setForm((prev) => ({ ...prev, association: e.target.value }))
+                  setForm((prev) => {
+                    setNameError('');
+                    return { ...prev, association: e.target.value };
+                  })
                 }
                 disabled={!editing}
                 size="small"
@@ -131,10 +216,18 @@ const AccessControlProfileForm = () => {
             </Grid>
             <Grid size={{ xs: 12 }}>
               <TextField
+                error={!!emailError}
+                helperText={
+                  emailError ||
+                  'Ao mudar o email você será deslogado, para sua segurança'
+                }
                 label="E-mail"
                 value={form.email}
                 onChange={(e) =>
-                  setForm((prev) => ({ ...prev, email: e.target.value }))
+                  setForm((prev) => {
+                    setEmailError('');
+                    return { ...prev, email: e.target.value };
+                  })
                 }
                 disabled={!editing}
                 size="small"

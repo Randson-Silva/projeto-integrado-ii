@@ -22,7 +22,12 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { getMyAssociate, updateMySelfDeclaration } from '../services/associate/associateService';
+import {
+  getMyAssociate,
+  updateMySelfDeclaration,
+} from '../services/associate/associateService';
+import type { AssociateEducation } from '../services/associate/associate.types';
+import { maskCEP } from '../utils/masks.util';
 
 interface SelfDeclForm {
   education: string;
@@ -52,9 +57,33 @@ interface ProfileForm {
 }
 
 const BR_STATES = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+  'AC',
+  'AL',
+  'AP',
+  'AM',
+  'BA',
+  'CE',
+  'DF',
+  'ES',
+  'GO',
+  'MA',
+  'MT',
+  'MS',
+  'MG',
+  'PA',
+  'PB',
+  'PR',
+  'PE',
+  'PI',
+  'RJ',
+  'RN',
+  'RS',
+  'RO',
+  'RR',
+  'SC',
+  'SP',
+  'SE',
+  'TO',
 ];
 
 const EMPTY_SELF_DECL: SelfDeclForm = {
@@ -114,9 +143,14 @@ const AssociateSelfSupplementForm = () => {
   const [editingDecl, setEditingDecl] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selfDecl, setSelfDecl] = useState<SelfDeclForm>(EMPTY_SELF_DECL);
-  const [selfDeclDraft, setSelfDeclDraft] = useState<SelfDeclForm>(EMPTY_SELF_DECL);
+  const [selfDeclDraft, setSelfDeclDraft] =
+    useState<SelfDeclForm>(EMPTY_SELF_DECL);
   const [profile, setProfile] = useState<ProfileForm>(EMPTY_PROFILE);
-  const [snack, setSnack] = useState<Snack>({ open: false, severity: 'success', msg: '' });
+  const [snack, setSnack] = useState<Snack>({
+    open: false,
+    severity: 'success',
+    msg: '',
+  });
 
   const toast = (severity: 'success' | 'error', msg: string) =>
     setSnack({ open: true, severity, msg });
@@ -128,9 +162,13 @@ const AssociateSelfSupplementForm = () => {
         const data = await getMyAssociate(token);
         const decl: SelfDeclForm = {
           education: data.selfDeclaration?.education ?? '',
-          income: data.selfDeclaration?.income != null
-            ? data.selfDeclaration.income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-            : '',
+          income:
+            data.selfDeclaration?.income != null
+              ? data.selfDeclaration.income.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                })
+              : '',
           race: data.selfDeclaration?.race ?? '',
           gender: data.selfDeclaration?.gender ?? '',
           sexualOrientation: data.selfDeclaration?.sexualOrientation ?? '',
@@ -166,8 +204,9 @@ const AssociateSelfSupplementForm = () => {
 
   const handleSaveDecl = async () => {
     setSaving(true);
-    const mapVal = (v: string) => (!v ? "" : v);
-    const mapEnum = (v: string) => (!v || v === 'PREFIRO_NAO_INFORMAR' ? null : v);
+    const mapVal = (v: string) => (!v ? '' : v);
+    const mapEnum = (v: string) =>
+      !v || v === 'PREFIRO_NAO_INFORMAR' ? null : v;
     // Converte renda mascarada ("R$ 1.500,00") para número ou envia null
     const parsedIncome = (() => {
       const raw = selfDeclDraft.income;
@@ -175,12 +214,15 @@ const AssociateSelfSupplementForm = () => {
       const digits = raw.replace(/\D/g, '');
       return digits ? Number(digits) / 100 : null;
     })();
+
+    if (!token) return;
+
     try {
       await updateMySelfDeclaration(token, {
         race: mapVal(selfDeclDraft.race),
         gender: mapVal(selfDeclDraft.gender),
         sexualOrientation: mapVal(selfDeclDraft.sexualOrientation),
-        education: mapEnum(selfDeclDraft.education) as any, // Cast ou mapeamento necessário dependendo do enum
+        education: mapEnum(selfDeclDraft.education) as AssociateEducation, // Cast ou mapeamento necessário dependendo do enum
         income: parsedIncome,
         acceptedDataSharingTerm: selfDeclDraft.dataSharing,
       });
@@ -229,7 +271,7 @@ const AssociateSelfSupplementForm = () => {
           v === '' ? (
             <span style={{ color: '#9e9e9e' }}>Selecione</span>
           ) : (
-            options.find((o) => o.value === v)?.label ?? String(v)
+            (options.find((o) => o.value === v)?.label ?? String(v))
           )
         }
       >
@@ -274,6 +316,7 @@ const AssociateSelfSupplementForm = () => {
           },
         },
         htmlInput: {
+          maxLength: 16, // ? 16 counting the special caracters that does not goes to backend, yk?
           inputMode: 'numeric',
         },
       }}
@@ -358,11 +401,19 @@ const AssociateSelfSupplementForm = () => {
             Dados Pessoais
           </Typography>
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 5 }}>{ptf('Nome Completo', profile.fullName)}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{ptf('CPF', formatCPF(profile.cpf))}</Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>{ptf('Data de Nascimento', profile.birthDate, 'date')}</Grid>
+            <Grid size={{ xs: 12, sm: 5 }}>
+              {ptf('Nome Completo', profile.fullName)}
+            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              {ptf('CPF', formatCPF(profile.cpf))}
+            </Grid>
+            <Grid size={{ xs: 12, sm: 3 }}>
+              {ptf('Data de Nascimento', profile.birthDate, 'date')}
+            </Grid>
             <Grid size={{ xs: 12, sm: 8 }}>{ptf('E-mail', profile.email)}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{ptf('Telefone', formatPhone(profile.phone))}</Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              {ptf('Telefone', formatPhone(profile.phone))}
+            </Grid>
           </Grid>
         </Stack>
 
@@ -372,22 +423,41 @@ const AssociateSelfSupplementForm = () => {
             Endereço
           </Typography>
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 2 }}>{ptf('CEP', profile.addressZipCode)}</Grid>
+            <Grid size={{ xs: 12, sm: 2 }}>
+              {ptf('CEP', maskCEP(profile.addressZipCode))}
+            </Grid>
             <Grid size={{ xs: 12, sm: 3 }}>
               <FormControl size="small" fullWidth>
                 <InputLabel shrink>Estado</InputLabel>
-                <Select value={profile.addressState} label="Estado" notched disabled>
+                <Select
+                  value={profile.addressState}
+                  label="Estado"
+                  notched
+                  disabled
+                >
                   {BR_STATES.map((s) => (
-                    <MenuItem key={s} value={s}>{s}</MenuItem>
+                    <MenuItem key={s} value={s}>
+                      {s}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>{ptf('Cidade', profile.addressCity)}</Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>{ptf('Bairro', profile.addressNeighborhood)}</Grid>
-            <Grid size={{ xs: 12, sm: 5 }}>{ptf('Rua', profile.addressStreet)}</Grid>
-            <Grid size={{ xs: 12, sm: 2 }}>{ptf('Número', profile.addressNumber)}</Grid>
-            <Grid size={{ xs: 12, sm: 5 }}>{ptf('Complemento', profile.addressComplement)}</Grid>
+            <Grid size={{ xs: 12, sm: 3 }}>
+              {ptf('Cidade', profile.addressCity)}
+            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              {ptf('Bairro', profile.addressNeighborhood)}
+            </Grid>
+            <Grid size={{ xs: 12, sm: 5 }}>
+              {ptf('Rua', profile.addressStreet)}
+            </Grid>
+            <Grid size={{ xs: 12, sm: 2 }}>
+              {ptf('Número', profile.addressNumber)}
+            </Grid>
+            <Grid size={{ xs: 12, sm: 5 }}>
+              {ptf('Complemento', profile.addressComplement)}
+            </Grid>
           </Grid>
         </Stack>
 
@@ -403,12 +473,12 @@ const AssociateSelfSupplementForm = () => {
                 profile.availableHours === 'MATUTINO'
                   ? 'Matutino'
                   : profile.availableHours === 'VESPERTINO'
-                  ? 'Vespertino'
-                  : profile.availableHours === 'NOTURNO'
-                  ? 'Noturno'
-                  : profile.availableHours === 'TODOS'
-                  ? 'Todos os turnos'
-                  : profile.availableHours
+                    ? 'Vespertino'
+                    : profile.availableHours === 'NOTURNO'
+                      ? 'Noturno'
+                      : profile.availableHours === 'TODOS'
+                        ? 'Todos os turnos'
+                        : profile.availableHours
               )}
             </Grid>
             <Grid size={{ xs: 12, sm: 4 }}>
@@ -448,19 +518,34 @@ const AssociateSelfSupplementForm = () => {
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
               {declSelect('Escolaridade', 'education', [
                 { value: '', label: 'Selecione' },
-                { value: 'FUNDAMENTAL_INCOMPLETO', label: 'Fundamental Incompleto' },
-                { value: 'FUNDAMENTAL_COMPLETO', label: 'Fundamental Completo' },
+                {
+                  value: 'FUNDAMENTAL_INCOMPLETO',
+                  label: 'Fundamental Incompleto',
+                },
+                {
+                  value: 'FUNDAMENTAL_COMPLETO',
+                  label: 'Fundamental Completo',
+                },
                 { value: 'MEDIO_INCOMPLETO', label: 'Médio Incompleto' },
                 { value: 'MEDIO_COMPLETO', label: 'Médio Completo' },
                 { value: 'SUPERIOR_INCOMPLETO', label: 'Superior Incompleto' },
                 { value: 'SUPERIOR_COMPLETO', label: 'Superior Completo' },
-                { value: 'ESPECIALIZACAO_INCOMPLETA', label: 'Espec. Incompleta' },
+                {
+                  value: 'ESPECIALIZACAO_INCOMPLETA',
+                  label: 'Espec. Incompleta',
+                },
                 { value: 'ESPECIALIZACAO_COMPLETA', label: 'Espec. Completa' },
                 { value: 'MESTRADO_INCOMPLETO', label: 'Mestrado Incompleto' },
                 { value: 'MESTRADO_COMPLETO', label: 'Mestrado Completo' },
-                { value: 'DOUTORADO_INCOMPLETO', label: 'Doutorado Incompleto' },
+                {
+                  value: 'DOUTORADO_INCOMPLETO',
+                  label: 'Doutorado Incompleto',
+                },
                 { value: 'DOUTORADO_COMPLETO', label: 'Doutorado Completo' },
-                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
+                {
+                  value: 'PREFIRO_NAO_INFORMAR',
+                  label: 'Prefiro não informar',
+                },
               ])}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 150 }}>
@@ -475,7 +560,10 @@ const AssociateSelfSupplementForm = () => {
                 { value: 'AMARELO', label: 'Amarelo (a)' },
                 { value: 'INDIGENA', label: 'Indígena' },
                 { value: 'QUILOMBOLA', label: 'Quilombola' },
-                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
+                {
+                  value: 'PREFIRO_NAO_INFORMAR',
+                  label: 'Prefiro não informar',
+                },
               ])}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
@@ -488,7 +576,10 @@ const AssociateSelfSupplementForm = () => {
                 { value: 'NAO_BINARIO', label: 'Não Binário' },
                 { value: 'GENERO_FLUIDO', label: 'Gênero Fluído' },
                 { value: 'OUTRO', label: 'Outro' },
-                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
+                {
+                  value: 'PREFIRO_NAO_INFORMAR',
+                  label: 'Prefiro não informar',
+                },
               ])}
             </Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
@@ -498,7 +589,10 @@ const AssociateSelfSupplementForm = () => {
                 { value: 'HOMOSSEXUAL', label: 'Homossexual' },
                 { value: 'BISSEXUAL', label: 'Bissexual' },
                 { value: 'OUTRO', label: 'Outro' },
-                { value: 'PREFIRO_NAO_INFORMAR', label: 'Prefiro não informar' },
+                {
+                  value: 'PREFIRO_NAO_INFORMAR',
+                  label: 'Prefiro não informar',
+                },
               ])}
             </Grid>
           </Grid>
@@ -508,20 +602,30 @@ const AssociateSelfSupplementForm = () => {
             control={
               <Checkbox
                 checked={selfDeclDraft.dataSharing}
-                onChange={(e) => setSelfDeclDraft({ ...selfDeclDraft, dataSharing: e.target.checked })}
+                onChange={(e) =>
+                  setSelfDeclDraft({
+                    ...selfDeclDraft,
+                    dataSharing: e.target.checked,
+                  })
+                }
                 disabled={!editingDecl}
                 color="primary"
               />
             }
             label={
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Eu autorizo o compartilhamento de todos os meus dados com parceiros da associação.
+                Eu autorizo o compartilhamento de todos os meus dados com
+                parceiros da associação.
               </Typography>
             }
           />
 
           {editingDecl && (
-            <Stack direction="row" spacing={2} sx={{ pt: 1, justifyContent: 'flex-start' }}>
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{ pt: 1, justifyContent: 'flex-start' }}
+            >
               <Button
                 variant="contained"
                 onClick={handleCancelDecl}
@@ -544,9 +648,19 @@ const AssociateSelfSupplementForm = () => {
                 color="primary"
                 onClick={handleSaveDecl}
                 disabled={saving}
-                sx={{ fontWeight: 700, borderRadius: 10, textTransform: 'none', px: 4, py: 1.5 }}
+                sx={{
+                  fontWeight: 700,
+                  borderRadius: 10,
+                  textTransform: 'none',
+                  px: 4,
+                  py: 1.5,
+                }}
               >
-                {saving ? <CircularProgress size={20} color="inherit" /> : 'Salvar'}
+                {saving ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  'Salvar'
+                )}
               </Button>
             </Stack>
           )}
@@ -559,7 +673,11 @@ const AssociateSelfSupplementForm = () => {
         onClose={() => setSnack((p) => ({ ...p, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity={snack.severity} variant="filled" sx={{ borderRadius: 2, fontWeight: 600 }}>
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          sx={{ borderRadius: 2, fontWeight: 600 }}
+        >
           {snack.msg}
         </Alert>
       </Snackbar>

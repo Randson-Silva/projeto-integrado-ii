@@ -29,6 +29,7 @@ import { useNavigate } from 'react-router-dom';
 import { normalizeRoleView, type Role } from '../services/auth/roles';
 import type { User } from '../services/user/user.types';
 import { getUsers } from '../services/user/userService';
+import { maskCPF } from '../utils/masks.util';
 
 const AccessControlSearchTable = () => {
   const navigate = useNavigate();
@@ -144,10 +145,8 @@ const AccessControlSearchTable = () => {
             }}
           >
             <MenuItem value="Todos">Todos</MenuItem>
-            <MenuItem value="SUPER_ADMIN">Controle de Acesso</MenuItem>
             <MenuItem value="ADMIN">Admin</MenuItem>
             <MenuItem value="CONSULTANT">Consultor</MenuItem>
-            <MenuItem value="ASSOCIATE">Associado</MenuItem>
           </Select>
         </FormControl>
       </Stack>
@@ -235,7 +234,7 @@ const AccessControlSearchTable = () => {
 
                     <TableCell sx={{ py: 1.5 }}>
                       <Typography variant="body2" color="text.secondary">
-                        {user.cpf}
+                        {maskCPF(user.cpf)}
                       </Typography>
                     </TableCell>
 

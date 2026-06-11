@@ -4,7 +4,6 @@ import {
   Button,
   CircularProgress,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
@@ -14,6 +13,7 @@ import {
   accessControlLogin,
   authGetProfile,
 } from '../services/auth/authService';
+import PasswordField from './PasswordField';
 
 const AccessControlLoginForm = () => {
   const [loading, setLoading] = useState(false);
@@ -31,6 +31,11 @@ const AccessControlLoginForm = () => {
 
     const data = new FormData(e.currentTarget);
     const accessKey = data.get('accessKey') as string;
+
+    if (!accessKey.trim()) {
+      setKeyError('A Chave de Acesso é obrigatória!');
+      return;
+    }
 
     setLoading(true);
 
@@ -91,15 +96,18 @@ const AccessControlLoginForm = () => {
           Voltar para tela inicial
         </Button>
 
-        <TextField
+        <PasswordField
           label="Chave de Acesso"
           name="accessKey"
-          type="text"
           placeholder="Digite a Chave de Acesso"
           fullWidth
           required
+          disabled={loading}
           error={!!keyError}
           helperText={keyError}
+          onChange={() => {
+            setKeyError('');
+          }}
         />
 
         <Button
