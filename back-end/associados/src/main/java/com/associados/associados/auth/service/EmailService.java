@@ -1,6 +1,7 @@
 package com.associados.associados.auth.service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,11 +60,11 @@ public class EmailService {
         }
     }
 
-    @Scheduled(cron = "0 0 8 * * *") // every day at 8 AM
+    @Scheduled(cron = "0 0 8 * * *") // 8 da manha todo dia
     public void checkAndSendBirthdays() {
         System.out.println("Starting birthday check...");
 
-        LocalDate hoje = LocalDate.now();
+        LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
         int currentMonth = hoje.getMonthValue();
         int currentDay = hoje.getDayOfMonth();
         
@@ -83,7 +84,7 @@ public class EmailService {
     }
 
     public void sendBirthdayEmail(String to, String name) {
-        String subject = "Centro Cultural Dom Maurício";
+        String subject = "Grupo Cultural de Dom Maurício";
         String topoUrl = "https://lh3.googleusercontent.com/d/15NVc2eHIegUHcDhWdfM-hxvADdEII1JD"; 
         String rodapeUrl = "https://lh3.googleusercontent.com/d/1JMR_IIR0BbMJutuVQN8IB5yGVsHGDRJq"; 
 
@@ -107,7 +108,7 @@ public class EmailService {
                     + "                                " + personalizedMessage + "" 
                     + "                            </p>"
                     + "                            <p style=\"color: #1a1a1a !important; font-size: 15px; margin-bottom: 0;\">"
-                    + "                                Att.,<br><strong>O Centro Cultural Dom Maurício</strong>"
+                    + "                                Att.,<br><strong>O Grupo Cultural de Dom Maurício</strong>"
                     + "                            </p>"
                     + "                        </td>"
                     + "                    </tr>"
