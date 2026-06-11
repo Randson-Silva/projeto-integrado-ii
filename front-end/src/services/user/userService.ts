@@ -104,3 +104,23 @@ export async function accessControlDeleteUser({
 
   return res.data;
 }
+
+export async function activateUser(token: string, id: string) {
+  const res = await api.patch(
+    `/management/users/${id}/active`,
+    { active: true },
+    { headers: { Authrization: `Bearer ${token}` } }
+  );
+
+  return res.data;
+}
+
+export async function inactivateUser(token: string, id: string) {
+  const res = await api.patch(
+    `/management/users/${id}/active`,
+    { active: false },
+    { headers: { Authrization: `Bearer ${token}` } }
+  );
+
+  return res.data;
+}

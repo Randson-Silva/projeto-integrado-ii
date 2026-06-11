@@ -41,7 +41,6 @@ import {
 } from '../services/associate/associate.mappers';
 
 import type {
-  Associate,
   AssociateCategoryResponse,
   IAdminAssociateProfileForm,
 } from '../services/associate/associate.types';
@@ -49,15 +48,18 @@ import type {
 import {
   deleteAssociate,
   getAssociateById,
+  getCategories,
   updateAssociate,
 } from '../services/associate/associateService';
 
+import { LinkRounded } from '@mui/icons-material';
 import {
   getCitiesByState,
   getStates,
   type City,
   type State,
 } from '../services/address/ibgeService';
+import { activateUser, inactivateUser } from '../services/user/userService';
 import { isValidBirthDate } from '../utils/dates.util';
 import { maskCEP, maskCPF, maskPhone } from '../utils/masks.util';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
@@ -114,8 +116,6 @@ const AssociateProfile = () => {
 
   const [form, setForm] = useState<IAdminAssociateProfileForm>(EMPTY);
 
-  const [profile, setProfile] = useState<Associate | null>(null);
-
   const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
 
   const [inactivateOpen, setInactivateOpen] = useState(false);
@@ -126,6 +126,8 @@ const AssociateProfile = () => {
     useState<IAdminAssociateProfileForm>(EMPTY);
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
+
+  const [isActive, setIsActive] = useState<boolean>();
 
   const [errors, setErrors] = useState<
     Partial<Record<keyof IAdminAssociateProfileForm, string>>
@@ -154,7 +156,7 @@ const AssociateProfile = () => {
 
         const res = await getAssociateById(token, id);
 
-        setProfile(res);
+        setIsActive(res.user.active);
 
         const data = mapAssociateResponseToForm(res);
 
@@ -169,18 +171,11 @@ const AssociateProfile = () => {
     load();
   }, [id, token]);
 
-  // ? seta as categorias
   useEffect(() => {
     if (!token) return;
-    // getCategories(token)
-    //   .then((data) => setCategories(data))
-    //   .catch(() => {});
-    // !
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCategories([
-      { id: '1', name: 'Categoria 1' },
-      { id: '2', name: 'Categoria 2' },
-    ]); // TODO: remover mock
+    getCategories(token)
+      .then((data) => setCategories(data))
+      .catch(() => {});
   }, [token]);
 
   useEffect(() => {
@@ -285,13 +280,27 @@ const AssociateProfile = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleInactivate = async () => {
+    if (!token) return;
+    if (!isActive) return;
+
+    await inactivateUser(token, form.id);
+  };
+
+  const handleActivate = async () => {
+    if (!token) return;
+    if (isActive) return;
+
+    await activateUser(token, form.id);
+  };
+
   const handleSave = async () => {
     if (!validateForm()) {
       return;
     }
 
     try {
-      if (!token || !id || !profile) return;
+      if (!token || !id) return;
 
       setSaving(true);
 
@@ -628,12 +637,20 @@ const AssociateProfile = () => {
                 </Button>
 
                 <Button
-                  startIcon={<LinkOffIcon sx={{ fontSize: 16 }} />}
+                  startIcon={
+                    isActive ? (
+                      <LinkOffIcon sx={{ fontSize: 16 }} />
+                    ) : (
+                      <LinkRounded sx={{ fontSize: 16 }} />
+                    )
+                  }
                   variant="contained"
-                  onClick={() => setInactivateOpen(true)}
+                  onClick={() => {
+                    setInactivateOpen(true);
+                  }}
                   sx={DARK_BTN}
                 >
-                  Inativar Vínculo
+                  {isActive ? 'Inativar Vínculo' : 'Ativar Vínculo'}
                 </Button>
 
                 <Button
@@ -812,7 +829,6 @@ const AssociateProfile = () => {
 
             <Grid size={{ xs: 12, sm: 4 }}>
               {sf('Categoria', 'category', [
-                { value: '', label: 'Selecione' },
                 ...categories.map((c) => ({ value: c.id, label: c.name })),
               ])}
             </Grid>
@@ -1002,7 +1018,9 @@ const AssociateProfile = () => {
       <InactivateAssociateDialog
         open={inactivateOpen}
         onClose={() => setInactivateOpen(false)}
-        onConfirm={async () => {}}
+        onConfirm={async () => {
+          await handleInactivate();
+        }}
         associateName={form.fullName}
       />
 
