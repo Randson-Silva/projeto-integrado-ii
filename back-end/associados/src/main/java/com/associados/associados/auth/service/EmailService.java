@@ -23,6 +23,14 @@ public class EmailService {
     @Autowired
     private AssociateRepository associateRepository;
 
+    private String birthdayMessageTemplate = "Desejamos a você um aniversário repleto de alegria, saúde e momentos inesquecíveis! "
+                                           + "Que este novo ciclo seja cheio de realizações e felicidade. Obrigado por fazer parte da "
+                                           + "nossa comunidade no Centro Cultural Dom Maurício.";
+
+    public void updateBirthdayMessageTemplate(String newTemplate) {
+        this.birthdayMessageTemplate = newTemplate;
+    }
+
     public void sendPasswordResetEmail(String to, String token) {
         String subject = "Password Recovery - Associates System";
         String body = "Hello!\n\nYour password recovery code is: " + token + "\n\nThis code expires in 15 minutes.";
@@ -76,56 +84,34 @@ public class EmailService {
 
     public void sendBirthdayEmail(String to, String name) {
         String subject = "Centro Cultural Dom Maurício";
-        
         String topoUrl = "https://lh3.googleusercontent.com/d/15NVc2eHIegUHcDhWdfM-hxvADdEII1JD"; 
         String rodapeUrl = "https://lh3.googleusercontent.com/d/1JMR_IIR0BbMJutuVQN8IB5yGVsHGDRJq"; 
 
+        String personalizedMessage = this.birthdayMessageTemplate.replace("{name}", name);
+
         String body = "<!DOCTYPE html>"
                     + "<html lang=\"pt-BR\">"
-                    + "<head>"
-                    + "    <meta charset=\"UTF-8\">"
-                    + "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
-                    + "    <meta name=\"color-scheme\" content=\"light only\">"
-                    + "    <meta name=\"supported-color-schemes\" content=\"light only\">"
-                    + "</head>"
+                    + "<head><meta charset=\"UTF-8\"></head>"
                     + "<body style=\"margin: 0; padding: 0; width: 100% !important; background-color: #121212; font-family: Arial, sans-serif;\">"
                     + "    <table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"background-color: #121212; padding: 40px 10px;\">"
                     + "        <tr>"
                     + "            <td align=\"center\">"
-                    + "                "
-                    + "                <table width=\"100%\" max-width=\"550\" style=\"max-width: 550px; background-color: #ebe5cf; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5);\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">"
-                    + "                    "
-                    + "                    "
-                    + "                    <tr>"
-                    + "                        <td align=\"center\" style=\"line-height: 0;\">"
-                    + "                            <img src=\"" + topoUrl + "\" alt=\"Topo\" width=\"100%\" style=\"width: 100%; max-width: 550px; height: auto; display: block; border: none;\">"
-                    + "                        </td>"
-                    + "                    </tr>"
-                    + "                    "
-                    + "                    "
+                    + "                <table width=\"100%\" style=\"max-width: 550px; background-color: #ebe5cf; border-radius: 12px; overflow: hidden;\">"
+                    + "                    <tr><td align=\"center\"><img src=\"" + topoUrl + "\" width=\"100%\"></td></tr>"
                     + "                    <tr>"
                     + "                        <td style=\"background-color: #ebe5cf; padding: 35px 40px; text-align: center;\">"
-                    + "                            <h2 style=\"color: #000000 !important; font-size: 24px; margin-top: 0; margin-bottom: 20px; font-weight: bold;\">"
+                    + "                            <h2 style=\"color: #000000 !important; font-size: 24px; margin-bottom: 20px;\">"
                     + "                                Querido(a) " + name + ","
                     + "                            </h2>"
                     + "                            <p style=\"color: #1a1a1a !important; font-size: 16px; line-height: 1.6; margin-bottom: 20px;\">"
-                    + "                                Desejamos a você um aniversário repleto de alegria, saúde e momentos inesquecíveis! "
-                    + "                                Que este novo ciclo seja cheio de realizações e felicidade. Obrigado por fazer parte da "
-                    + "                                nossa comunidade no Centro Cultural Dom Maurício."
+                    + "                                " + personalizedMessage + "" 
                     + "                            </p>"
                     + "                            <p style=\"color: #1a1a1a !important; font-size: 15px; margin-bottom: 0;\">"
                     + "                                Att.,<br><strong>O Centro Cultural Dom Maurício</strong>"
                     + "                            </p>"
                     + "                        </td>"
                     + "                    </tr>"
-                    + "                    "
-                    + "                    "
-                    + "                    <tr>"
-                    + "                        <td align=\"center\" style=\"line-height: 0;\">"
-                    + "                            <img src=\"" + rodapeUrl + "\" alt=\"Rodapé\" width=\"100%\" style=\"width: 100%; max-width: 550px; height: auto; display: block; border: none;\">"
-                    + "                        </td>"
-                    + "                    </tr>"
-                    + "                    "
+                    + "                    <tr><td align=\"center\"><img src=\"" + rodapeUrl + "\" width=\"100%\"></td></tr>"
                     + "                </table>"
                     + "            </td>"
                     + "        </tr>"

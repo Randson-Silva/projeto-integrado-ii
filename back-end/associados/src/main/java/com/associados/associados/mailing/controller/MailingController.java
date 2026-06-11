@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.associados.associados.auth.service.EmailService;
+import com.associados.associados.mailing.dtos.request.BirthDayMessageDto;
 import com.associados.associados.mailing.dtos.request.SendMailingDto;
 import com.associados.associados.mailing.dtos.response.MailingRecipientResponseDto;
 import com.associados.associados.mailing.dtos.response.MailingSentResponseDto;
@@ -31,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 public class MailingController {
 
     private final MailingService mailingService;
+    private final EmailService emailService;
 
     @GetMapping("/recipients")
     @SecurityRequirement(name = "bearerAuth")
@@ -56,4 +59,17 @@ public class MailingController {
         int sentCount = mailingService.sendMailing(data);
         return ResponseEntity.ok(new MailingSentResponseDto("Mailing sent successfully!", sentCount));
     }
+
+    @PostMapping("/birthday-template")
+    @SecurityRequirement(name = "bearerAuth")   
+    @Operation(summary = "Update Birthday Template", description = "Updates the daily scheduled birthday email message.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Template updated successfully")
+    })
+    public ResponseEntity<String> updateBirthdayTemplate(@RequestBody @Valid BirthDayMessageDto data) {
+        emailService.updateBirthdayMessageTemplate(data.message());
+        
+        return ResponseEntity.ok("Mensagem de aniversário atualizada com sucesso!");
+    }   
+
 }
