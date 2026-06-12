@@ -104,7 +104,6 @@ export const mapFormToUpdatePayload = (
   // Filtra valores legados do banco que não existem mais no enum
   education:
     !form.education ||
-    form.education === 'PREFIRO_NAO_INFORMAR' ||
     (!VALID_EDUCATION.has(form.education) && form.education !== 'NÃO_SELECIONADO')
       ? ('' as UpdateAssociatePayload['education'])
       : (form.education as UpdateAssociatePayload['education']),
@@ -138,7 +137,7 @@ export const mapFormToCreatePayload = (
   gender: form.gender || undefined,
   sexualOrientation: form.sexualOrientation || undefined,
   education:
-    !form.education || form.education === 'PREFIRO_NAO_INFORMAR' || form.education === 'NÃO_SELECIONADO'
+    !form.education || form.education === 'NÃO_SELECIONADO'
       ? ('' as CreateAssociatePayload['education'])
       : (form.education as CreateAssociatePayload['education']),
   income: parseMaskedIncome(String(form.income ?? '')) ?? undefined,

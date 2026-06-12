@@ -17,10 +17,11 @@ import {
 import { useState } from 'react';
 
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
+import Logo from '../../assets/logo-deles.svg';
 
 const MENU_ITEMS = [
   { label: 'Entrar como associado', href: '/login-associado' },
-  { label: 'Entrar como administrador', href: '/login' },
+  { label: 'Gerenciar Associados', href: '/login' },
   { label: 'Controle de acesso', href: '/login-controle' },
 ];
 
@@ -63,13 +64,13 @@ const Header = () => {
           >
             <Box
               component="img"
-              src="/system-logo.png"
+              src={Logo}
               alt="Grupo Cultural de Dom Maurício"
               sx={{
                 height: {
                   xs: 42,
                   sm: 48,
-                  md: 56,
+                  md: 65,
                 },
 
                 width: 'auto',

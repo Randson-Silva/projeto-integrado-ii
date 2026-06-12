@@ -1,5 +1,6 @@
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
+import YouTubeIcon from '@mui/icons-material/YouTube';
 import {
   Box,
   Container,
@@ -8,6 +9,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import Logo from '../../assets/logo-deles.svg';
 
 const Footer = () => (
   <Box component="footer" sx={{ bgcolor: '#5F5E5E', pt: 4, pb: 2 }}>
@@ -22,10 +24,9 @@ const Footer = () => (
         }}
         spacing={3}
       >
-        {/* Logo branca */}
         <Box
           component="img"
-          src="/white-system-logo.svg"
+          src={Logo}
           alt="Grupo Cultural de Dom Maurício"
           sx={{ height: 64, width: 'auto' }}
         />
@@ -36,15 +37,14 @@ const Footer = () => (
           sx={{ alignItems: { xs: 'flex-start', sm: 'flex-end' } }}
         >
           <Typography variant="body2" sx={{ color: '#fff' }}>
-            associacao@email.com
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#fff' }}>
-            (88) 9. 8888-8888
+            grupoculturaldedommauricio@gmail.com
           </Typography>
           <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }}>
             <IconButton
               aria-label="Facebook"
-              href="#"
+              href="https://www.facebook.com/mauricio.gc.142#"
+              target="_blank"
+              rel="noopener noreferrer"
               size="small"
               sx={{ color: '#fff', p: 0.5 }}
             >
@@ -52,11 +52,23 @@ const Footer = () => (
             </IconButton>
             <IconButton
               aria-label="Instagram"
-              href="#"
+              href="https://www.instagram.com/grupodommauricio/"
+              target="_blank"
+              rel="noopener noreferrer"
               size="small"
               sx={{ color: '#fff', p: 0.5 }}
             >
               <InstagramIcon sx={{ fontSize: 22 }} />
+            </IconButton>
+            <IconButton
+              aria-label="YouTube"
+              href="https://www.youtube.com/channel/UCq3G-DV0MW3spxrQus_lNMw"
+              target="_blank"
+              rel="noopener noreferrer"
+              size="small"
+              sx={{ color: '#fff', p: 0.5 }}
+            >
+              <YouTubeIcon sx={{ fontSize: 22 }} />
             </IconButton>
           </Stack>
         </Stack>

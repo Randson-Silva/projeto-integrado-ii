@@ -32,28 +32,10 @@ const Sidebar = ({ items }: SidebarProps) => {
         bgcolor: 'background.paper',
       }}
     >
-      {/* Logo */}
-      <Box
-        sx={{
-          p: 2.5,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <Box
-          component="img"
-          src="/grey-cultural-group-logo.png"
-          alt="Logotipo Cinza do Grupo Cultural"
-          sx={{
-            width: '100%',
-            maxHeight: 72,
-            objectFit: 'contain',
-          }}
-        />
-      </Box>
+
 
       {/* Menu */}
-      <List sx={{ pt: 1.5, px: 1 }}>
+      <List sx={{ pt: 9, px: 1 }}>
         {items.map((item) => {
           const active = pathname.startsWith(item.href);
 

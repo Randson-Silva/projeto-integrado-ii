@@ -29,18 +29,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => (
         maxWidth: 430,
       }}
     >
-      <Box
-        component="img"
-        src="/system-logo.png"
-        alt="Logo Grupo Cultural"
-        sx={{
-          width: '100%',
-          maxWidth: 242,
-          height: 'auto',
-          maxHeight: 95,
-          objectFit: 'contain',
-        }}
-      />
+
       {children}
     </Paper>
   </Box>
