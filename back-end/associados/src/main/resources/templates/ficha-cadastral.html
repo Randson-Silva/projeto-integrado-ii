@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Ficha Cadastral do Associado</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 10mm 15mm;
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #000000; /* Texto principal em preto puro */
+            margin: 0;
+            padding: 0;
+            line-height: 1.3;
+        }
+        .header-box {
+            border: 2px solid #000000; /* Borda preta forte */
+            border-radius: 10px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            background-color: #FFFFFF; /* Fundo branco limpo */
+        }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .header-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #EA580C; /* Laranja mantido */
+            margin: 0;
+        }
+        .institution-details {
+            font-size: 11px;
+            color: #333333; /* Grafite bem escuro em vez de cinza claro */
+            margin: 4px 0 0 0;
+            line-height: 1.4;
+        }
+        .logo-img {
+            width: 100px;
+            height: 65px;
+            object-fit: contain;
+        }
+        .main-title {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #000000;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 15px 0;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #000000; /* Linha preta mais grossa */
+        }
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #FFFFFF; /* Texto branco */
+            background-color: #000000; /* Fundo preto puro */
+            padding: 4px 8px;
+            border-left: 4px solid #EA580C; /* Detalhe lateral laranja */
+            margin-top: 12px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 5px;
+            table-layout: fixed; 
+        }
+        .data-table td {
+            padding: 3px 6px;
+            font-size: 12px;
+            vertical-align: top;
+        }
+        .label {
+            font-weight: bold;
+            color: #000000; /* Labels em preto */
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+        .value {
+            color: #000000;
+            font-size: 12px;
+            background-color: #FFFFFF;
+            padding: 4px;
+            border-radius: 4px;
+            border: 1px solid #000000; /* Borda das caixas em preto */
+            display: block;
+            word-wrap: break-word; 
+        }
+        .footer {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 10px;
+            color: #333333;
+            border-top: 1px solid #000000; /* Linha do rodapé preta */
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-box">
+        <table class="header-table">
+            <tr>
+                <td style="width: 110px; vertical-align: middle;">
+                    <img src="IMAGEM" class="logo-img" alt="Logo" />
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px;">
+                    <h1 class="header-title">Grupo Cultural de Dom Maurício</h1>
+                    <p class="institution-details">
+                        <strong>CNPJ:</strong> 00.000.000/0001-00<br/>
+                        <strong>Endereço:</strong> Distrito de Dom Maurício, Zona Rural — Quixadá - CE, CEP: 63900-000<br/>
+                        <strong>Contato:</strong> contato@contato.com | (88) 90000-0000
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="main-title">Ficha Cadastral do Associado</div>
+
+    <div class="section-title">Dados Pessoais</div>
+    <table class="data-table">
+        <tr>
+            <td style="width: 60%;">
+                <span class="label">Nome Completo</span>
+                <span class="value" th:text="${associado.user != null ? associado.user.name : ''}"></span>
+            </td>
+            <td style="width: 40%;">
+                <span class="label">Nome Social</span>
+                <span class="value" th:text="${associado.selfDeclaration != null ? associado.selfDeclaration.socialName : 'Não informado'}"></span>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 50%;">
+                <span class="label">CPF</span>
+                <span class="value" th:text="${associado.cpf != null and #strings.length(associado.cpf) == 11 ? #strings.substring(associado.cpf,0,3) + '.' + #strings.substring(associado.cpf,3,6) + '.' + #strings.substring(associado.cpf,6,9) + '-' + #strings.substring(associado.cpf,9,11) : associado.cpf}"></span>
+            </td>
+            <td style="width: 50%;">
+                <span class="label">Data de Nascimento / Registro</span>
+                <span class="value" th:text="${associado.birthDate != null ? #temporals.format(associado.birthDate, 'dd/MM/yyyy') : 'Não informada'}"></span>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 60%;">
+                <span class="label">E-mail</span>
+                <span class="value" th:text="${associado.user != null ? associado.user.email : ''}"></span>
+            </td>
+            <td style="width: 40%;">
+                <span class="label">Telefone</span>
+                <span class="value" th:text="${associado.phone != null and #strings.length(associado.phone) == 11 ? '(' + #strings.substring(associado.phone,0,2) + ') ' + #strings.substring(associado.phone,2,7) + '-' + #strings.substring(associado.phone,7,11) : (associado.phone != null and #strings.length(associado.phone) == 10 ? '(' + #strings.substring(associado.phone,0,2) + ') ' + #strings.substring(associado.phone,2,6) + '-' + #strings.substring(associado.phone,6,10) : (associado.phone != null ? associado.phone : 'Não informado'))}"></span>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <span class="label">Nome do Responsável Legal (Para menores)</span>
+                <span class="value" th:text="${associado.legalGuardianName != null ? associado.legalGuardianName : 'N/A'}"></span>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Dados de Endereço</div>
+    <table class="data-table">
+        <tr>
+            <td style="width: 25%;">
+                <span class="label">CEP</span>
+                <span class="value" th:text="${associado.address != null and associado.address.postalCode != null and #strings.length(associado.address.postalCode) == 8 ? #strings.substring(associado.address.postalCode,0,5) + '-' + #strings.substring(associado.address.postalCode,5,8) : (associado.address != null ? associado.address.postalCode : '')}"></span>
+            </td>
+            <td style="width: 25%;">
+                <span class="label">Estado</span>
+                <span class="value" th:text="${associado.address != null ? associado.address.state : ''}"></span>
+            </td>
+            <td style="width: 50%;">
+                <span class="label">Cidade</span>
+                <span class="value" th:text="${associado.address != null ? associado.address.city : ''}"></span>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 40%;">
+                <span class="label">Bairro</span>
+                <span class="value" th:text="${associado.address != null ? associado.address.neighborhood : ''}"></span>
+            </td>
+            <td style="width: 60%;" colspan="2">
+                <span class="label">Logradouro</span>
+                <span class="value" th:text="${associado.address != null ? associado.address.street : ''}"></span>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 30%;">
+                <span class="label">Número</span>
+                <span class="value" th:text="${associado.address != null ? associado.address.number : ''}"></span>
+            </td>
+            <td style="width: 70%;" colspan="2">
+                <span class="label">Complemento</span>
+                <span class="value" th:text="${associado.address != null ? associado.address.complement : ''}"></span>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Dados Institucionais e Atuação</div>
+    <table class="data-table">
+        <tr>
+            <td style="width: 50%;">
+                <span class="label">Disponibilidade de Horário</span>
+                <span class="value" th:text="${associado.availableHours != null ? associado.availableHours : 'Não Informado'}"></span>
+            </td>
+            <td style="width: 50%;">
+                <span class="label">Categoria / Atuação</span>
+                <span class="value" th:text="${associado.workCategory != null ? associado.workCategory.name : 'Nenhuma'}"></span>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Dados Autodeclaratórios e Socioeconômicos</div>
+    <table class="data-table">
+        <tr>
+            <td style="width: 50%;">
+                <span class="label">Escolaridade</span>
+                <span class="value" th:text="${associado.selfDeclaration != null ? associado.selfDeclaration.education : 'Não informada'}"></span>
+            </td>
+            <td style="width: 50%;">
+                <span class="label">Renda Familiar / Pessoal</span>
+                <span class="value" th:text="${associado.selfDeclaration != null ? associado.selfDeclaration.income : 'Não informada'}"></span>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 50%;">
+                <span class="label">Etnia / Raça</span>
+                <span class="value" th:text="${associado.selfDeclaration != null ? associado.selfDeclaration.race : 'Não informada'}"></span>
+            </td>
+            <td style="width: 50%;">
+                <span class="label">Identidade de Gênero</span>
+                <span class="value" th:text="${associado.selfDeclaration != null ? associado.selfDeclaration.gender : 'Não informada'}"></span>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 50%;">
+                <span class="label">Orientação Sexual</span>
+                <span class="value" th:text="${associado.selfDeclaration != null ? associado.selfDeclaration.sexualOrientation : 'Não informada'}"></span>
+            </td>
+            <td style="width: 50%;">
+                <span class="label">Compartilhamento de Dados</span>
+                <span class="value" th:text="${associado.selfDeclaration != null and associado.selfDeclaration.acceptedDataSharingTerm} ? 'Autorizado' : 'Não autorizado'"></span>
+            </td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        Documento emitido eletronicamente via Sistema de Gestão de Associados.<br/>
+        <strong>Gerado em:</strong> <span th:text="${#calendars.format(#calendars.createNowForTimeZone('America/Sao_Paulo'), 'dd/MM/yyyy HH:mm:ss')}"></span><br/>
+        Grupo Cultural de Dom Maurício &copy; <span th:text="${#calendars.year(#calendars.createNowForTimeZone('America/Sao_Paulo'))}"></span>
+    </div>
+
+</body>
+</html>
