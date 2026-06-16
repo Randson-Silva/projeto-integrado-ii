@@ -1,5 +1,7 @@
 package com.associados.associados.associate.service;
 
+import java.time.LocalDate;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -70,10 +72,9 @@ public class AssociateService {
         Associate associate = new Associate();
         associate.setCpf(data.cpf());
         associate.setBirthDate(data.birthDate());
-        if(data.birthDate().isAfter(java.time.LocalDate.now().minusYears(18))) {
+        if (data.birthDate().isAfter(LocalDate.now().minusYears(18))) {
             associate.setLegalGuardianName(data.legalGuardianName());
-        }
-        else {
+        } else {
             associate.setLegalGuardianName("");
         }
         associate.setWorkCategory(workCategory);
@@ -135,7 +136,7 @@ public class AssociateService {
             associate.setBirthDate(data.birthDate());
         }
 
-        if (associate.getBirthDate().isAfter(java.time.LocalDate.now().minusYears(18))) {
+        if (associate.getBirthDate().isAfter(LocalDate.now().minusYears(18))) {
             if (data.legalGuardianName() != null) {
                 associate.setLegalGuardianName(data.legalGuardianName());
             }

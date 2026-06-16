@@ -1,6 +1,7 @@
 package com.associados.associados.user.controller;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,8 +11,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.associados.associados.associate.entity.Associate;
+import com.associados.associados.associate.dtos.response.AssociateResponseDto;
 import com.associados.associados.auth.dtos.request.RegisterAdminDto;
+import com.associados.associados.associate.service.AssociateService;
 import com.associados.associados.user.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class AdminController {
 
     private final UserService userService;
+    private final AssociateService associateService;
 
     @PostMapping
     @SecurityRequirement(name = "bearerAuth")
@@ -51,8 +54,8 @@ public class AdminController {
         @ApiResponse(responseCode = "200", description = "List of associates retrieved successfully"),
         @ApiResponse(responseCode = "403", description = "Insufficient permissions")
     })
-    public ResponseEntity<List<Associate>> getAllAssociates() {
-        List<Associate> associates = userService.getAllAssociates();
+    public ResponseEntity<Page<AssociateResponseDto>> getAllAssociates(Pageable pageable) {
+        Page<AssociateResponseDto> associates = associateService.getAllAssociates(pageable);
         return ResponseEntity.ok(associates);
     }
 }

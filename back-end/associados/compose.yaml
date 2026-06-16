@@ -41,6 +41,18 @@ services:
       - API_SECURITY_TOKEN_SECRET=${JWT_SECRET}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+    volumes:
+      - ./storage:/app/uploads
+
+  nginx-storage:
+    image: nginx:alpine
+    container_name: nginx_storage
+    restart: always
+    ports:
+      - "8081:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro,z
+      - ./storage:/usr/share/nginx/html/uploads:ro,z
 
 volumes:
   postgres_data:
