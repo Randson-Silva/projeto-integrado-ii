@@ -3,7 +3,6 @@ import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import DownloadIcon from '@mui/icons-material/Download';
 import EditIcon from '@mui/icons-material/Edit';
-import LinkOffIcon from '@mui/icons-material/LinkOff';
 import PersonIcon from '@mui/icons-material/Person';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SendIcon from '@mui/icons-material/Send';
@@ -46,24 +45,22 @@ import type {
 } from '../services/associate/associate.types';
 
 import {
-  deleteAssociate,
-  getAssociateById,
-  getCategories,
-  updateAssociate,
-} from '../services/associate/associateService';
-
-import { LinkRounded } from '@mui/icons-material';
-import {
   getCitiesByState,
   getStates,
   type City,
   type State,
 } from '../services/address/ibgeService';
-import { activateUser, inactivateUser } from '../services/user/userService';
+import {
+  deleteAssociate,
+  getAssociateById,
+  getAssociateRegistrationForm,
+  getCategories,
+  updateAssociate,
+} from '../services/associate/associateService';
 import { isValidBirthDate } from '../utils/dates.util';
 import { maskCEP, maskCPF, maskIncome, maskPhone } from '../utils/masks.util';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
-import InactivateAssociateDialog from './InactivateAssociateDialog';
+// import InactivateAssociateDialog from './InactivateAssociateDialog';
 
 const DARK_BTN = {
   bgcolor: '#5F5E5E',
@@ -91,6 +88,7 @@ const EMPTY: IAdminAssociateProfileForm = {
   phone: '',
   birthDate: '',
   category: '',
+  guardianName: '',
   availableHours: '',
   addressZipCode: '',
   addressState: '',
@@ -118,7 +116,7 @@ const AssociateProfile = () => {
 
   const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
 
-  const [inactivateOpen, setInactivateOpen] = useState(false);
+  // const [inactivateOpen, setInactivateOpen] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -135,7 +133,27 @@ const AssociateProfile = () => {
     sexualOrientation: '',
   });
 
-  const [isActive, setIsActive] = useState<boolean>();
+  const isUnder18 = (() => {
+    if (!form.birthDate) return false;
+
+    const today = new Date();
+
+    const birth = new Date(form.birthDate);
+
+    let age = today.getFullYear() - birth.getFullYear();
+
+    const monthDiff = today.getMonth() - birth.getMonth();
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
+      age--;
+    }
+
+    return age < 18;
+  })();
+  // const [isActive, setIsActive] = useState<boolean>();
 
   const [errors, setErrors] = useState<
     Partial<Record<keyof IAdminAssociateProfileForm, string>>
@@ -164,7 +182,7 @@ const AssociateProfile = () => {
 
         const res = await getAssociateById(token, id);
 
-        setIsActive(res.user?.active ?? false);
+        // setIsActive(res.user?.active ?? false);
 
         const data = mapAssociateResponseToForm(res);
 
@@ -172,7 +190,10 @@ const AssociateProfile = () => {
         setOriginalForm(data);
 
         setDeclaratoryData({
-          education: res.selfDeclaration?.education === 'NÃO_SELECIONADO' ? '' : (res.selfDeclaration?.education ?? ''),
+          education:
+            res.selfDeclaration?.education === 'NÃO_SELECIONADO'
+              ? ''
+              : (res.selfDeclaration?.education ?? ''),
           income: res.selfDeclaration?.income?.toString() ?? '',
           race: res.selfDeclaration?.race ?? '',
           gender: res.selfDeclaration?.gender ?? '',
@@ -233,6 +254,10 @@ const AssociateProfile = () => {
 
     if (!form.fullName.trim()) {
       newErrors.fullName = 'Nome é obrigatório';
+    }
+
+    if (!form.guardianName?.trim()) {
+      newErrors.guardianName = 'Responsável legal é obrigatório';
     }
 
     if (!form.email.trim()) {
@@ -296,19 +321,56 @@ const AssociateProfile = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInactivate = async () => {
-    if (!token) return;
-    if (!isActive) return;
+  const handleDownloadRegistrationForm = async () => {
+    if (!token || !originalForm.id) {
+      toast(
+        'error',
+        'Não foi possível validar suas informações, tente fazer login novamente.'
+      );
+      return;
+    }
 
-    await inactivateUser(token, form.id);
+    try {
+      const pdfBlob = await getAssociateRegistrationForm(
+        token,
+        originalForm.id
+      );
+
+      const url = window.URL.createObjectURL(pdfBlob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `ficha-cadastral-${originalForm.id}.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast('success', 'Ficha baixada com sucesso.');
+    } catch {
+      toast(
+        'error',
+        'Não foi possível gerar a ficha devido a um erro no servidor.'
+      );
+    }
   };
 
-  const handleActivate = async () => {
-    if (!token) return;
-    if (isActive) return;
+  // ! removed from backlog
+  // const handleInactivate = async () => {
+  //   if (!token) return;
+  //   if (!isActive) return;
 
-    await activateUser(token, form.id);
-  };
+  //   await inactivateUser(token, form.id);
+  // };
+
+  // const handleActivate = async () => {
+  //   if (!token) return;
+  //   if (isActive) return;
+
+  //   await activateUser(token, form.id);
+  // };
 
   const handleSave = async () => {
     if (!validateForm()) {
@@ -320,6 +382,7 @@ const AssociateProfile = () => {
 
       setSaving(true);
 
+      console.log(form.guardianName)
       await updateAssociate(
         token,
         id,
@@ -693,7 +756,7 @@ const AssociateProfile = () => {
                   Excluir Associado
                 </Button>
 
-                <Button
+                {/* <Button
                   startIcon={
                     isActive ? (
                       <LinkOffIcon sx={{ fontSize: 16 }} />
@@ -708,12 +771,13 @@ const AssociateProfile = () => {
                   sx={DARK_BTN}
                 >
                   {isActive ? 'Inativar Vínculo' : 'Ativar Vínculo'}
-                </Button>
+                </Button> */}
 
                 <Button
                   startIcon={<DownloadIcon sx={{ fontSize: 16 }} />}
                   variant="contained"
                   color="primary"
+                  onClick={handleDownloadRegistrationForm}
                   sx={{
                     borderRadius: 10,
                     textTransform: 'none',
@@ -802,6 +866,12 @@ const AssociateProfile = () => {
             <Grid size={{ xs: 12, sm: 3 }}>
               {tf('Data de Nascimento', 'birthDate', 'date')}
             </Grid>
+
+            {isUnder18 && (
+              <Grid size={{ xs: 12, sm: 8 }}>
+                {tf('Nome do Responsável', 'guardianName')}
+              </Grid>
+            )}
 
             <Grid size={{ xs: 12, sm: 8 }}>
               {tf('E-mail', 'email', 'email')}
@@ -1088,14 +1158,14 @@ const AssociateProfile = () => {
         </Paper>
       </Stack>
 
-      <InactivateAssociateDialog
+      {/* <InactivateAssociateDialog
         open={inactivateOpen}
         onClose={() => setInactivateOpen(false)}
         onConfirm={async () => {
           await handleInactivate();
         }}
         associateName={form.fullName}
-      />
+      /> */}
 
       <DeleteConfirmDialog
         open={deleteOpen}
