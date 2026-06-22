@@ -4,10 +4,12 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.associados.associados.auth.infra.exceptions.BusinessException;
+import com.associados.associados.user.dtos.request.ChangeOwnPasswordDto;
 import com.associados.associados.user.dtos.request.PatchUserContactDto;
 import com.associados.associados.user.dtos.request.UpdateProfileDto;
 import com.associados.associados.user.dtos.response.UserResponseDto;
@@ -24,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AccessManagementService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public Page<UserResponseDto> listUsers(UUID requesterId, Pageable pageable) {
         User requester = findUserOrThrow(requesterId);
@@ -117,6 +120,26 @@ public class AccessManagementService {
         user.setPhone(data.phone());
 
         return new UserResponseDto(userRepository.save(user));
+    }
+
+    @Transactional
+    public void changeOwnPassword(UUID userId, ChangeOwnPasswordDto data) {
+        User user = findUserOrThrow(userId);
+
+        if (user.getPassword() == null || !passwordEncoder.matches(data.currentPassword(), user.getPassword())) {
+            throw new BusinessException("Current password is invalid");
+        }
+
+        if (!data.newPassword().equals(data.confirmPassword())) {
+            throw new BusinessException("Password confirmation does not match");
+        }
+
+        if (passwordEncoder.matches(data.newPassword(), user.getPassword())) {
+            throw new BusinessException("New password must be different from the current password");
+        }
+
+        user.setPassword(passwordEncoder.encode(data.newPassword()));
+        userRepository.save(user);
     }
 
     @Transactional

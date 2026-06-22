@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.associados.associados.auth.infra.exceptions.BusinessException;
+import com.associados.associados.user.dtos.request.ChangeOwnPasswordDto;
 import com.associados.associados.user.dtos.request.PatchUserContactDto;
 import com.associados.associados.user.dtos.request.ToggleActiveDto;
 import com.associados.associados.user.dtos.request.UpdateProfileDto;
@@ -136,6 +137,26 @@ public class AccessManagementController {
         return ResponseEntity.ok(updatedUser);
     }
 
+    @PatchMapping("/me/password")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Change own password", description = "Changes the password of the authenticated user (ADMIN and CONSULTANT only)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Password changed successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid current password or password confirmation mismatch"),
+        @ApiResponse(responseCode = "403", description = "Permission denied")
+    })
+    public ResponseEntity<Void> changeOwnPassword(@RequestBody @Valid ChangeOwnPasswordDto data) {
+        UUID userId = getAuthenticatedUserId();
+        User requester = getAuthenticatedUser();
+
+        if (requester.getRole() != RoleEnum.ADMIN && requester.getRole() != RoleEnum.CONSULTANT) {
+            throw new BusinessException("Only ADMIN and CONSULTANT can change their password");
+        }
+
+        accessManagementService.changeOwnPassword(userId, data);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{id}")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Delete user", description = "Permanently removes a user account (cannot delete self)")
@@ -160,4 +181,3 @@ public class AccessManagementController {
         return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 }
-

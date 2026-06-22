@@ -67,7 +67,9 @@ public class SecurityConfiguration {
                     req.requestMatchers("/categories/**").hasRole("ADMIN");
                     req.requestMatchers("/mailing/**").hasAnyRole("ADMIN");
                     req.requestMatchers(HttpMethod.PATCH, "/management/users/me/contact").hasAnyRole("ADMIN", "CONSULTANT");
+                    req.requestMatchers(HttpMethod.PATCH, "/management/users/me/password").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers("/management/**").hasRole("SUPER_ADMIN");
+                    req.requestMatchers(HttpMethod.POST, "/users/upload-avatar").authenticated();
                     req.anyRequest().authenticated();
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

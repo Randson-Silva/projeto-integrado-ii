@@ -46,6 +46,9 @@ public class User implements UserDetails {
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(length = 500)
+    private String avatarUrl;
+
     @Column(name = "email_login", nullable = false, unique = true)
     @Email(message = "The email should be valid")
     private String email;
@@ -105,6 +108,9 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return this.isActive;
     }
+
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 
     public User(RegisterAdminDto data) {
         this.name = data.fullName();

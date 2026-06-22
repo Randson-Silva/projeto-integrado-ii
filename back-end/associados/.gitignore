@@ -41,3 +41,6 @@ push.sh
 ## população de banco para testes ##
 
 src/main/resources/data.sql
+
+## storage para fotos ##
+storage/
