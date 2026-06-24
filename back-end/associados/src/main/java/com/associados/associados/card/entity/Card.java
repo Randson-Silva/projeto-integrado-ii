@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import com.associados.associados.associate.entity.Associate;
+import com.associados.associados.user.entity.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,6 +32,10 @@ public class Card {
     @OneToOne(optional = false)
     @JoinColumn(name = "associate_id", nullable = false, unique = true)
     private Associate associate;
+
+    @OneToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
 
     @Column(nullable = false, length = 255)
     private String fullName;

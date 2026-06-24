@@ -14,7 +14,8 @@ public record CardResponseDto(
         String cpf,
         LocalDate validity,
         CategoryResponseDto category,
-        String number) {
+        String number,
+        String avatarUrl) {
     public CardResponseDto(Card card) {
         this(
                 card.getId(),
@@ -24,6 +25,7 @@ public record CardResponseDto(
                 card.getCpf(),
                 card.getValidity(),
                 card.getCategory() == null ? null : new CategoryResponseDto(card.getCategory()),
-                card.getNumber());
+                card.getNumber(),
+                card.getUser() == null ? null : card.getUser().getAvatarUrl());
     }
 }

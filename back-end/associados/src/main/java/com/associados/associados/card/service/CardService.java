@@ -36,6 +36,7 @@ public class CardService {
 
         Card card = new Card();
         card.setAssociate(associate);
+        card.setUser(associate.getUser());
         card.setFullName(associate.getUser().getName());
         card.setSocialName(resolveSocialName(associate));
         card.setCpf(associate.getCpf());
