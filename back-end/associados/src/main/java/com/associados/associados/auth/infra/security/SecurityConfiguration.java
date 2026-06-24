@@ -53,6 +53,7 @@ public class SecurityConfiguration {
                     req.requestMatchers(HttpMethod.POST, "/admins").hasRole("SUPER_ADMIN");
                     req.requestMatchers(HttpMethod.POST, "/associates").hasRole("ADMIN");
                     req.requestMatchers(HttpMethod.GET, "/associates/me").hasRole("ASSOCIATE");
+                    req.requestMatchers(HttpMethod.GET, "/cards/me").hasRole("ASSOCIATE");
                     req.requestMatchers(HttpMethod.GET, "/associates").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers(HttpMethod.GET, "/associates/**").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers(HttpMethod.PATCH, "/associates/me/self-declaration").hasRole("ASSOCIATE");

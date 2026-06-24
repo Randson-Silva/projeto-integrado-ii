@@ -18,6 +18,7 @@ import com.associados.associados.associate.repository.AssociateRepository;
 import com.associados.associados.associate.repository.CategoryRepository;
 import com.associados.associados.auth.dtos.request.RegisterAssociateDto;
 import com.associados.associados.auth.infra.exceptions.BusinessException;
+import com.associados.associados.card.service.CardService;
 import com.associados.associados.user.entity.User;
 import com.associados.associados.user.enums.RoleEnum;
 import com.associados.associados.user.repository.UserRepository;
@@ -32,6 +33,7 @@ public class AssociateService {
     private final AssociateRepository associateRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final CardService cardService;
 
     @Transactional
     public void register(RegisterAssociateDto data) {
@@ -84,7 +86,8 @@ public class AssociateService {
         associate.setAddress(address);
         associate.setSelfDeclaration(declaration);
 
-        associateRepository.save(associate);
+        Associate savedAssociate = associateRepository.save(associate);
+        cardService.createForAssociate(savedAssociate);
     }
 
     private void validateCpf(String cpf) {
