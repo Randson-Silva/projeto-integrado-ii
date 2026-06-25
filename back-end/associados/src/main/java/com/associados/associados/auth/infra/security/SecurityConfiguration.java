@@ -53,11 +53,14 @@ public class SecurityConfiguration {
                     req.requestMatchers(HttpMethod.POST, "/auth/password/reset").hasAuthority("PASSWORD_RESET");
                     req.requestMatchers("/error/**").permitAll();
                     req.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
+                    req.requestMatchers(HttpMethod.GET, "/uploads/**").permitAll();
                     req.requestMatchers(HttpMethod.GET, "/terms/data-sharing").permitAll(); //temporário (depois revisar permissões)
+                    req.requestMatchers(HttpMethod.GET, "/cards/validate").permitAll(); //pagina publica
 
                     req.requestMatchers(HttpMethod.POST, "/admins").hasRole("SUPER_ADMIN");
                     req.requestMatchers(HttpMethod.POST, "/associates").hasRole("ADMIN");
                     req.requestMatchers(HttpMethod.GET, "/associates/me").hasRole("ASSOCIATE");
+                    req.requestMatchers(HttpMethod.GET, "/cards/me").hasRole("ASSOCIATE");
                     req.requestMatchers(HttpMethod.GET, "/associates").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers(HttpMethod.GET, "/associates/**").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers(HttpMethod.PATCH, "/associates/me/self-declaration").hasRole("ASSOCIATE");
@@ -70,6 +73,8 @@ public class SecurityConfiguration {
                     req.requestMatchers(HttpMethod.PATCH, "/management/users/me/password").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers("/management/**").hasRole("SUPER_ADMIN");
                     req.requestMatchers(HttpMethod.POST, "/users/upload-avatar").authenticated();
+                    req.requestMatchers(HttpMethod.PATCH, "/users/*/avatar").authenticated();
+                    req.requestMatchers(HttpMethod.DELETE, "/users/*/avatar").hasAnyRole("ADMIN", "SUPER_ADMIN");
                     req.anyRequest().authenticated();
                 })
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
