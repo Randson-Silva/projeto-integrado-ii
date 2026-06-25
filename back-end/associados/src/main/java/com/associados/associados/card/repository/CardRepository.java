@@ -16,5 +16,7 @@ public interface CardRepository extends JpaRepository<Card, UUID> {
 
     boolean existsByAssociateId(UUID associateId);
 
+    void deleteByAssociateId(UUID associateId);
+
     long countByNumberStartingWith(String numberPrefix);
 }
