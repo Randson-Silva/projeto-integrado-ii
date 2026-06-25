@@ -10,6 +10,8 @@ import com.associados.associados.card.entity.Card;
 
 @Repository
 public interface CardRepository extends JpaRepository<Card, UUID> {
+    Optional<Card> findByNumber(String number);
+
     Optional<Card> findByAssociateId(UUID associateId);
 
     boolean existsByAssociateId(UUID associateId);

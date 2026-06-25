@@ -10,6 +10,7 @@ import com.associados.associados.associate.entity.SelfDeclaration;
 import com.associados.associados.associate.repository.AssociateRepository;
 import com.associados.associados.auth.infra.exceptions.BusinessException;
 import com.associados.associados.card.dtos.response.CardResponseDto;
+import com.associados.associados.card.dtos.response.CardValidationResponseDto;
 import com.associados.associados.card.entity.Card;
 import com.associados.associados.card.repository.CardRepository;
 
@@ -55,6 +56,18 @@ public class CardService {
                 .orElseThrow(() -> new BusinessException("Card not found"));
 
         return new CardResponseDto(card);
+    }
+
+    public CardValidationResponseDto validateCard(String number) {
+        Card card = cardRepository.findByNumber(number).orElse(null);
+
+        if (card == null) {
+            return new CardValidationResponseDto(false, number, null, "Card not found");
+        }
+
+        boolean valid = !card.getValidity().isBefore(LocalDate.now());
+        String message = valid ? "Card is valid" : "Card expired";
+        return new CardValidationResponseDto(valid, card.getNumber(), card.getValidity(), message);
     }
 
     private String generateCardNumber() {

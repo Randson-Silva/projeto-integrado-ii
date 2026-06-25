@@ -49,6 +49,7 @@ public class SecurityConfiguration {
                     req.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
                     req.requestMatchers(HttpMethod.GET, "/uploads/**").permitAll();
                     req.requestMatchers(HttpMethod.GET, "/terms/data-sharing").permitAll(); //temporário (depois revisar permissões)
+                    req.requestMatchers(HttpMethod.GET, "/cards/validate").permitAll(); //pagina publica
 
                     req.requestMatchers(HttpMethod.POST, "/admins").hasRole("SUPER_ADMIN");
                     req.requestMatchers(HttpMethod.POST, "/associates").hasRole("ADMIN");
