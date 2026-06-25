@@ -15,6 +15,7 @@ import ValidationResultModal from './ValidationResultModal';
 
 interface CardResult {
   name: string;
+  socialName: string;
   category: string;
   numeracao: string;
   validity: string;
@@ -34,13 +35,16 @@ const ValidateCardSection = () => {
     try {
       const data = await validateCard(code.trim());
       if (data?.valid) {
-        setResult({
+        const cardResult: CardResult = {
           name: data.name || '—',
+          socialName: data.socialName || '—',
           category: data.category || '—',
           numeracao: code.trim(),
           validity: data.validity || '—',
           status: data.status || '—',
-        });
+        };
+
+        setResult(cardResult);
       } else {
         setErrorMsg(data?.message || 'Carteirinha não encontrada.');
         setErrorOpen(true);
@@ -108,11 +112,13 @@ const ValidateCardSection = () => {
               flexShrink: 0,
             }}
           >
-            {result.name.charAt(0)}
+            {result.socialName.charAt(0) ?? result.name.charAt(0)}
           </Avatar>
 
           <Stack spacing={0.5} sx={{ flex: 1 }}>
-            <Typography sx={{ fontWeight: 700 }}>{result.name}</Typography>
+            <Typography sx={{ fontWeight: 700 }}>
+              {result.socialName ?? result.name}
+            </Typography>
             <Typography variant="body2" color="text.secondary">
               Categoria: {result.category}
             </Typography>
