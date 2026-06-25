@@ -22,11 +22,11 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import type { AssociateEducation } from '../services/associate/associate.types';
 import {
   getMyAssociate,
   updateMySelfDeclaration,
 } from '../services/associate/associateService';
-import type { AssociateEducation } from '../services/associate/associate.types';
 import { maskCEP } from '../utils/masks.util';
 
 interface SelfDeclForm {
@@ -36,6 +36,7 @@ interface SelfDeclForm {
   gender: string;
   sexualOrientation: string;
   dataSharing: boolean;
+  socialName: string;
 }
 
 interface ProfileForm {
@@ -93,6 +94,7 @@ const EMPTY_SELF_DECL: SelfDeclForm = {
   gender: '',
   sexualOrientation: '',
   dataSharing: false,
+  socialName: '',
 };
 
 const EMPTY_PROFILE: ProfileForm = {
@@ -164,7 +166,7 @@ const AssociateSelfSupplementForm = () => {
           education:
             data.selfDeclaration?.education === 'NÃO_SELECIONADO'
               ? ''
-              : data.selfDeclaration?.education ?? '',
+              : (data.selfDeclaration?.education ?? ''),
           income:
             data.selfDeclaration?.income != null
               ? data.selfDeclaration.income.toLocaleString('pt-BR', {
@@ -176,6 +178,7 @@ const AssociateSelfSupplementForm = () => {
           gender: data.selfDeclaration?.gender ?? '',
           sexualOrientation: data.selfDeclaration?.sexualOrientation ?? '',
           dataSharing: data.selfDeclaration?.acceptedDataSharingTerm ?? false,
+          socialName: data.selfDeclaration?.socialName ?? '',
         };
         setSelfDecl(decl);
         setSelfDeclDraft(decl);
@@ -208,8 +211,8 @@ const AssociateSelfSupplementForm = () => {
   const handleSaveDecl = async () => {
     setSaving(true);
     const mapVal = (v: string) => (!v ? '' : v);
-    const mapEnum = (v: string) =>
-      !v || v === 'PREFIRO_NAO_INFORMAR' ? null : v;
+    // const mapEnum = (v: string) =>
+    //   !v || v === 'PREFIRO_NAO_INFORMAR' ? null : v;
     // Converte renda mascarada ("R$ 1.500,00") para número ou envia null
     const parsedIncome = (() => {
       const raw = selfDeclDraft.income;
@@ -225,11 +228,13 @@ const AssociateSelfSupplementForm = () => {
         race: mapVal(selfDeclDraft.race),
         gender: mapVal(selfDeclDraft.gender),
         sexualOrientation: mapVal(selfDeclDraft.sexualOrientation),
-        education: (selfDeclDraft.education === '' || selfDeclDraft.education === 'NÃO_SELECIONADO'
+        education: (selfDeclDraft.education === '' ||
+        selfDeclDraft.education === 'NÃO_SELECIONADO'
           ? ''
           : selfDeclDraft.education) as AssociateEducation,
         income: parsedIncome,
         acceptedDataSharingTerm: selfDeclDraft.dataSharing,
+        socialName: selfDeclDraft.socialName,
       });
       setSelfDecl({ ...selfDeclDraft });
       setEditingDecl(false);
@@ -338,6 +343,35 @@ const AssociateSelfSupplementForm = () => {
       size="small"
       fullWidth
       slotProps={{ inputLabel: { shrink: true } }}
+    />
+  );
+
+  const nomeSocialField = (
+    <TextField
+      label="Nome Social"
+      value={selfDeclDraft.socialName}
+      onChange={(e) =>
+        setSelfDeclDraft((prev) => ({
+          ...prev,
+          socialName: e.target.value,
+        }))
+      }
+      disabled={!editingDecl}
+      size="small"
+      fullWidth
+      slotProps={{
+        inputLabel: {
+          shrink: true,
+          sx: { color: editingDecl ? 'primary.main' : undefined },
+        },
+        input: {
+          sx: {
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: editingDecl ? 'primary.main' : undefined,
+            },
+          },
+        },
+      }}
     />
   );
 
@@ -521,6 +555,7 @@ const AssociateSelfSupplementForm = () => {
           </Stack>
 
           <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6, md: 5 }}>{nomeSocialField}</Grid>
             <Grid size={{ xs: 12, sm: 'auto' }} sx={{ minWidth: 180 }}>
               {declSelect('Escolaridade', 'education', [
                 {
