@@ -254,9 +254,10 @@ public class AssociateService {
 
     @Transactional
     public void deleteAssociate(java.util.UUID id) {
-        if (!associateRepository.existsById(id)) {
-            throw new BusinessException("Associate not found");
-        }
+        Associate associate = findAssociateOrThrow(id);
+        
+        cardService.deleteByAssociateId(associate.getId());
+
         associateRepository.deleteById(id);
     }
 

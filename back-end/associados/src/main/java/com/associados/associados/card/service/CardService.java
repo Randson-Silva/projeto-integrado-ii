@@ -58,6 +58,14 @@ public class CardService {
         return new CardResponseDto(card);
     }
 
+    @Transactional
+    public void deleteByAssociateId(java.util.UUID associateId) {
+        if (associateId == null) {
+            return;
+        }
+        cardRepository.deleteByAssociateId(associateId);
+    }
+
     public CardValidationResponseDto validateCard(String number) {
         Card card = cardRepository.findByNumber(number).orElse(null);
 
