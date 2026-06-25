@@ -131,6 +131,7 @@ const AssociateProfile = () => {
     race: '',
     gender: '',
     sexualOrientation: '',
+    socialName: '',
   });
 
   const isUnder18 = (() => {
@@ -198,6 +199,7 @@ const AssociateProfile = () => {
           race: res.selfDeclaration?.race ?? '',
           gender: res.selfDeclaration?.gender ?? '',
           sexualOrientation: res.selfDeclaration?.sexualOrientation ?? '',
+          socialName: res.selfDeclaration?.socialName ?? '',
         });
       } catch {
         toast('error', 'Erro ao carregar associado.');
@@ -382,7 +384,6 @@ const AssociateProfile = () => {
 
       setSaving(true);
 
-      console.log(form.guardianName)
       await updateAssociate(
         token,
         id,
@@ -982,6 +983,16 @@ const AssociateProfile = () => {
                   mb: editing ? 0 : 1,
                 }}
               >
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="Nome social"
+                    value={declaratoryData.socialName}
+                    disabled
+                    size="small"
+                    fullWidth
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                </Grid>
                 <Grid size={{ xs: 12, sm: 3 }}>
                   {sdf('Escolaridade', 'education', [
                     { value: '', label: 'Selecione' },
