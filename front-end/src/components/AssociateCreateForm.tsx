@@ -31,6 +31,7 @@ import {
   createAssociate,
   getCategories,
 } from '../services/associate/associateService';
+import { getValidityDate } from '../services/cardService';
 import { isValidBirthDate } from '../utils/dates.util';
 import { maskCEP, maskCPF, maskPhone } from '../utils/masks.util';
 import DuplicateCPFDialog from './DuplicateCPFDialog';
@@ -79,6 +80,9 @@ const AssociateCreateForm = () => {
   >({});
   const [form, setForm] = useState<AssociateCreateForm>(EMPTY);
   const [saving, setSaving] = useState(false);
+
+  const [isBlocked, setIsBlocked] = useState(false);
+
   const [duplicateOpen, setDuplicate] = useState(false);
   const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
   const [snack, setSnack] = useState<Snack>({
@@ -152,11 +156,29 @@ const AssociateCreateForm = () => {
 
   useEffect(() => {
     if (!token) return;
-    getCategories(token)
-      .then((data) => setCategories(data))
-      .catch(() => {
-        /* silently ignore, select fica vazio */
-      });
+
+    const validateSystemConfig = async () => {
+      try {
+        const fetchedCategories = await getCategories(token);
+        setCategories(fetchedCategories);
+
+        const fetchedValidityDate = await getValidityDate(token);
+
+        if (
+          !fetchedCategories ||
+          fetchedCategories.length === 0 ||
+          !fetchedValidityDate
+        ) {
+          setIsBlocked(true);
+        } else {
+          setIsBlocked(false);
+        }
+      } catch (error) {
+        console.error('Erro ao validar configurações do sistema:', error);
+      }
+    };
+
+    validateSystemConfig();
   }, [token]);
 
   const set =
@@ -663,7 +685,7 @@ const AssociateCreateForm = () => {
               variant="contained"
               color="primary"
               onClick={handleSubmit}
-              disabled={saving}
+              disabled={saving || isBlocked}
               sx={{
                 fontWeight: 700,
                 borderRadius: 10,
