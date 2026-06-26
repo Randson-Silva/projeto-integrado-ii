@@ -2,6 +2,7 @@ import AddIcon from '@mui/icons-material/Add';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CloseIcon from '@mui/icons-material/Close';
 import {
+  Alert,
   Box,
   Button,
   Divider,
@@ -10,11 +11,10 @@ import {
   InputAdornment,
   OutlinedInput,
   Paper,
+  Snackbar,
   Stack,
   TextField,
   Typography,
-  Snackbar,
-  Alert,
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
@@ -24,6 +24,7 @@ import {
   deleteCategory,
   getCategories,
 } from '../services/associate/associateService';
+import { getValidityDate, updateValidityDate } from '../services/cardService';
 
 const MONTHS_PT = [
   'Janeiro',
@@ -52,6 +53,7 @@ interface DateFieldProps {
   value: string;
   onChange: (v: string) => void;
 }
+
 const DateField = ({ label, value, onChange }: DateFieldProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -133,10 +135,15 @@ const SettingsForm = () => {
 
   const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
   const [newCategory, setNewCategory] = useState('');
+  const [originalValidityDate, setOriginalValidityDate] = useState('');
   const [validityDate, setValidityDate] = useState('');
 
   const [error, setError] = useState('');
-  const [snack, setSnack] = useState<{ open: boolean; severity: 'success' | 'error'; msg: string }>({
+  const [snack, setSnack] = useState<{
+    open: boolean;
+    severity: 'success' | 'error';
+    msg: string;
+  }>({
     open: false,
     severity: 'success',
     msg: '',
@@ -148,12 +155,20 @@ const SettingsForm = () => {
       return;
     }
 
+    const loadValidityDate = async () => {
+      const date = await getValidityDate(token);
+
+      setOriginalValidityDate(date);
+      setValidityDate(date);
+    };
+
     const loadCategories = async () => {
       const categories = await getCategories(token);
       setCategories(categories);
     };
 
     loadCategories();
+    loadValidityDate();
   }, [token, logout]);
 
   const addCategory = async () => {
@@ -188,9 +203,17 @@ const SettingsForm = () => {
 
       setCategories((prev) => [...prev, created]);
       setNewCategory('');
-      setSnack({ open: true, severity: 'success', msg: 'Categoria adicionada com sucesso!' });
+      setSnack({
+        open: true,
+        severity: 'success',
+        msg: 'Categoria adicionada com sucesso!',
+      });
     } catch {
-      setSnack({ open: true, severity: 'error', msg: 'Erro ao adicionar a categoria. Tente novamente.' });
+      setSnack({
+        open: true,
+        severity: 'error',
+        msg: 'Erro ao adicionar a categoria. Tente novamente.',
+      });
     }
   };
 
@@ -210,7 +233,47 @@ const SettingsForm = () => {
       setCategories((p) => p.filter((c) => c.id !== cat.id));
       setSnack({ open: true, severity: 'success', msg: 'Categoria removida!' });
     } catch {
-      setSnack({ open: true, severity: 'error', msg: 'Não foi possível remover a categoria.' });
+      setSnack({
+        open: true,
+        severity: 'error',
+        msg: 'Não foi possível remover a categoria.',
+      });
+    }
+  };
+
+  const handleSetValidityDate = async () => {
+    if (!token) {
+      logout();
+      return;
+    }
+
+    if (!validityDate) return;
+
+    if (new Date(validityDate).valueOf() < Date.now()) {
+      setSnack({
+        open: true,
+        severity: 'error',
+        msg: 'Erro: insira uma data válida.',
+      });
+      return;
+    }
+
+    try {
+      await updateValidityDate(validityDate, token);
+
+      setOriginalValidityDate(validityDate);
+
+      setSnack({
+        open: true,
+        severity: 'success',
+        msg: 'Data definida com sucesso!',
+      });
+    } catch {
+      setSnack({
+        open: true,
+        severity: 'error',
+        msg: 'Erro ao definir a data. Tente novamente.',
+      });
     }
   };
 
@@ -253,7 +316,9 @@ const SettingsForm = () => {
               value={newCategory}
               onChange={(e) => {
                 setError('');
-                setNewCategory(e.target.value.replace(/[^a-zA-Z0-9À-ÿ\s]/g, ''));
+                setNewCategory(
+                  e.target.value.replace(/[^a-zA-Z0-9À-ÿ\s]/g, '')
+                );
               }}
               onKeyDown={(e) => e.key === 'Enter' && addCategory()}
               size="small"
@@ -352,7 +417,7 @@ const SettingsForm = () => {
             sx={{ justifyContent: 'flex-end', mt: 3 }}
           >
             <Button
-              onClick={() => setValidityDate('')}
+              onClick={() => setValidityDate(originalValidityDate)}
               sx={{
                 textTransform: 'none',
                 fontWeight: 600,
@@ -362,10 +427,8 @@ const SettingsForm = () => {
               Cancelar
             </Button>
             <Button
-              onClick={() => {
-                // TODO: salvar data de validade via API
-                console.log('Validade:', validityDate);
-              }}
+              disabled={!validityDate || validityDate === originalValidityDate}
+              onClick={handleSetValidityDate}
               sx={{
                 textTransform: 'none',
                 fontWeight: 600,

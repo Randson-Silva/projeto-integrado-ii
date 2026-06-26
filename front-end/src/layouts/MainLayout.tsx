@@ -1,9 +1,12 @@
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import MenuIcon from '@mui/icons-material/Menu';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
+  Alert,
   AppBar,
   Avatar,
   Box,
+  Button,
   Drawer,
   IconButton,
   Menu,
@@ -20,9 +23,11 @@ import { associateItems } from '../config/sidebarItems/associateItems';
 import { consultantItems } from '../config/sidebarItems/consultantItems';
 import { superAdminItems } from '../config/sidebarItems/superAdminItems';
 import { useAuth } from '../hooks/useAuth';
+import { getCategories } from '../services/associate/associateService';
 import { authGetProfile } from '../services/auth/authService';
 import { decodeJwt } from '../services/auth/jwt.config';
 import { normalizeRoleView } from '../services/auth/roles';
+import { getValidityDate } from '../services/cardService';
 
 const DRAWER_WIDTH = 224;
 
@@ -39,17 +44,14 @@ const UserMenu = () => {
     const loadUserInfo = async () => {
       try {
         if (!token) {
-          setDisplayName('Usuário');
-          setRole('Indefinido');
+          logout();
           return;
         }
 
         const user = await authGetProfile({ token });
 
         if (!user) {
-          setDisplayName('Usuário');
-          setRole('Indefinido');
-          setRawRole('');
+          logout();
           return;
         }
 
@@ -57,14 +59,12 @@ const UserMenu = () => {
         setRole(normalizeRoleView(user.role));
         setRawRole(user.role);
       } catch {
-        setDisplayName('Usuário');
-        setRole('Indefinido');
-        setRawRole('');
+        logout();
       }
     };
 
     loadUserInfo();
-  }, [token]);
+  }, [token, logout]);
 
   const initial = displayName ? displayName.charAt(0).toUpperCase() : '?';
 
@@ -151,13 +151,21 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children, menuItems, pageTitle }: MainLayoutProps) => {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const [missingValidityDate, setMissingValidityDate] = useState(false);
+  const [missingCategories, setMissingCategories] = useState(false);
+
   let activeItems: SidebarItem[] = [];
+  let userRole = '';
+
   if (menuItems) {
     activeItems = menuItems;
   } else if (token) {
     const user = decodeJwt(token);
+    userRole = user?.role || '';
+
     if (user?.role === 'SUPER_ADMIN') {
       activeItems = superAdminItems;
     } else if (user?.role === 'CONSULTANT') {
@@ -170,6 +178,31 @@ const MainLayout = ({ children, menuItems, pageTitle }: MainLayoutProps) => {
       activeItems = [];
     }
   }
+
+  useEffect(() => {
+    const checkSystemSettings = async () => {
+      if (token && (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN')) {
+        // Valida a Data
+        try {
+          const date = await getValidityDate(token);
+          setMissingValidityDate(!date);
+        } catch (error) {
+          console.error('Erro ao verificar data de validade:', error);
+        }
+
+        // Valida as Categorias
+        try {
+          const categories = await getCategories(token);
+          // Se não retornar nada uo se o array vier vazio (length === 0)
+          setMissingCategories(!categories || categories.length === 0);
+        } catch (error) {
+          console.error('Erro ao verificar categorias:', error);
+        }
+      }
+    };
+
+    checkSystemSettings();
+  }, [token, userRole]);
 
   const drawer = <Sidebar items={activeItems} />;
 
@@ -230,7 +263,7 @@ const MainLayout = ({ children, menuItems, pageTitle }: MainLayoutProps) => {
         {drawer}
       </Drawer>
 
-      {/* Content */}
+      {/* CONTEÚDO PRINCIPAL */}
       <Box
         component="main"
         sx={{
@@ -269,7 +302,55 @@ const MainLayout = ({ children, menuItems, pageTitle }: MainLayoutProps) => {
           <UserMenu />
         </Box>
 
-        <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 } }}>{children}</Box>
+        {/* CONTAINER DOS ALERTAS E DA PÁGINA */}
+        <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 } }}>
+          {/* BANNER DE AVISO - DATA DE VALIDADE */}
+          {missingValidityDate && (
+            <Alert
+              severity="warning"
+              icon={<WarningAmberIcon />}
+              action={
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => navigate('/configuracoes')}
+                >
+                  Configurar
+                </Button>
+              }
+              sx={{ mb: 3, borderRadius: 2, alignItems: 'center' }}
+            >
+              <strong>Atenção:</strong> A Data de Validade Anual não foi
+              definida. O cadastro de novos associados está bloqueado até que a
+              configuração seja feita.
+            </Alert>
+          )}
+
+          {/* BANNER DE AVISO - CATEGORIAS */}
+          {missingCategories && (
+            <Alert
+              severity="warning"
+              icon={<WarningAmberIcon />}
+              action={
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => navigate('/configuracoes')}
+                >
+                  Configurar
+                </Button>
+              }
+              sx={{ mb: 3, borderRadius: 2, alignItems: 'center' }}
+            >
+              <strong>Atenção:</strong> Nenhuma categoria de cadastro foi
+              definida. O cadastro de novos associados está bloqueado até que ao
+              menos uma seja adicionada.
+            </Alert>
+          )}
+
+          {/* Renderiza as páginas aqui dentro */}
+          {children}
+        </Box>
       </Box>
     </Box>
   );
