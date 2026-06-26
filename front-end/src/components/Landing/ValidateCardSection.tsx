@@ -11,15 +11,17 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { validateCard } from '../../services/cardService';
+import { convertToForm } from '../../utils/dates.util';
 import ValidationResultModal from './ValidationResultModal';
 
 interface CardResult {
-  name: string;
+  valid: string;
+  avatarUrl: string;
+  fullName: string;
   socialName: string;
   category: string;
-  numeracao: string;
+  number: string;
   validity: string;
-  status: string;
 }
 
 const ValidateCardSection = () => {
@@ -36,12 +38,13 @@ const ValidateCardSection = () => {
       const data = await validateCard(code.trim());
       if (data?.valid) {
         const cardResult: CardResult = {
-          name: data.name || '—',
+          fullName: data.fullName || '—',
           socialName: data.socialName || '—',
-          category: data.category || '—',
-          numeracao: code.trim(),
+          category: data.category.name || '—',
+          number: code.trim(),
           validity: data.validity || '—',
-          status: data.status || '—',
+          avatarUrl: data.avatarUrl || '',
+          valid: data.valid ? 'Válido' : 'Inválido',
         };
 
         setResult(cardResult);
@@ -112,18 +115,18 @@ const ValidateCardSection = () => {
               flexShrink: 0,
             }}
           >
-            {result.socialName.charAt(0) ?? result.name.charAt(0)}
+            {result.socialName.charAt(0) ?? result.fullName.charAt(0)}
           </Avatar>
 
           <Stack spacing={0.5} sx={{ flex: 1 }}>
             <Typography sx={{ fontWeight: 700 }}>
-              {result.socialName ?? result.name}
+              {result.socialName ?? result.fullName}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Categoria: {result.category}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Numeração: {result.numeracao}
+              Numeração: {result.number}
             </Typography>
 
             <Stack
@@ -132,7 +135,7 @@ const ValidateCardSection = () => {
               sx={{ pt: 0.5, flexWrap: 'wrap' }}
             >
               <Chip
-                label={result.status}
+                label={result.valid}
                 size="small"
                 sx={{
                   bgcolor: 'success.main',
@@ -142,7 +145,7 @@ const ValidateCardSection = () => {
                 }}
               />
               <Chip
-                label={`Validade: ${result.validity}`}
+                label={`Validade: ${convertToForm(result.validity)}`}
                 size="small"
                 color="primary"
                 sx={{ fontWeight: 700, fontSize: 11 }}
