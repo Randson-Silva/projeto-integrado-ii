@@ -35,7 +35,10 @@ public class SecurityFilter extends OncePerRequestFilter {
         var token = this.recoverToken(request);
         if(token != null){
             if (isPasswordResetRequest(request)) {
-                authenticatePasswordResetToken(token);
+                authenticatePasswordResetToken(token, response);
+                if (response.isCommitted()) {
+                    return;
+                }
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -50,15 +53,19 @@ public class SecurityFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 } else {
                     log.warn("User not found in database for email: {}", login);
+                    rejectUnauthorized(response);
+                    return;
                 }
             } else {
                 log.warn("Invalid or expired token provided");
+                rejectUnauthorized(response);
+                return;
             }
         }
         filterChain.doFilter(request, response);
     }
 
-    private void authenticatePasswordResetToken(String token) {
+    private void authenticatePasswordResetToken(String token, HttpServletResponse response) throws IOException {
         var tokenData = jwtService.validatePasswordResetToken(token);
         if (tokenData != null) {
             var authorities = List.of(new SimpleGrantedAuthority("PASSWORD_RESET"));
@@ -66,6 +73,14 @@ public class SecurityFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } else {
             log.warn("Invalid or expired password reset token provided");
+            rejectUnauthorized(response);
+        }
+    }
+
+    private void rejectUnauthorized(HttpServletResponse response) throws IOException {
+        SecurityContextHolder.clearContext();
+        if (!response.isCommitted()) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         }
     }
 
