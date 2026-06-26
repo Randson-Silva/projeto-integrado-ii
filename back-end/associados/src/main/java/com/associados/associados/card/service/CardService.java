@@ -76,12 +76,28 @@ public class CardService {
         Card card = cardRepository.findByNumber(number).orElse(null);
 
         if (card == null) {
-            return new CardValidationResponseDto(false, number, null, "Card not found");
+            return new CardValidationResponseDto(
+                    false,
+                    null,
+                    null,
+                    null,
+                    null,
+                    number,
+                    null,
+                    "Card not found");
         }
 
         boolean valid = !card.getValidity().isBefore(LocalDate.now());
         String message = valid ? "Card is valid" : "Card expired";
-        return new CardValidationResponseDto(valid, card.getNumber(), card.getValidity(), message);
+        return new CardValidationResponseDto(
+                valid,
+                card.getUser() == null ? null : card.getUser().getAvatarUrl(),
+                card.getFullName(),
+                card.getSocialName(),
+                card.getCategory() == null ? null : new com.associados.associados.associate.dtos.response.CategoryResponseDto(card.getCategory()),
+                card.getNumber(),
+                card.getValidity(),
+                message);
     }
 
     private String generateCardNumber() {
