@@ -102,6 +102,10 @@ public class CardService {
     }
 
     public Card updateCardValidity(java.util.UUID associateId, LocalDate newValidity) {
+        if (newValidity != null && newValidity.isBefore(LocalDate.now())) {
+            throw new BusinessException("The new validity date cannot be in the past");
+        }
+
         Card card = cardRepository.findByAssociateId(associateId)
                 .orElseThrow(() -> new BusinessException("Card not found for the given associate ID"));
 
