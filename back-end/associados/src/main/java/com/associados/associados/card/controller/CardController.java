@@ -59,8 +59,13 @@ public class CardController {
 
     @PutMapping("/settings/validity")
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Update default card validity date", description = "Sets the global expiration date required to generate any new associate cards.")
+    @Operation(summary = "Update default card validity date (Admin only)", description = "Sets the global expiration date required to generate any new associate cards.")
     public ResponseEntity<Void> updateDefaultValidity(@RequestParam java.time.LocalDate validityDate) {
+        
+        if (validityDate != null && validityDate.isBefore(LocalDate.now())) {
+            throw new BusinessException("The default validity date cannot be in the past.");
+        }
+
         configurationService.updateCardValidityConfiguration(validityDate);
         return ResponseEntity.noContent().build();
     }
