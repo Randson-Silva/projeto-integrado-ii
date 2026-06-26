@@ -72,6 +72,7 @@ public class SecurityConfiguration {
                     req.requestMatchers(HttpMethod.PATCH, "/management/users/me/contact").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers(HttpMethod.PATCH, "/management/users/me/password").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers("/management/**").hasRole("SUPER_ADMIN");
+                    req.requestMatchers(HttpMethod.PUT, "/cards/settings/validity").hasRole("ADMIN");
                     req.requestMatchers(HttpMethod.POST, "/users/upload-avatar").authenticated();
                     req.requestMatchers(HttpMethod.PATCH, "/users/*/avatar").authenticated();
                     req.requestMatchers(HttpMethod.DELETE, "/users/*/avatar").hasAnyRole("ADMIN", "SUPER_ADMIN");
