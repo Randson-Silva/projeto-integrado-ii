@@ -3,6 +3,7 @@ import ClearIcon from '@mui/icons-material/Clear';
 import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
 import {
+  Alert,
   Avatar,
   Button,
   CircularProgress,
@@ -13,6 +14,7 @@ import {
   MenuItem,
   Paper,
   Select,
+  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -22,12 +24,11 @@ import {
   TableRow,
   TextField,
   Typography,
-  Snackbar,
-  Alert,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import { api_base_url } from '../services/api';
 import { normalizeRoleView, type Role } from '../services/auth/roles';
 import type { User } from '../services/user/user.types';
 import { getUsers } from '../services/user/userService';
@@ -43,7 +44,11 @@ const AccessControlSearchTable = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
-  const [snack, setSnack] = useState<{ open: boolean; severity: 'success' | 'error'; msg: string }>({
+  const [snack, setSnack] = useState<{
+    open: boolean;
+    severity: 'success' | 'error';
+    msg: string;
+  }>({
     open: false,
     severity: 'success',
     msg: '',
@@ -234,6 +239,11 @@ const AccessControlSearchTable = () => {
                         spacing={2}
                       >
                         <Avatar
+                          src={
+                            user.avatarUrl
+                              ? `${api_base_url}${user.avatarUrl}`
+                              : undefined
+                          }
                           sx={{
                             width: 48,
                             height: 48,

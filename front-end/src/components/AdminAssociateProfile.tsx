@@ -50,6 +50,7 @@ import {
   type City,
   type State,
 } from '../services/address/ibgeService';
+import { api_base_url } from '../services/api';
 import {
   deleteAssociate,
   getAssociateById,
@@ -97,6 +98,7 @@ const EMPTY: IAdminAssociateProfileForm = {
   addressStreet: '',
   addressNumber: '',
   addressComplement: '',
+  avatarUrl: '',
 };
 
 const AssociateProfile = () => {
@@ -258,8 +260,10 @@ const AssociateProfile = () => {
       newErrors.fullName = 'Nome é obrigatório';
     }
 
-    if (!form.guardianName?.trim()) {
-      newErrors.guardianName = 'Responsável legal é obrigatório';
+    if (isUnder18) {
+      if (!form.guardianName?.trim()) {
+        newErrors.guardianName = 'Responsável legal é obrigatório';
+      }
     }
 
     if (!form.email.trim()) {
@@ -382,8 +386,8 @@ const AssociateProfile = () => {
     try {
       if (!token || !id) return;
 
-      setSaving(true);
-
+      console.log(form.cpf.replace(/\D/g, ''));
+      console.log(form);
       await updateAssociate(
         token,
         id,
@@ -395,6 +399,7 @@ const AssociateProfile = () => {
           addressZipCode: form.addressZipCode.replace(/\D/g, ''),
         })
       );
+      console.log('foi');
 
       setEditing(false);
 
@@ -660,26 +665,19 @@ const AssociateProfile = () => {
               }}
             >
               <Avatar
+                src={
+                  form.avatarUrl
+                    ? `${api_base_url}${form.avatarUrl}`
+                    : undefined
+                }
                 sx={{
-                  width: {
-                    xs: 100,
-                    sm: 140,
-                  },
-                  height: {
-                    xs: 100,
-                    sm: 140,
-                  },
+                  width: { xs: 100, sm: 140 },
+                  height: { xs: 100, sm: 140 },
                   bgcolor: 'grey.500',
                 }}
               >
                 <PersonIcon
-                  sx={{
-                    fontSize: {
-                      xs: 64,
-                      sm: 90,
-                    },
-                    color: 'grey.300',
-                  }}
+                  sx={{ fontSize: { xs: 64, sm: 90 }, color: 'grey.300' }}
                 />
               </Avatar>
 

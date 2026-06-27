@@ -37,6 +37,7 @@ export interface IAssociateProfileForm {
   cpf: string;
   email: string;
   phone: string;
+  avatarUrl: string;
   birthDate: string;
   guardianName: string;
   category: string; // UUID from categories table
@@ -64,6 +65,7 @@ export interface IAdminAssociateProfileForm {
   phone: string;
   birthDate: string;
   category: string; // UUID from categories table
+  avatarUrl: string;
   guardianName: string;
   addressZipCode: string;
   addressState: string;
@@ -102,6 +104,7 @@ export interface AssociateResponse {
     cpf?: string;
     phone?: string;
     role?: string;
+    avatarUrl?: string;
     accessKeyHash?: string;
     createdAt?: string;
     updatedAt?: string;

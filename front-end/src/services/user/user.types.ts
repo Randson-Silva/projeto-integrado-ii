@@ -7,6 +7,7 @@ export interface User {
   cpf: string;
   phone: string;
   role: Role;
+  avatarUrl: string;
 }
 
 export interface PageableResponse<T> {

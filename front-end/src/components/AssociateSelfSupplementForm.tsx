@@ -20,13 +20,15 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { api_base_url } from '../services/api';
 import type { AssociateEducation } from '../services/associate/associate.types';
 import {
   getMyAssociate,
   updateMySelfDeclaration,
 } from '../services/associate/associateService';
+import { updateAvatar } from '../services/user/imageService';
 import { maskCEP } from '../utils/masks.util';
 
 interface SelfDeclForm {
@@ -55,6 +57,7 @@ interface ProfileForm {
   category: string;
   availableHours: string;
   status: string;
+  avatarUrl: string;
 }
 
 const BR_STATES = [
@@ -113,6 +116,7 @@ const EMPTY_PROFILE: ProfileForm = {
   category: '',
   availableHours: '',
   status: '',
+  avatarUrl: '',
 };
 
 type Snack = { open: boolean; severity: 'success' | 'error'; msg: string };
@@ -154,6 +158,19 @@ const AssociateSelfSupplementForm = () => {
     msg: '',
   });
 
+  const [userId, setUserId] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
   const toast = (severity: 'success' | 'error', msg: string) =>
     setSnack({ open: true, severity, msg });
 
@@ -180,8 +197,10 @@ const AssociateSelfSupplementForm = () => {
           dataSharing: data.selfDeclaration?.acceptedDataSharingTerm ?? false,
           socialName: data.selfDeclaration?.socialName ?? '',
         };
+
         setSelfDecl(decl);
         setSelfDeclDraft(decl);
+        setUserId(data.user.id);
         setProfile({
           fullName: data.user.name ?? '',
           cpf: data.cpf ?? '',
@@ -198,6 +217,7 @@ const AssociateSelfSupplementForm = () => {
           category: data.workCategory?.name ?? '',
           availableHours: data.availableHours ?? '',
           status: data.user?.active ? 'Ativo' : 'Inativo',
+          avatarUrl: data.user.avatarUrl ?? '',
         });
       } catch {
         toast('error', 'Erro ao carregar dados.');
@@ -208,12 +228,17 @@ const AssociateSelfSupplementForm = () => {
     load();
   }, [token]);
 
+  const handleCancelDecl = () => {
+    setSelfDeclDraft({ ...selfDecl });
+    setEditingDecl(false);
+    setAvatarFile(null);
+    setAvatarPreview(null);
+  };
+
   const handleSaveDecl = async () => {
     setSaving(true);
     const mapVal = (v: string) => (!v ? '' : v);
-    // const mapEnum = (v: string) =>
-    //   !v || v === 'PREFIRO_NAO_INFORMAR' ? null : v;
-    // Converte renda mascarada ("R$ 1.500,00") para número ou envia null
+
     const parsedIncome = (() => {
       const raw = selfDeclDraft.income;
       if (!raw || raw === 'PREFIRO_NAO_INFORMAR') return null;
@@ -236,19 +261,31 @@ const AssociateSelfSupplementForm = () => {
         acceptedDataSharingTerm: selfDeclDraft.dataSharing,
         socialName: selfDeclDraft.socialName,
       });
+
+      let newAvatarUrl = profile.avatarUrl;
+      if (avatarFile && userId) {
+        const uploadedUrl = await updateAvatar({
+          token,
+          id: userId,
+          file: avatarFile,
+        });
+        if (uploadedUrl) {
+          newAvatarUrl = uploadedUrl;
+        }
+      }
+
       setSelfDecl({ ...selfDeclDraft });
+      setProfile((prev) => ({ ...prev, avatarUrl: newAvatarUrl }));
       setEditingDecl(false);
+      setAvatarFile(null);
+      setAvatarPreview(null);
+
       toast('success', 'Dados salvos com sucesso!');
     } catch {
       toast('error', 'Erro ao salvar dados.');
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleCancelDecl = () => {
-    setSelfDeclDraft({ ...selfDecl });
-    setEditingDecl(false);
   };
 
   const declSelect = (
@@ -386,10 +423,23 @@ const AssociateSelfSupplementForm = () => {
   return (
     <>
       <Stack spacing={4}>
-        {/* Avatar */}
         <Stack sx={{ alignItems: 'center' }}>
           <Box sx={{ position: 'relative', width: 'fit-content' }}>
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              ref={fileInputRef}
+              onChange={handleFileChange}
+            />
+
             <Avatar
+              src={
+                avatarPreview ||
+                (profile.avatarUrl
+                  ? `${api_base_url}${profile.avatarUrl}`
+                  : undefined)
+              }
               sx={{
                 width: { xs: 120, sm: 160 },
                 height: { xs: 120, sm: 160 },
@@ -400,9 +450,11 @@ const AssociateSelfSupplementForm = () => {
                 sx={{ fontSize: { xs: 80, sm: 110 }, color: 'rgba(0,0,0,0.3)' }}
               />
             </Avatar>
+
             {editingDecl && (
               <IconButton
                 size="small"
+                onClick={() => fileInputRef.current?.click()}
                 sx={{
                   position: 'absolute',
                   bottom: 4,
@@ -419,6 +471,7 @@ const AssociateSelfSupplementForm = () => {
               </IconButton>
             )}
           </Box>
+
           <Typography variant="h6" sx={{ mt: 1, fontWeight: 700 }}>
             {profile.fullName || '—'}
           </Typography>

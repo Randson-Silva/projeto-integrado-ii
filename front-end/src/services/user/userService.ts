@@ -43,6 +43,7 @@ export interface AccessControlGetUserByIdResponse {
   cpf: string;
   phone: string;
   role: Role;
+  avatarUrl: string;
 }
 
 export async function accessControlGetUserById({
