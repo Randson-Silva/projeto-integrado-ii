@@ -1,5 +1,6 @@
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import MenuIcon from '@mui/icons-material/Menu';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Alert,
@@ -23,11 +24,13 @@ import { associateItems } from '../config/sidebarItems/associateItems';
 import { consultantItems } from '../config/sidebarItems/consultantItems';
 import { superAdminItems } from '../config/sidebarItems/superAdminItems';
 import { useAuth } from '../hooks/useAuth';
+import { api_base_url } from '../services/api';
 import { getCategories } from '../services/associate/associateService';
 import { authGetProfile } from '../services/auth/authService';
 import { decodeJwt } from '../services/auth/jwt.config';
 import { normalizeRoleView } from '../services/auth/roles';
 import { getValidityDate } from '../services/cardService';
+import { getAvatar } from '../services/user/imageService';
 
 const DRAWER_WIDTH = 224;
 
@@ -39,6 +42,8 @@ const UserMenu = () => {
   const [displayName, setDisplayName] = useState('');
   const [role, setRole] = useState('');
   const [rawRole, setRawRole] = useState('');
+
+  const [userAvatar, setUserAvatar] = useState('');
 
   useEffect(() => {
     const loadUserInfo = async () => {
@@ -55,6 +60,22 @@ const UserMenu = () => {
           return;
         }
 
+        const { id } = user;
+
+        if (!id) {
+          logout();
+          return;
+        }
+
+        let avatarUrl;
+        try {
+          avatarUrl = await getAvatar({ token, id });
+        } catch {
+          avatarUrl = '';
+        } finally {
+          setUserAvatar(avatarUrl ? `${api_base_url}${avatarUrl}` : '');
+        }
+
         setDisplayName(user.name?.split(' ')[0] ?? 'Usuário');
         setRole(normalizeRoleView(user.role));
         setRawRole(user.role);
@@ -65,8 +86,6 @@ const UserMenu = () => {
 
     loadUserInfo();
   }, [token, logout]);
-
-  const initial = displayName ? displayName.charAt(0).toUpperCase() : '?';
 
   const handleLogout = () => {
     setAnchor(null);
@@ -82,15 +101,15 @@ const UserMenu = () => {
         sx={{ cursor: 'pointer', userSelect: 'none', alignItems: 'center' }}
       >
         <Avatar
+          src={userAvatar}
           sx={{
             width: 38,
             height: 38,
             bgcolor: 'primary.main',
-            fontWeight: 700,
-            fontSize: 16,
           }}
         >
-          {initial}
+          {/* Removida a condicional e ajustado o tamanho para 24 */}
+          <PersonOutlineIcon sx={{ fontSize: 24, color: '#ffffff' }} />
         </Avatar>
         <Stack sx={{ display: { xs: 'none', sm: 'flex' } }}>
           <Typography

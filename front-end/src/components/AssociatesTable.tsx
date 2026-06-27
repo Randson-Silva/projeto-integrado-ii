@@ -38,9 +38,10 @@ import type {
 } from '../services/associate/associate.types';
 
 import { useAuth } from '../hooks/useAuth';
+import { api_base_url } from '../services/api';
 import { getCategories } from '../services/associate/associateService';
-import { maskCPF } from '../utils/masks.util';
 import { decodeJwt } from '../services/auth/jwt.config';
+import { maskCPF } from '../utils/masks.util';
 
 type ChipColor = 'success' | 'warning' | 'default' | 'error';
 
@@ -441,6 +442,11 @@ const AssociatesTable = () => {
                           spacing={2}
                         >
                           <Avatar
+                            src={
+                              u.user?.avatarUrl
+                                ? `${api_base_url}${u.user.avatarUrl}`
+                                : undefined
+                            }
                             sx={{ width: 52, height: 52, bgcolor: 'grey.500' }}
                           >
                             <PersonIcon sx={{ color: '#fff', fontSize: 34 }} />

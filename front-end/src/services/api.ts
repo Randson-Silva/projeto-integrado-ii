@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+export const api_base_url = import.meta.env.VITE_BACKEND_URL;
+
 const api = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: api_base_url,
 });
 
 api.interceptors.request.use((config) => {
@@ -15,8 +17,8 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  response => response,
-  error => {
+  (response) => response,
+  (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -25,5 +27,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+console.info('Backend running on: ', api_base_url);
 
 export default api;

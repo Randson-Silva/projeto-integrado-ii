@@ -20,10 +20,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { api_base_url } from '../services/api';
 import { authGetProfile } from '../services/auth/authService';
 import { normalizeRoleView } from '../services/auth/roles';
+import { getAvatar, uploadAvatar } from '../services/user/imageService';
 import type { User } from '../services/user/user.types';
 import { updateOwnContact } from '../services/user/userService';
 import { maskCPF, maskPhone } from '../utils/masks.util';
@@ -60,6 +62,14 @@ const AdminProfileForm = () => {
 
   const [profile, setProfile] = useState<User | null>(null);
 
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
+
+  // NOVOS ESTADOS PARA O RASCUNHO DA FOTO
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -78,7 +88,15 @@ const AdminProfileForm = () => {
         setLoading(true);
         const user = await authGetProfile({ token });
 
-        const { email, role, cpf = '', id = '', name = '', phone = '' } = user;
+        const {
+          email,
+          role,
+          cpf = '',
+          id = '',
+          name = '',
+          phone = '',
+          avatarUrl: userUrl,
+        } = user;
 
         const userProfile: User = {
           cpf,
@@ -87,6 +105,7 @@ const AdminProfileForm = () => {
           id,
           name,
           phone,
+          avatarUrl: userUrl,
         };
 
         setProfile(userProfile);
@@ -100,6 +119,17 @@ const AdminProfileForm = () => {
         };
         setOriginalForm(formData);
         setForm(formData);
+
+        if (id) {
+          let imageUrl;
+          try {
+            imageUrl = await getAvatar({ token, id });
+          } catch {
+            imageUrl = '';
+          } finally {
+            setAvatarUrl(imageUrl ? `${api_base_url}${imageUrl}` : '');
+          }
+        }
       } catch {
         setSnack({
           open: true,
@@ -112,6 +142,15 @@ const AdminProfileForm = () => {
     };
     loadProfile();
   }, [token]);
+
+  // AGORA APENAS CRIA O RASCUNHO DA IMAGEM
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
 
   const set =
     (key: keyof AdminProfileForm) =>
@@ -184,11 +223,21 @@ const AdminProfileForm = () => {
     setConfirmEmailOpen(false);
     setSaving(true);
     try {
+      // 1. Atualiza os dados de contato
       await updateOwnContact({
         token: token!,
         email: form.email,
         phone: form.phone.replace(/\D/g, ''),
       });
+
+      // 2. Faz o upload da foto se o usuário selecionou uma nova
+      if (avatarFile) {
+        const avatarPath = await uploadAvatar({
+          token: token!,
+          file: avatarFile,
+        });
+        setAvatarUrl(`${api_base_url}${avatarPath}`);
+      }
 
       if (
         form.email.trim().toLocaleLowerCase() !==
@@ -198,7 +247,10 @@ const AdminProfileForm = () => {
         return;
       }
 
+      // 3. Reseta os estados de edição
       setEditing(false);
+      setAvatarFile(null);
+      setAvatarPreview(null);
 
       setSnack({
         open: true,
@@ -210,6 +262,8 @@ const AdminProfileForm = () => {
     } catch {
       setForm(originalForm);
       setEditing(false);
+      setAvatarFile(null);
+      setAvatarPreview(null);
 
       setSnack({
         open: true,
@@ -218,6 +272,7 @@ const AdminProfileForm = () => {
       });
     } finally {
       setSaving(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -242,7 +297,6 @@ const AdminProfileForm = () => {
   return (
     <>
       <Stack spacing={2.5}>
-        {/* Header */}
         <Stack
           direction="row"
           sx={{ alignItems: 'center', justifyContent: 'flex-end' }}
@@ -277,8 +331,17 @@ const AdminProfileForm = () => {
             p: { xs: 2, sm: 3 },
           }}
         >
-          {/* Avatar */}
+          {/* Avatar Area */}
           <Stack sx={{ alignItems: 'center', mb: 3 }}>
+            {/* Input escondido para o arquivo */}
+            <input
+              type="file"
+              hidden
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleAvatarChange}
+            />
+
             <Badge
               overlap="circular"
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -286,6 +349,8 @@ const AdminProfileForm = () => {
                 editing ? (
                   <IconButton
                     size="small"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={saving}
                     sx={{
                       bgcolor: 'primary.main',
                       color: '#fff',
@@ -300,11 +365,15 @@ const AdminProfileForm = () => {
               }
             >
               <Avatar
+                src={avatarPreview || avatarUrl}
                 sx={{ width: 100, height: 100, bgcolor: 'primary.light' }}
               >
-                <PersonOutlineIcon
-                  sx={{ fontSize: 64, color: 'primary.main' }}
-                />
+                {/* O ícone só aparece se não tiver src ou preview */}
+                {!(avatarPreview || avatarUrl) && (
+                  <PersonOutlineIcon
+                    sx={{ fontSize: 64, color: 'primary.main' }}
+                  />
+                )}
               </Avatar>
             </Badge>
           </Stack>
@@ -377,6 +446,10 @@ const AdminProfileForm = () => {
                     setEditing(false);
                     setForm(originalForm);
                     setFieldErrors({});
+                    // LIMPA A FOTO AO CANCELAR:
+                    setAvatarFile(null);
+                    setAvatarPreview(null);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
                   }}
                   sx={{
                     borderRadius: 10,

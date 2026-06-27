@@ -10,9 +10,11 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { api_base_url } from '../../services/api';
 import { validateCard } from '../../services/cardService';
 import { convertToForm } from '../../utils/dates.util';
 import ValidationResultModal from './ValidationResultModal';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined'
 
 interface CardResult {
   valid: string;
@@ -106,6 +108,11 @@ const ValidateCardSection = () => {
           }}
         >
           <Avatar
+            src={
+              result.avatarUrl
+                ? `${api_base_url}${result.avatarUrl}`
+                : undefined
+            }
             sx={{
               width: 52,
               height: 52,
@@ -115,7 +122,7 @@ const ValidateCardSection = () => {
               flexShrink: 0,
             }}
           >
-            {result.socialName.charAt(0) ?? result.fullName.charAt(0)}
+            <PersonOutlineIcon sx={{ fontSize: 64, color: 'primary.main' }} />
           </Avatar>
 
           <Stack spacing={0.5} sx={{ flex: 1 }}>

@@ -1,12 +1,6 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import {
-  Button,
-  Grid,
-  Paper,
-  Stack,
-  TextField,
-} from '@mui/material';
+import { Button, Grid, Paper, Stack, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -19,7 +13,7 @@ const AccessControlProfileForm = () => {
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [keyDialogOpen, setKeyDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -31,7 +25,15 @@ const AccessControlProfileForm = () => {
       try {
         const data = await authGetProfile({ token });
 
-        const { email, role, cpf = '', id = '', name = '', phone = '' } = data;
+        const {
+          email,
+          role,
+          cpf = '',
+          id = '',
+          name = '',
+          phone = '',
+          avatarUrl,
+        } = data;
 
         const userProfile: User = {
           cpf,
@@ -40,6 +42,7 @@ const AccessControlProfileForm = () => {
           id,
           name,
           phone,
+          avatarUrl,
         };
 
         setProfile(userProfile);
@@ -50,8 +53,6 @@ const AccessControlProfileForm = () => {
 
     fetchProfile();
   }, [token]);
-
-
 
   return (
     <>
@@ -79,8 +80,7 @@ const AccessControlProfileForm = () => {
             alignItems: { xs: 'flex-start', sm: 'center' },
           }}
           spacing={2}
-        >
-        </Stack>
+        ></Stack>
 
         <Paper
           elevation={0}
@@ -104,24 +104,24 @@ const AccessControlProfileForm = () => {
             </Grid>
           </Grid>
 
-              {/* <Divider sx={{ my: 3 }} /> */}
-              <Button
-                startIcon={<LockOutlinedIcon sx={{ fontSize: 18 }} />}
-                variant="contained"
-                onClick={() => setKeyDialogOpen(true)}
-                sx={{
-                  my: 3,
-                  bgcolor: 'primary',
-                  color: '#fff',
-                  fontWeight: 600,
-                  borderRadius: 10,
-                  textTransform: 'none',
-                  px: 3,
-                  width: { xs: '100%', sm: 'auto' },
-                }}
-              >
-                Alterar chave de acesso
-              </Button>
+          {/* <Divider sx={{ my: 3 }} /> */}
+          <Button
+            startIcon={<LockOutlinedIcon sx={{ fontSize: 18 }} />}
+            variant="contained"
+            onClick={() => setKeyDialogOpen(true)}
+            sx={{
+              my: 3,
+              bgcolor: 'primary',
+              color: '#fff',
+              fontWeight: 600,
+              borderRadius: 10,
+              textTransform: 'none',
+              px: 3,
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          >
+            Alterar chave de acesso
+          </Button>
         </Paper>
       </Stack>
 
@@ -129,7 +129,6 @@ const AccessControlProfileForm = () => {
         open={keyDialogOpen}
         onClose={() => setKeyDialogOpen(false)}
       />
-
     </>
   );
 };

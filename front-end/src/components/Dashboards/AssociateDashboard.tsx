@@ -70,7 +70,7 @@ const AssociateDashboard = () => {
   return (
     <Stack spacing={4}>
       <Typography variant="h4" sx={{ fontWeight: 700 }} color="text.primary">
-        Bem Vindo, {firstName}
+        Bem Vindo(a), {firstName}
       </Typography>
 
       <Stack spacing={0.5}>

@@ -18,6 +18,7 @@ export const mapAssociateResponseToForm = (
     fullName: associate.user.name ?? '',
     cpf: maskCPF(cpf) ?? '',
     email: associate.user.email ?? '',
+    avatarUrl: associate.user?.avatarUrl ?? '',
     phone: maskPhone(phone) ?? '',
     birthDate: associate.birthDate ?? '',
     category: associate.workCategory?.id ?? '',

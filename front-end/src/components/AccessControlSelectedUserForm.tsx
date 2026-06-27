@@ -1,7 +1,9 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditIcon from '@mui/icons-material/Edit';
+import PersonIcon from '@mui/icons-material/Person';
 import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -16,7 +18,6 @@ import {
   Select,
   Skeleton,
   Snackbar,
-  Alert,
   Stack,
   TextField,
   Typography,
@@ -24,6 +25,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { api_base_url } from '../services/api';
 import { normalizeRoleView, type Role } from '../services/auth/roles';
 import {
   accessControlDeleteUser,
@@ -54,7 +56,11 @@ const AccessControlSelectedUserForm = () => {
   const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [error, setError] = useState('');
-  const [snack, setSnack] = useState<{ open: boolean; severity: 'success' | 'error'; msg: string }>({
+  const [snack, setSnack] = useState<{
+    open: boolean;
+    severity: 'success' | 'error';
+    msg: string;
+  }>({
     open: false,
     severity: 'success',
     msg: '',
@@ -132,13 +138,7 @@ const AccessControlSelectedUserForm = () => {
     setSaving(true);
     setError('');
 
-    const {
-      email,
-      id: formId,
-      name: fullName,
-      phone,
-      role: newRole,
-    } = form;
+    const { email, id: formId, name: fullName, phone, role: newRole } = form;
 
     try {
       await accessControlUpdateUser({
@@ -156,10 +156,19 @@ const AccessControlSelectedUserForm = () => {
 
       setOriginalForm({ ...form });
       setEditing(false);
-      setSnack({ open: true, severity: 'success', msg: 'Usuário atualizado com sucesso!' });
+      setSnack({
+        open: true,
+        severity: 'success',
+        msg: 'Usuário atualizado com sucesso!',
+      });
     } catch (err: unknown) {
-      const apiMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setSnack({ open: true, severity: 'error', msg: apiMsg || 'Erro ao salvar alterações. Verifique as credenciais.' });
+      const apiMsg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      setSnack({
+        open: true,
+        severity: 'error',
+        msg: apiMsg || 'Erro ao salvar alterações. Verifique as credenciais.',
+      });
     } finally {
       setSaving(false);
     }
@@ -174,10 +183,16 @@ const AccessControlSelectedUserForm = () => {
       await accessControlDeleteUser({ id });
 
       navigate('/controle-de-acesso', {
-        state: { snack: { severity: 'success', msg: 'Usuário excluído com sucesso!' } }
+        state: {
+          snack: { severity: 'success', msg: 'Usuário excluído com sucesso!' },
+        },
       });
     } catch {
-      setSnack({ open: true, severity: 'error', msg: 'Erro ao excluir o perfil do usuário. Tente novamente.' });
+      setSnack({
+        open: true,
+        severity: 'error',
+        msg: 'Erro ao excluir o perfil do usuário. Tente novamente.',
+      });
     } finally {
       setLoadingData(false);
       setDeleteOpen(false);
@@ -339,6 +354,11 @@ const AccessControlSelectedUserForm = () => {
               spacing={2}
             >
               <Avatar
+                src={
+                  form.avatarUrl
+                    ? `${api_base_url}${form.avatarUrl}`
+                    : undefined
+                }
                 sx={{
                   width: 80,
                   height: 80,
@@ -348,7 +368,7 @@ const AccessControlSelectedUserForm = () => {
                   color: 'text.secondary',
                 }}
               >
-                {form.name?.charAt(0) ?? '?'}
+                <PersonIcon sx={{ color: 'grey.100', fontSize: 30 }} />
               </Avatar>
               <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -389,7 +409,9 @@ const AccessControlSelectedUserForm = () => {
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               {field('Nome Completo', 'name')}
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>{field('CPF', 'cpf', true)}</Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              {field('CPF', 'cpf', true)}
+            </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               {field('Telefone', 'phone')}
             </Grid>

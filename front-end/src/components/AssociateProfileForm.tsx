@@ -7,7 +7,6 @@ import LinkOffIcon from '@mui/icons-material/LinkOff';
 import PersonIcon from '@mui/icons-material/Person';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SendIcon from '@mui/icons-material/Send';
-
 import {
   Alert,
   Avatar,
@@ -39,7 +38,11 @@ import {
   mapFormToUpdatePayload,
 } from '../services/associate/associate.mappers';
 
-import type { AssociateCategoryResponse, AssociateProfileForm, IAssociateProfileForm } from '../services/associate/associate.types';
+import type {
+  AssociateCategoryResponse,
+  AssociateProfileForm,
+  IAssociateProfileForm,
+} from '../services/associate/associate.types';
 
 import {
   deleteAssociate,
@@ -99,6 +102,8 @@ const EMPTY: IAssociateProfileForm = {
   income: '',
   disability: '',
   availableHours: '',
+  guardianName: '',
+  avatarUrl: '',
 };
 
 const AssociateProfile = () => {
@@ -163,12 +168,6 @@ const AssociateProfile = () => {
     };
     load();
   }, [id, token]);
-  useEffect(() => {
-    if (!token) return;
-    getCategories(token)
-      .then((data) => setCategories(data))
-      .catch(() => {});
-  }, [token]);
 
   useEffect(() => {
     const loadStates = async () => {
@@ -290,11 +289,8 @@ const AssociateProfile = () => {
         id,
         mapFormToUpdatePayload({
           ...form,
-
           cpf: form.cpf.replace(/\D/g, ''),
-
           phone: form.phone.replace(/\D/g, ''),
-
           addressZipCode: form.addressZipCode.replace(/\D/g, ''),
         })
       );
@@ -303,7 +299,8 @@ const AssociateProfile = () => {
       setEditing(false);
 
       toast('success', 'Alterações salvas com sucesso!');
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast('error', 'Erro ao salvar alterações.');
     } finally {
       setSaving(false);
@@ -759,7 +756,9 @@ const AssociateProfile = () => {
 
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, sm: 4 }}>
-              {sf('Categoria', 'category',
+              {sf(
+                'Categoria',
+                'category',
                 categories.map((c) => ({ value: c.id, label: c.name }))
               )}
             </Grid>

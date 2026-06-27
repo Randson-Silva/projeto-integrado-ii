@@ -7,4 +7,5 @@ export interface AuthUser {
   role: Role;
   cpf?: string;
   phone?: string;
+  avatarUrl: string;
 }
