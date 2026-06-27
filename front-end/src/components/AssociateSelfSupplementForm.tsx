@@ -37,6 +37,7 @@ interface SelfDeclForm {
   race: string;
   gender: string;
   sexualOrientation: string;
+  otherSexualOrientation?: string;
   dataSharing: boolean;
   socialName: string;
 }
@@ -96,6 +97,7 @@ const EMPTY_SELF_DECL: SelfDeclForm = {
   race: '',
   gender: '',
   sexualOrientation: '',
+  otherSexualOrientation: '',
   dataSharing: false,
   socialName: '',
 };
@@ -193,7 +195,14 @@ const AssociateSelfSupplementForm = () => {
               : '',
           race: data.selfDeclaration?.race ?? '',
           gender: data.selfDeclaration?.gender ?? '',
-          sexualOrientation: data.selfDeclaration?.sexualOrientation ?? '',
+          sexualOrientation: 
+            !data.selfDeclaration?.sexualOrientation || ['HETEROSSEXUAL', 'HOMOSSEXUAL', 'BISSEXUAL', 'NAO_SEI', 'PREFIRO_NAO_INFORMAR'].includes(data.selfDeclaration.sexualOrientation)
+              ? (data.selfDeclaration?.sexualOrientation ?? '')
+              : 'OUTRO',
+          otherSexualOrientation: 
+            !data.selfDeclaration?.sexualOrientation || ['HETEROSSEXUAL', 'HOMOSSEXUAL', 'BISSEXUAL', 'NAO_SEI', 'PREFIRO_NAO_INFORMAR'].includes(data.selfDeclaration.sexualOrientation)
+              ? ''
+              : data.selfDeclaration.sexualOrientation,
           dataSharing: data.selfDeclaration?.acceptedDataSharingTerm ?? false,
           socialName: data.selfDeclaration?.socialName ?? '',
         };
@@ -252,7 +261,7 @@ const AssociateSelfSupplementForm = () => {
       await updateMySelfDeclaration(token, {
         race: mapVal(selfDeclDraft.race),
         gender: mapVal(selfDeclDraft.gender),
-        sexualOrientation: mapVal(selfDeclDraft.sexualOrientation),
+        sexualOrientation: mapVal(selfDeclDraft.sexualOrientation === 'OUTRO' ? (selfDeclDraft.otherSexualOrientation || 'OUTRO') : selfDeclDraft.sexualOrientation),
         education: (selfDeclDraft.education === '' ||
         selfDeclDraft.education === 'NÃO_SELECIONADO'
           ? ''
@@ -674,12 +683,37 @@ const AssociateSelfSupplementForm = () => {
                 { value: 'HETEROSSEXUAL', label: 'Heterossexual' },
                 { value: 'HOMOSSEXUAL', label: 'Homossexual' },
                 { value: 'BISSEXUAL', label: 'Bissexual' },
+                { value: 'NAO_SEI', label: 'Não sei' },
                 { value: 'OUTRO', label: 'Outro' },
                 {
                   value: 'PREFIRO_NAO_INFORMAR',
                   label: 'Prefiro não informar',
                 },
               ])}
+              {selfDeclDraft.sexualOrientation === 'OUTRO' && (
+                <TextField
+                  label="Qual?"
+                  size="small"
+                  fullWidth
+                  disabled={!editingDecl}
+                  value={selfDeclDraft.otherSexualOrientation || ''}
+                  onChange={(e) => setSelfDeclDraft(p => ({ ...p, otherSexualOrientation: e.target.value }))}
+                  sx={{ mt: 2 }}
+                  slotProps={{
+                    inputLabel: {
+                      shrink: true,
+                      sx: { color: editingDecl ? 'primary.main' : undefined },
+                    },
+                    input: {
+                      sx: {
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: editingDecl ? 'primary.main' : undefined,
+                        },
+                      },
+                    },
+                  }}
+                />
+              )}
             </Grid>
           </Grid>
 

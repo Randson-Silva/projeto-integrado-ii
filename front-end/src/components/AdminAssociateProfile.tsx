@@ -1084,14 +1084,16 @@ const AssociateProfile = () => {
                 <Grid size={{ xs: 12, sm: 2 }}>
                   {sdf('Orientação Sexual', 'sexualOrientation', [
                     { value: '', label: 'Selecione' },
-                    { value: 'HETEROSSEXUAL', label: 'Heterosexual' },
+                    { value: 'HETEROSSEXUAL', label: 'Heterossexual' },
                     { value: 'HOMOSSEXUAL', label: 'Homossexual' },
                     { value: 'BISSEXUAL', label: 'Bissexual' },
+                    { value: 'NAO_SEI', label: 'Não sei' },
                     { value: 'OUTRO', label: 'Outro' },
                     {
                       value: 'PREFIRO_NAO_INFORMAR',
                       label: 'Prefiro não informar',
                     },
+                    ...(!['', 'HETEROSSEXUAL', 'HOMOSSEXUAL', 'BISSEXUAL', 'NAO_SEI', 'OUTRO', 'PREFIRO_NAO_INFORMAR'].includes(declaratoryData.sexualOrientation) ? [{ value: declaratoryData.sexualOrientation, label: declaratoryData.sexualOrientation }] : [])
                   ])}
                 </Grid>
               </Grid>
