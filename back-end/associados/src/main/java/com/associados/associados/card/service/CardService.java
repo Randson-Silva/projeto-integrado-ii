@@ -9,6 +9,7 @@ import com.associados.associados.associate.entity.Associate;
 import com.associados.associados.associate.entity.SelfDeclaration;
 import com.associados.associados.associate.repository.AssociateRepository;
 import com.associados.associados.auth.infra.exceptions.BusinessException;
+import com.associados.associados.auth.service.EmailService;
 import com.associados.associados.card.dtos.response.CardResponseDto;
 import com.associados.associados.card.dtos.response.CardValidationResponseDto;
 import com.associados.associados.card.entity.Card;
@@ -24,6 +25,8 @@ public class CardService {
 
     private final CardRepository cardRepository;
     private final AssociateRepository associateRepository;
+    private final CardPdfService cardPdfService;
+    private final EmailService emailService;
     private final SystemConfigurationService configurationService;
 
     @Transactional
@@ -62,6 +65,37 @@ public class CardService {
                 .orElseThrow(() -> new BusinessException("Card not found"));
 
         return new CardResponseDto(card);
+    }
+
+    @Transactional
+    public void syncCard(Associate associate) {
+        cardRepository.findByAssociateId(associate.getId()).ifPresent(card -> {
+            card.setFullName(associate.getUser().getName());
+            card.setSocialName(resolveSocialName(associate));
+            card.setCategory(associate.getWorkCategory());
+            cardRepository.save(card);
+        });
+    }
+
+    public byte[] downloadOwnCard(java.util.UUID userId) {
+        Associate associate = associateRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException("Associate not found"));
+        Card card = cardRepository.findByAssociateId(associate.getId())
+                .orElseThrow(() -> new BusinessException("Card not found"));
+        return cardPdfService.generate(card);
+    }
+
+    public void sendCardByEmail(java.util.UUID associateId) {
+        Card card = cardRepository.findByAssociateId(associateId)
+                .orElseThrow(() -> new BusinessException("Card not found for this associate"));
+        byte[] pdf = cardPdfService.generate(card);
+        String filename = "carteirinha-" + card.getNumber() + ".pdf";
+        emailService.sendEmailWithAttachment(
+                card.getUser().getEmail(),
+                "Sua Carteirinha - Associados",
+                "Olá " + card.getSocialName() + ",\n\nSegue em anexo sua carteirinha de associado.",
+                pdf,
+                filename);
     }
 
     @Transactional

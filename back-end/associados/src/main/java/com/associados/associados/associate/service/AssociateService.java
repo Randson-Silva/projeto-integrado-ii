@@ -221,7 +221,9 @@ public class AssociateService {
             declaration.setIncome(data.income());
         }
 
-        return new AssociateResponseDto(associateRepository.save(associate));
+        Associate savedAssociate = associateRepository.save(associate);
+        cardService.syncCard(savedAssociate);
+        return new AssociateResponseDto(savedAssociate);
     }
 
     @Transactional
@@ -249,6 +251,7 @@ public class AssociateService {
         }
 
         Associate savedAssociate = associateRepository.save(associate);
+        cardService.syncCard(savedAssociate);
         return new SelfDeclarationResponseDto(savedAssociate.getSelfDeclaration());
     }
 
