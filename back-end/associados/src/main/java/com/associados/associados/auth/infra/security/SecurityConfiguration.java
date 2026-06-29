@@ -1,5 +1,7 @@
 package com.associados.associados.auth.infra.security;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -11,6 +13,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.associados.associados.auth.filter.SecurityFilter;
 
@@ -39,6 +44,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+                .cors(cors -> {}) // activate CORS
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
@@ -70,6 +76,7 @@ public class SecurityConfiguration {
                     req.requestMatchers(HttpMethod.PATCH, "/management/users/me/contact").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers(HttpMethod.PATCH, "/management/users/me/password").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers("/management/**").hasRole("SUPER_ADMIN");
+                    req.requestMatchers(HttpMethod.PUT, "/cards/settings/validity").hasRole("ADMIN");
                     req.requestMatchers(HttpMethod.POST, "/users/upload-avatar").authenticated();
                     req.requestMatchers(HttpMethod.PATCH, "/users/*/avatar").authenticated();
                     req.requestMatchers(HttpMethod.DELETE, "/users/*/avatar").hasAnyRole("ADMIN", "SUPER_ADMIN");
@@ -82,5 +89,22 @@ public class SecurityConfiguration {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
+    }
+
+    // CORS config
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+
+        // TODO: replace with custom variable
+        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
     }
 }

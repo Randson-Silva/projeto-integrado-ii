@@ -14,6 +14,7 @@ import com.associados.associados.card.dtos.response.CardResponseDto;
 import com.associados.associados.card.dtos.response.CardValidationResponseDto;
 import com.associados.associados.card.entity.Card;
 import com.associados.associados.card.repository.CardRepository;
+import com.associados.associados.config.SystemConfigurationService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class CardService {
     private final AssociateRepository associateRepository;
     private final CardPdfService cardPdfService;
     private final EmailService emailService;
+    private final SystemConfigurationService configurationService;
 
     @Transactional
     public Card createForAssociate(Associate associate) {
@@ -38,6 +40,9 @@ public class CardService {
                     .orElseThrow(() -> new BusinessException("Card already exists for this associate"));
         }
 
+        LocalDate configuredValidity = configurationService.getCardValidityConfiguration()
+                .orElseThrow(() -> new BusinessException("Card generation is currently unavailable. A default validity date has not been set by an administrator."));
+
         Card card = new Card();
         card.setAssociate(associate);
         card.setUser(associate.getUser());
@@ -45,7 +50,8 @@ public class CardService {
         card.setSocialName(resolveSocialName(associate));
         card.setCpf(associate.getCpf());
         card.setCategory(associate.getWorkCategory());
-        card.setValidity(LocalDate.now().plusYears(1)); // Regra temporária; alterar para regra de negocio de alterar a data de validade quando quiser
+        
+        card.setValidity(configuredValidity); 
         card.setNumber(generateCardNumber());
 
         return cardRepository.save(card);
@@ -143,5 +149,17 @@ public class CardService {
             return declaration.getSocialName();
         }
         return associate.getUser().getName();
+    }
+
+    public Card updateCardValidity(java.util.UUID associateId, LocalDate newValidity) {
+        if (newValidity != null && newValidity.isBefore(LocalDate.now())) {
+            throw new BusinessException("The new validity date cannot be in the past");
+        }
+
+        Card card = cardRepository.findByAssociateId(associateId)
+                .orElseThrow(() -> new BusinessException("Card not found for the given associate ID"));
+
+        card.setValidity(newValidity);
+        return cardRepository.save(card);
     }
 }

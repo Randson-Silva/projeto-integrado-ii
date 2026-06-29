@@ -35,6 +35,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import com.associados.associados.associate.service.PdfService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
 @RestController
 @RequestMapping("/associates")
 @RequiredArgsConstructor
@@ -42,6 +46,7 @@ import lombok.RequiredArgsConstructor;
 public class AssociateController {
 
     private final AssociateService associateService;
+    private final PdfService pdfService;
 
     @PostMapping
     @SecurityRequirement(name = "bearerAuth")
@@ -96,6 +101,27 @@ public class AssociateController {
     public ResponseEntity<AssociateResponseDto> getAssociateById(@PathVariable UUID id) {
         AssociateResponseDto associate = associateService.getAssociateById(id);
         return ResponseEntity.ok(associate);
+    }
+
+    @GetMapping("/{id}/registration-form")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Download Ficha Cadastral", description = "Gera e faz o download da ficha cadastral do associado em PDF")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "PDF gerado e enviado com sucesso"),
+        @ApiResponse(responseCode = "404", description = "Associate not found"),
+        @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
+    public ResponseEntity<byte[]> downloadFichaCadastral(@PathVariable UUID id) {
+        
+        byte[] pdfBytes = pdfService.generateFichaCadastralPdf(id);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF); 
+        headers.setContentDispositionFormData("attachment", "ficha-cadastral-" + id.toString() + ".pdf"); 
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfBytes);
     }
 
     @PatchMapping("/{id}")
