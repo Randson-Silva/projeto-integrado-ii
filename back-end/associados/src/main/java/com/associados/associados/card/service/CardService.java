@@ -59,6 +59,16 @@ public class CardService {
     }
 
     @Transactional
+    public void syncCard(Associate associate) {
+        cardRepository.findByAssociateId(associate.getId()).ifPresent(card -> {
+            card.setFullName(associate.getUser().getName());
+            card.setSocialName(resolveSocialName(associate));
+            card.setCategory(associate.getWorkCategory());
+            cardRepository.save(card);
+        });
+    }
+
+    @Transactional
     public void deleteByAssociateId(java.util.UUID associateId) {
         if (associateId == null) {
             return;
