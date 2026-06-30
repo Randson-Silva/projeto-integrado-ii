@@ -65,6 +65,17 @@ public class CardController {
                 .body(pdf);
     }
 
+    @GetMapping("/{associateId}/download")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Download any associate's card (Admin/Consultant only)", description = "Downloads a specific associate's card as a PDF file using their associate ID.")
+    public ResponseEntity<byte[]> downloadAssociateCard(@PathVariable UUID associateId) {
+        byte[] pdf = cardService.downloadAssociateCard(associateId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"carteirinha-" + associateId + ".pdf\"")
+                .body(pdf);
+    }
+
     @PostMapping("/{associateId}/send-email")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Send associate card by email", description = "Generates the associate's card and sends it as a PDF attachment to their registered email.")

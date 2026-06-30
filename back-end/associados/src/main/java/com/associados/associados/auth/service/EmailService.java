@@ -7,9 +7,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,11 +14,10 @@ import org.springframework.stereotype.Service;
 
 import com.associados.associados.associate.entity.Associate;
 import com.associados.associados.associate.repository.AssociateRepository;
+import com.associados.associados.auth.infra.exceptions.BusinessException;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-
-import jakarta.mail.MessagingException;
 
 @Service
 public class EmailService {
