@@ -85,6 +85,12 @@ public class CardService {
         return cardPdfService.generate(card);
     }
 
+    public byte[] downloadAssociateCard(java.util.UUID associateId) {
+        Card card = cardRepository.findByAssociateId(associateId)
+                .orElseThrow(() -> new BusinessException("Card not found for this associate"));
+        return cardPdfService.generate(card);
+    }
+
     public void sendCardByEmail(java.util.UUID associateId) {
         Card card = cardRepository.findByAssociateId(associateId)
                 .orElseThrow(() -> new BusinessException("Card not found for this associate"));
