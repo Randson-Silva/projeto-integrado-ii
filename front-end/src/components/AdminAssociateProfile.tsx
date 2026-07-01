@@ -10,6 +10,7 @@ import SendIcon from '@mui/icons-material/Send';
 import {
   Alert,
   Avatar,
+  Backdrop,
   Button,
   Chip,
   CircularProgress,
@@ -44,6 +45,7 @@ import type {
   IAdminAssociateProfileForm,
 } from '../services/associate/associate.types';
 
+import axios from 'axios';
 import {
   getCitiesByState,
   getStates,
@@ -58,9 +60,11 @@ import {
   getCategories,
   updateAssociate,
 } from '../services/associate/associateService';
+import { downloadCardById, sendCardEmailById } from '../services/cardService';
 import { isValidBirthDate } from '../utils/dates.util';
 import { maskCEP, maskCPF, maskIncome, maskPhone } from '../utils/masks.util';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
+import { renovateAssociateCard } from '../services/admin/adminService';
 // import InactivateAssociateDialog from './InactivateAssociateDialog';
 
 const DARK_BTN = {
@@ -117,6 +121,8 @@ const AssociateProfile = () => {
   const [form, setForm] = useState<IAdminAssociateProfileForm>(EMPTY);
 
   const [categories, setCategories] = useState<AssociateCategoryResponse[]>([]);
+
+  const [sendingCard, setSendingCard] = useState(false);
 
   // const [inactivateOpen, setInactivateOpen] = useState(false);
 
@@ -611,6 +617,107 @@ const AssociateProfile = () => {
     );
   }
 
+  const handleDownloadCard = async () => {
+    if (!token || !originalForm.id) {
+      toast(
+        'error',
+        'Não foi possível validar suas informações, tente fazer login novamente.'
+      );
+      return;
+    }
+
+    try {
+      const pdfBlob = await downloadCardById(originalForm.id, token);
+
+      const url = window.URL.createObjectURL(pdfBlob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `carteirinha-${originalForm.id}.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast('success', 'Carteirinha baixada com sucesso.');
+    } catch (error) {
+      let strError = '';
+      if (axios.isAxiosError(error)) {
+        strError = error.response?.data?.message ?? error.message;
+      } else if (error instanceof Error) {
+        strError =
+          'Não foi possível baixar devido a um erro do servidor, tente novamente.';
+      } else {
+        strError = 'Erro desconhecido';
+      }
+      toast('error', strError);
+    }
+  };
+
+  const handleSendCard = async () => {
+    if (!token || !originalForm.id) {
+      toast(
+        'error',
+        'Não foi possível validar suas informações, tente fazer login novamente.'
+      );
+      return;
+    }
+
+    try {
+      setSendingCard(true);
+
+      await sendCardEmailById(originalForm.id, token);
+
+      toast('success', 'Carteirinha enviada com sucesso.');
+    } catch (error) {
+      let strError = '';
+
+      if (axios.isAxiosError(error)) {
+        strError = error.response?.data?.message ?? error.message;
+      } else if (error instanceof Error) {
+        strError =
+          'Não foi possível enviar devido a um erro do servidor, tente novamente.';
+      } else {
+        strError = 'Erro desconhecido';
+      }
+
+      toast('error', strError);
+    } finally {
+      setSendingCard(false);
+    }
+  };
+
+  const handleRenovateCard = async () => {
+    try {
+      if (!token || !originalForm.id) {
+        toast(
+          'error',
+          'Não foi possível validar suas informações, tente fazer login navemente'
+        );
+        return;
+      }
+
+      await renovateAssociateCard(originalForm.id, token);
+
+      toast('success', 'Carteirinha renovada com sucesso!');
+    } catch (error) {
+      let strError = '';
+
+      if (axios.isAxiosError(error)) {
+        strError = error.response?.data?.message ?? error.message;
+      } else if (error instanceof Error) {
+        strError =
+          'Não foi possível renovar devido a um erro do servidor, tente novamente.';
+      } else {
+        strError = 'Erro desconhecido';
+      }
+
+      toast('error', strError);
+    }
+  };
+
   return (
     <>
       <Stack spacing={3}>
@@ -814,16 +921,25 @@ const AssociateProfile = () => {
                   startIcon={<RefreshIcon sx={{ fontSize: 16 }} />}
                   variant="contained"
                   sx={DARK_BTN}
+                  onClick={handleRenovateCard}
                 >
                   Renovar Carteirinha
                 </Button>
 
                 <Button
-                  startIcon={<SendIcon sx={{ fontSize: 16 }} />}
+                  startIcon={
+                    sendingCard ? (
+                      <CircularProgress size={16} color="inherit" />
+                    ) : (
+                      <SendIcon sx={{ fontSize: 16 }} />
+                    )
+                  }
                   variant="contained"
                   sx={DARK_BTN}
+                  onClick={handleSendCard}
+                  disabled={sendingCard}
                 >
-                  Enviar Carteirinha
+                  {sendingCard ? 'Enviando...' : 'Enviar Carteirinha'}
                 </Button>
 
                 <Button
@@ -836,6 +952,7 @@ const AssociateProfile = () => {
                     fontWeight: 600,
                     px: 2.5,
                   }}
+                  onClick={handleDownloadCard}
                 >
                   Baixar Carteirinha
                 </Button>
@@ -1093,7 +1210,22 @@ const AssociateProfile = () => {
                       value: 'PREFIRO_NAO_INFORMAR',
                       label: 'Prefiro não informar',
                     },
-                    ...(!['', 'HETEROSSEXUAL', 'HOMOSSEXUAL', 'BISSEXUAL', 'NAO_SEI', 'OUTRO', 'PREFIRO_NAO_INFORMAR'].includes(declaratoryData.sexualOrientation) ? [{ value: declaratoryData.sexualOrientation, label: declaratoryData.sexualOrientation }] : [])
+                    ...(![
+                      '',
+                      'HETEROSSEXUAL',
+                      'HOMOSSEXUAL',
+                      'BISSEXUAL',
+                      'NAO_SEI',
+                      'OUTRO',
+                      'PREFIRO_NAO_INFORMAR',
+                    ].includes(declaratoryData.sexualOrientation)
+                      ? [
+                          {
+                            value: declaratoryData.sexualOrientation,
+                            label: declaratoryData.sexualOrientation,
+                          },
+                        ]
+                      : []),
                   ])}
                 </Grid>
               </Grid>
@@ -1186,6 +1318,19 @@ const AssociateProfile = () => {
         description="Tem certeza que deseja excluir este associado? Todos os dados serão removidos permanentemente do sistema."
         confirmLabel="Sim, Excluir Associado"
       />
+
+      <Backdrop
+        open={sendingCard}
+        sx={{
+          color: '#fff',
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+        }}
+      >
+        <Stack sx={{ alignItems: 'center' }} spacing={2}>
+          <CircularProgress color="inherit" />
+          <Typography>Enviando carteirinha...</Typography>
+        </Stack>
+      </Backdrop>
 
       <Snackbar
         open={snack.open}
