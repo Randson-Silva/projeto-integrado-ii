@@ -16,3 +16,14 @@ export async function adminFetchAssociates({
 
   return res.data.content;
 }
+
+export async function renovateAssociateCard(id: string, token: string) {
+  return true;
+  // const res = await api.put(`/cards/${id}/renovate`, {
+  //   headers: {
+  //     Authorization: `Bearer ${token}`,
+  //   },
+  // });
+
+  // return res.data;
+}

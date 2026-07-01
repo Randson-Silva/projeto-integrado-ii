@@ -1,12 +1,28 @@
 import DownloadIcon from '@mui/icons-material/Download';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
-import { Button, Chip, CircularProgress, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  Button,
+  Chip,
+  CircularProgress,
+  Snackbar,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../hooks/useAuth';
 import { getMyAssociate } from '../../services/associate/associateService';
+import type { AuthUser } from '../../services/auth/auth.types';
 import { authGetProfile } from '../../services/auth/authService';
+import { selfDownloadCard } from '../../services/cardService';
+
+type Snack = {
+  open: boolean;
+  severity: 'success' | 'error';
+  msg: string;
+};
 
 const AssociateDashboard = () => {
   const { token } = useAuth();
@@ -16,6 +32,13 @@ const AssociateDashboard = () => {
   const [firstName, setFirstName] = useState('');
   const [status, setStatus] = useState('Inativo');
   const [hasProfile, setHasProfile] = useState(false);
+  const [profile, setProfile] = useState<AuthUser>();
+
+  const [snack, setSnack] = useState<Snack>({
+    open: false,
+    severity: 'success',
+    msg: '',
+  });
 
   useEffect(() => {
     const loadAssociate = async () => {
@@ -27,6 +50,8 @@ const AssociateDashboard = () => {
       try {
         const profile = await authGetProfile({ token });
         setFirstName(profile.name ? profile.name.split(' ')[0] : 'Associado');
+
+        setProfile(profile);
 
         try {
           const associate = await getMyAssociate(token);
@@ -40,7 +65,9 @@ const AssociateDashboard = () => {
               !!sd.gender ||
               !!sd.sexualOrientation ||
               (!!sd.education && sd.education !== 'NÃO_SELECIONADO') ||
-              (sd.income !== undefined && sd.income !== null && sd.income !== 0));
+              (sd.income !== undefined &&
+                sd.income !== null &&
+                sd.income !== 0));
 
           setHasProfile(hasCompletedComplementaryData);
           setStatus(associate.user?.active ? 'Ativo' : 'Inativo');
@@ -66,6 +93,40 @@ const AssociateDashboard = () => {
       </Stack>
     );
   }
+
+  const toast = (severity: 'success' | 'error', msg: string) =>
+    setSnack({
+      open: true,
+      severity,
+      msg,
+    });
+
+  const handleDownloadCard = async () => {
+    if (!token || !profile || !profile.id) return;
+    try {
+      const pdfBlob = await selfDownloadCard(token);
+
+      const url = window.URL.createObjectURL(pdfBlob);
+
+      const link = document.createElement('a');
+      link.href = url;
+
+      link.download = `carteirinha.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast('success', 'Ficha baixada com sucesso.');
+    } catch {
+      toast(
+        'error',
+        'Não foi possível gerar a ficha devido a um erro no servidor.'
+      );
+    }
+  };
 
   return (
     <Stack spacing={4}>
@@ -106,9 +167,7 @@ const AssociateDashboard = () => {
           variant="contained"
           color="primary"
           startIcon={<DownloadIcon />}
-          onClick={() => {
-            // TODO: download carteirinha
-          }}
+          onClick={handleDownloadCard}
           sx={{
             borderRadius: 10,
             textTransform: 'none',
@@ -143,6 +202,31 @@ const AssociateDashboard = () => {
           }}
         />
       </Stack>
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={() =>
+          setSnack((p) => ({
+            ...p,
+            open: false,
+          }))
+        }
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+      >
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          sx={{
+            borderRadius: 2,
+            fontWeight: 600,
+          }}
+        >
+          {snack.msg}
+        </Alert>
+      </Snackbar>
     </Stack>
   );
 };
