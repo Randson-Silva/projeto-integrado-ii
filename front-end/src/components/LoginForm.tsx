@@ -10,10 +10,10 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import Logo from '../assets/logo-laranja3.svg';
 import { useAuth } from '../hooks/useAuth';
 import { authLogin } from '../services/auth/authService';
 import PasswordField from './PasswordField';
-import Logo from '../assets/logo-laranja3.svg';
 
 const LoginForm = () => {
   const [loading, setLoading] = useState(false);
@@ -61,7 +61,7 @@ const LoginForm = () => {
 
       setAuthToken(token);
 
-      navigate('/associados');
+      navigate('/admin/associados');
     } catch {
       setEmailError('Credenciais inválidas. Verifique e tente novamente.');
     } finally {

@@ -148,7 +148,7 @@ const AssociateDashboard = () => {
             variant="contained"
             color="primary"
             startIcon={<PersonAddAlt1Icon />}
-            onClick={() => navigate('/meu-cadastro')}
+            onClick={() => navigate('/associado/meu-cadastro')}
             sx={{
               borderRadius: 10,
               textTransform: 'none',

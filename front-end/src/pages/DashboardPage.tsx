@@ -25,7 +25,7 @@ const DashboardPage = () => {
   }
 
   if (user.role === 'ADMIN' || user.role === 'CONSULTANT') {
-    return <Navigate to="/associados" replace />;
+    return <Navigate to="/admin/associados" replace />;
   }
 
   return (

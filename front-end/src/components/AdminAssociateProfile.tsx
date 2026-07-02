@@ -52,6 +52,7 @@ import {
   type City,
   type State,
 } from '../services/address/ibgeService';
+import { renovateAssociateCard } from '../services/admin/adminService';
 import { api_base_url } from '../services/api';
 import {
   deleteAssociate,
@@ -64,7 +65,6 @@ import { downloadCardById, sendCardEmailById } from '../services/cardService';
 import { isValidBirthDate } from '../utils/dates.util';
 import { maskCEP, maskCPF, maskIncome, maskPhone } from '../utils/masks.util';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
-import { renovateAssociateCard } from '../services/admin/adminService';
 // import InactivateAssociateDialog from './InactivateAssociateDialog';
 
 const DARK_BTN = {
@@ -428,7 +428,7 @@ const AssociateProfile = () => {
 
       toast('success', 'Associado excluído com sucesso!');
       setTimeout(() => {
-        navigate('/associados');
+        navigate('/admin/associados');
       }, 1500);
     } catch {
       toast('error', 'Erro ao excluir associado.');
@@ -723,7 +723,7 @@ const AssociateProfile = () => {
       <Stack spacing={3}>
         <Button
           startIcon={<ArrowBackIcon sx={{ fontSize: 18 }} />}
-          onClick={() => navigate('/associados')}
+          onClick={() => navigate('/admin/associados')}
           sx={{
             alignSelf: 'flex-start',
             color: 'text.secondary',
