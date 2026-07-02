@@ -1,6 +1,7 @@
 package com.associados.associados.associate.service;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +19,8 @@ import com.associados.associados.associate.repository.AssociateRepository;
 import com.associados.associados.associate.repository.CategoryRepository;
 import com.associados.associados.auth.dtos.request.RegisterAssociateDto;
 import com.associados.associados.auth.infra.exceptions.BusinessException;
+import com.associados.associados.card.entity.Card;
+import com.associados.associados.card.repository.CardRepository;
 import com.associados.associados.card.service.CardService;
 import com.associados.associados.user.entity.User;
 import com.associados.associados.user.enums.RoleEnum;
@@ -34,6 +37,7 @@ public class AssociateService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final CardService cardService;
+    private final CardRepository cardRepository;
 
     @Transactional
     public void register(RegisterAssociateDto data) {
@@ -107,28 +111,33 @@ public class AssociateService {
     }
 
     public Page<AssociateResponseDto> getAllAssociates(Pageable pageable) {
-        return associateRepository.findAll(pageable).map(AssociateResponseDto::new);
+        return associateRepository.findAll(pageable).map(associate -> {
+            String cardNumber = cardRepository.findByAssociateId(associate.getId()).map(Card::getNumber).orElse(null);
+            return new AssociateResponseDto(associate, cardNumber);
+        });
     }
 
     public AssociateResponseDto getAssociateById(java.util.UUID id) {
         Associate associate = findAssociateOrThrow(id);
-        return new AssociateResponseDto(associate);
+        String cardNumber = cardRepository.findByAssociateId(associate.getId()).map(Card::getNumber).orElse(null);
+        return new AssociateResponseDto(associate, cardNumber);
     }
 
     public AssociateResponseDto getAssociateByUserId(java.util.UUID userId) {
         Associate associate = associateRepository.findByUserId(userId)
                 .orElseThrow(() -> new BusinessException("Associate not found"));
-        return new AssociateResponseDto(associate);
+        String cardNumber = cardRepository.findByAssociateId(associate.getId()).map(Card::getNumber).orElse(null);
+        return new AssociateResponseDto(associate, cardNumber);
     }
 
     @Transactional
-    public AssociateResponseDto updateAssociate(java.util.UUID id, UpdateAssociateDto data) {
+    public AssociateResponseDto updateAssociate(UUID id, UpdateAssociateDto data) {
         Associate associate = findAssociateOrThrow(id);
         User user = associate.getUser();
         Address address = associate.getAddress();
         SelfDeclaration declaration = associate.getSelfDeclaration();
 
-        // Update Associate fields
+        // Associate
         if (data.cpf() != null) {
             validateCpf(data.cpf());
             validateCpfNotAlreadyUsed(data.cpf(), id);
@@ -159,7 +168,7 @@ public class AssociateService {
             associate.setAvailableHours(data.availableHours());
         }
 
-        // Update User fields
+        // User
         if (data.fullName() != null) {
             user.setName(data.fullName());
         }
@@ -168,7 +177,6 @@ public class AssociateService {
             user.setEmail(data.email());
         }
 
-        // Update Address fields
         if (data.postalCode() != null) {
             address.setPostalCode(data.postalCode());
         }
@@ -197,33 +205,41 @@ public class AssociateService {
             address.setState(data.state());
         }
 
-        if (data.socialName() != null) {
-            declaration.setSocialName(data.socialName());
-        }
+        if (declaration != null) {
+            if (data.socialName() != null) {
+                declaration.setSocialName(data.socialName());
+            }
 
-        if (data.race() != null) {
-            declaration.setRace(data.race());
-        }
+            if (data.race() != null) {
+                declaration.setRace(data.race());
+            }
 
-        if (data.gender() != null) {
-            declaration.setGender(data.gender());
-        }
+            if (data.gender() != null) {
+                declaration.setGender(data.gender());
+            }
 
-        if (data.sexualOrientation() != null) {
-            declaration.setSexualOrientation(data.sexualOrientation());
-        }
+            if (data.sexualOrientation() != null) {
+                declaration.setSexualOrientation(data.sexualOrientation());
+            }
 
-        if (data.education() != null) {
-            declaration.setEducation(data.education());
-        }
+            if (data.education() != null) {
+                declaration.setEducation(data.education());
+            }
 
-        if (data.income() != null) {
-            declaration.setIncome(data.income());
+            if (data.income() != null) {
+                declaration.setIncome(data.income());
+            }
         }
 
         Associate savedAssociate = associateRepository.save(associate);
+
         cardService.syncCard(savedAssociate);
-        return new AssociateResponseDto(savedAssociate);
+
+        String cardNumber = cardRepository.findByAssociateId(savedAssociate.getId())
+                .map(Card::getNumber)
+                .orElse(null);
+
+        return new AssociateResponseDto(savedAssociate, cardNumber);
     }
 
     @Transactional

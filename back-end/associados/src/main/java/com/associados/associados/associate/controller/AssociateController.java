@@ -5,7 +5,9 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,6 +25,7 @@ import com.associados.associados.associate.dtos.request.UpdateSelfDeclarationDto
 import com.associados.associados.associate.dtos.response.AssociateResponseDto;
 import com.associados.associados.associate.dtos.response.SelfDeclarationResponseDto;
 import com.associados.associados.associate.service.AssociateService;
+import com.associados.associados.associate.service.PdfService;
 import com.associados.associados.auth.dtos.request.RegisterAssociateDto;
 import com.associados.associados.auth.dtos.response.MessageResponseDto;
 import com.associados.associados.user.entity.User;
@@ -34,10 +37,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import com.associados.associados.associate.service.PdfService;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping("/associates")
