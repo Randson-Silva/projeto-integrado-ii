@@ -35,20 +35,27 @@ const Sidebar = ({ items }: SidebarProps) => {
     >
       <Toolbar sx={{ display: { xs: 'block', md: 'none' } }} />
       {/* Top Logo (Desktop Only) */}
-      <Box 
+      <Box
         component={Link}
-        to="/dashboard"
-        sx={{ pt: 4, pb: 3, pl: 2, pr: 1, display: { xs: 'none', md: 'block' }, textDecoration: 'none' }}
+        to="/associado/dashboard"
+        sx={{
+          pt: 4,
+          pb: 3,
+          pl: 2,
+          pr: 1,
+          display: { xs: 'none', md: 'block' },
+          textDecoration: 'none',
+        }}
       >
         <Box
           component="img"
           src={LogoCinza}
           alt="Logo SIGA"
-          sx={{ 
-            height: 90, 
+          sx={{
+            height: 90,
             width: '100%',
             objectFit: 'contain',
-            objectPosition: 'left center'
+            objectPosition: 'left center',
           }}
         />
       </Box>
@@ -118,19 +125,25 @@ const Sidebar = ({ items }: SidebarProps) => {
       </List>
 
       {/* Bottom Logo*/}
-      <Box 
+      <Box
         component={Link}
-        to="/dashboard"
-        sx={{ mt: 'auto', p: 3, display: { xs: 'flex', md: 'none' }, justifyContent: 'center', textDecoration: 'none' }}
+        to="/associado/dashboard"
+        sx={{
+          mt: 'auto',
+          p: 3,
+          display: { xs: 'flex', md: 'none' },
+          justifyContent: 'center',
+          textDecoration: 'none',
+        }}
       >
         <Box
           component="img"
           src={LogoCinza}
           alt="Logo SIGA"
-          sx={{ 
-            height: 100, 
+          sx={{
+            height: 100,
             width: 'auto',
-            objectFit: 'contain' 
+            objectFit: 'contain',
           }}
         />
       </Box>

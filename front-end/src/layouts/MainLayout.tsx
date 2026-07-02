@@ -144,9 +144,9 @@ const UserMenu = () => {
           onClick={() => {
             setAnchor(null);
             if (rawRole === 'ASSOCIATE') {
-              navigate('/meu-cadastro');
+              navigate('/associado/meu-cadastro');
             } else if (rawRole === 'CONSULTANT' || rawRole === 'ADMIN') {
-              navigate('/meu-perfil');
+              navigate('/admin/meu-perfil');
             } else if (rawRole === 'SUPER_ADMIN') {
               navigate('/controle-de-acesso/meu-perfil');
             }
@@ -332,7 +332,7 @@ const MainLayout = ({ children, menuItems, pageTitle }: MainLayoutProps) => {
                 <Button
                   color="inherit"
                   size="small"
-                  onClick={() => navigate('/configuracoes')}
+                  onClick={() => navigate('/admin/configuracoes')}
                 >
                   Configurar
                 </Button>
@@ -354,7 +354,7 @@ const MainLayout = ({ children, menuItems, pageTitle }: MainLayoutProps) => {
                 <Button
                   color="inherit"
                   size="small"
-                  onClick={() => navigate('/configuracoes')}
+                  onClick={() => navigate('/admin/configuracoes')}
                 >
                   Configurar
                 </Button>

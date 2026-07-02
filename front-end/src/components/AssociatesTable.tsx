@@ -290,7 +290,7 @@ const AssociatesTable = () => {
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
-            onClick={() => navigate('/associados/novo')}
+            onClick={() => navigate('/admin/associados/novo')}
             sx={{
               fontWeight: 600,
               borderRadius: 10,
@@ -426,7 +426,7 @@ const AssociatesTable = () => {
                     <TableRow
                       key={u.id}
                       hover
-                      onClick={() => navigate(`/associados/${u.id}`)}
+                      onClick={() => navigate(`/admin/associados/${u.id}`)}
                       sx={{
                         cursor: 'pointer',
                         bgcolor:

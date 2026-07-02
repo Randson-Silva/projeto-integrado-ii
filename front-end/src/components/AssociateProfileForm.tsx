@@ -315,7 +315,7 @@ const AssociateProfile = () => {
 
       toast('success', 'Associado excluído com sucesso!');
       setTimeout(() => {
-        navigate('/associados');
+        navigate('/admin/associados');
       }, 1500);
     } catch {
       toast('error', 'Erro ao excluir associado.');
@@ -440,7 +440,7 @@ const AssociateProfile = () => {
       <Stack spacing={3}>
         <Button
           startIcon={<ArrowBackIcon sx={{ fontSize: 18 }} />}
-          onClick={() => navigate('/associados')}
+          onClick={() => navigate('/admin/associados')}
           sx={{
             alignSelf: 'flex-start',
             color: 'text.secondary',

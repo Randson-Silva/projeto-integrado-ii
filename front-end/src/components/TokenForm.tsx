@@ -89,7 +89,7 @@ const TokenForm = () => {
 
       setAuthToken(authToken);
 
-      navigate('/dashboard');
+      navigate('/associado/dashboard');
     } catch {
       setError(true);
       setSnack({ open: true, severity: 'error', msg: 'Token inválido ou expirado. Tente novamente.' });
