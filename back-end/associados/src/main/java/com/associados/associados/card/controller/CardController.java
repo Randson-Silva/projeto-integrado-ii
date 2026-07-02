@@ -1,5 +1,6 @@
 package com.associados.associados.card.controller;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.springframework.http.HttpHeaders;
@@ -9,11 +10,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import java.time.LocalDate;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -51,14 +47,11 @@ public class CardController {
         return ResponseEntity.ok(cardService.getOwnCard(user.getId()));
     }
 
-    @PutMapping("/me/renew")
+    @PutMapping("/renew/{associateId}")
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Renew authenticated associate's card", description = "Updates the card validity to the global validity date currently configured by administrators.")
-    public ResponseEntity<CardResponseDto> renewOwnCard(@AuthenticationPrincipal User user) {
-        if (user == null) {
-            throw new BusinessException("Unauthenticated user.");
-        }
-        return ResponseEntity.ok(cardService.renewOwnCard(user.getId()));
+    @Operation(summary = "Renew associate's card (Admin only)", description = "Updates the card validity to the global validity date currently configured by administrators.")
+    public ResponseEntity<CardResponseDto> renewCard(@PathVariable UUID associateId) {
+        return ResponseEntity.ok(cardService.renewCard(associateId));
     }
 
     @GetMapping("/me/download")

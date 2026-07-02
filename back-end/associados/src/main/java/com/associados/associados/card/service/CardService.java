@@ -170,12 +170,9 @@ public class CardService {
     }
 
     @Transactional
-    public CardResponseDto renewOwnCard(java.util.UUID userId) {
-        Associate associate = associateRepository.findByUserId(userId)
-                .orElseThrow(() -> new BusinessException("Associate not found"));
-
-        Card card = cardRepository.findByAssociateId(associate.getId())
-                .orElseThrow(() -> new BusinessException("Card not found"));
+    public CardResponseDto renewCard(java.util.UUID associateId) {
+        Card card = cardRepository.findByAssociateId(associateId)
+                .orElseThrow(() -> new BusinessException("Card not found for this associate"));
 
         LocalDate configuredValidity = configurationService.getCardValidityConfiguration()
                 .orElseThrow(() -> new BusinessException("Card renewal is currently unavailable. A default validity date has not been set by an administrator."));
