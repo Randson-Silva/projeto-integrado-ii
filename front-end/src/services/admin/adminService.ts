@@ -18,12 +18,11 @@ export async function adminFetchAssociates({
 }
 
 export async function renovateAssociateCard(id: string, token: string) {
-  return true;
-  // const res = await api.put(`/cards/${id}/renovate`, {
-  //   headers: {
-  //     Authorization: `Bearer ${token}`,
-  //   },
-  // });
+  const res = await api.put(`/cards/renew/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-  // return res.data;
+  return res.data;
 }
