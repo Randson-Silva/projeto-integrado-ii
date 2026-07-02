@@ -25,7 +25,11 @@ const MENU_ITEMS = [
   { label: 'Controle de acesso', href: '/login-controle' },
 ];
 
-const Header = () => {
+interface HeaderProps {
+  transparent?: boolean;
+}
+
+const Header = ({ transparent = false }: HeaderProps) => {
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
 
   const open = Boolean(anchor);
@@ -36,12 +40,11 @@ const Header = () => {
 
   return (
     <AppBar
-      position="sticky"
+      position={transparent ? 'absolute' : 'static'}
       elevation={0}
       sx={{
-        bgcolor: 'background.paper',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-        top: 0,
+        bgcolor: transparent ? 'transparent' : 'background.paper',
+        boxShadow: transparent ? 'none' : '0 2px 12px rgba(0,0,0,0.08)',
         zIndex: 1100,
       }}
     >
@@ -79,6 +82,8 @@ const Header = () => {
                 objectFit: 'contain',
 
                 flexShrink: 0,
+                
+                filter: transparent ? 'drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.8))' : 'none',
               }}
             />
           </Box>
@@ -90,8 +95,11 @@ const Header = () => {
               component={RouterLink}
               to="/"
               sx={{
-                color:
-                  location.pathname === '/' ? 'primary.main' : 'text.secondary',
+                color: location.pathname === '/'
+                  ? 'primary.main'
+                  : transparent
+                    ? 'rgba(255,255,255,0.9)'
+                    : 'text.secondary',
 
                 fontWeight: location.pathname === '/' ? 700 : 600,
 
@@ -99,7 +107,7 @@ const Header = () => {
                 fontSize: 15,
 
                 '&:hover': {
-                  color: 'text.primary',
+                  color: 'primary.main',
                 },
               }}
             >
@@ -111,9 +119,10 @@ const Header = () => {
               component={RouterLink}
               to="/validate"
               sx={{
-                color:
-                  location.pathname === '/validate'
-                    ? 'primary.main'
+                color: location.pathname === '/validate'
+                  ? 'primary.main'
+                  : transparent
+                    ? 'rgba(255,255,255,0.9)'
                     : 'text.secondary',
 
                 fontWeight: location.pathname === '/validate' ? 700 : 600,
@@ -122,7 +131,7 @@ const Header = () => {
                 fontSize: 15,
 
                 '&:hover': {
-                  color: 'text.primary',
+                  color: 'primary.main',
                 },
               }}
             >
@@ -136,7 +145,11 @@ const Header = () => {
               }
               onClick={(e) => setAnchor(e.currentTarget)}
               sx={{
-                color: open ? 'primary.main' : 'text.secondary',
+                color: transparent
+                  ? 'rgba(255,255,255,0.9)'
+                  : open
+                    ? 'primary.main'
+                    : 'text.secondary',
 
                 fontWeight: open ? 700 : 600,
 
@@ -144,7 +157,7 @@ const Header = () => {
                 fontSize: 15,
 
                 '&:hover': {
-                  color: 'text.primary',
+                  color: 'primary.main',
                 },
               }}
             >
