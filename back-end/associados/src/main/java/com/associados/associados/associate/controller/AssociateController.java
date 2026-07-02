@@ -104,9 +104,9 @@ public class AssociateController {
 
     @GetMapping("/{id}/registration-form")
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Download Ficha Cadastral", description = "Gera e faz o download da ficha cadastral do associado em PDF")
+    @Operation(summary = "Download Registration Form", description = "Generates and downloads the associate's registration form as a PDF file")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "PDF gerado e enviado com sucesso"),
+        @ApiResponse(responseCode = "200", description = "PDF successfully generated and downloaded"),
         @ApiResponse(responseCode = "404", description = "Associate not found"),
         @ApiResponse(responseCode = "403", description = "Insufficient permissions")
     })
