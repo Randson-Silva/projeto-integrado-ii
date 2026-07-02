@@ -3,6 +3,7 @@ package com.associados.associados.auth.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -15,6 +16,7 @@ import com.associados.associados.auth.dtos.request.ForgotPasswordRequestDto;
 import com.associados.associados.auth.dtos.request.LoginAdminDto;
 import com.associados.associados.auth.dtos.request.LoginAssociateDto;
 import com.associados.associados.auth.dtos.request.LoginAssociateTokenDto;
+import com.associados.associados.auth.dtos.request.ResetAccessKeyDto;
 import com.associados.associados.auth.dtos.request.ValidatePasswordTokenDto;
 import com.associados.associados.auth.dtos.response.LoginResponseDto;
 import com.associados.associados.auth.dtos.response.MessageResponseDto;
@@ -48,6 +50,13 @@ public class AuthController {
     public ResponseEntity<LoginResponseDto> loginAccessManager(@RequestBody @Valid AccessKeyLoginDto data) {
         var response = authService.loginAccessManager(data);
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/access-manager/reset-password")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<MessageResponseDto> resetAccessManagerPassword(@RequestBody @Valid ResetAccessKeyDto data) {
+        authService.resetAccessKey(data);
+        return ResponseEntity.ok(new MessageResponseDto("Access key changed successfully!"));
     }
 
     @PostMapping("/password/forgot")

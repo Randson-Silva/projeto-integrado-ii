@@ -51,6 +51,16 @@ public class CardController {
         return ResponseEntity.ok(cardService.getOwnCard(user.getId()));
     }
 
+    @PutMapping("/me/renew")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Renew authenticated associate's card", description = "Updates the card validity to the global validity date currently configured by administrators.")
+    public ResponseEntity<CardResponseDto> renewOwnCard(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            throw new BusinessException("Unauthenticated user.");
+        }
+        return ResponseEntity.ok(cardService.renewOwnCard(user.getId()));
+    }
+
     @GetMapping("/me/download")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Download authenticated associate's card", description = "Downloads the associate's card as a PDF file.")

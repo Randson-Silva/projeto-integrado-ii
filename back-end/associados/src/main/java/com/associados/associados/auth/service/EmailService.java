@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import com.associados.associados.associate.entity.Associate;
 import com.associados.associados.associate.repository.AssociateRepository;
 import com.associados.associados.auth.infra.exceptions.BusinessException;
+import com.associados.associados.message.MessageService;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -27,17 +28,8 @@ public class EmailService {
     @Autowired
     private AssociateRepository associateRepository;
 
-    private String birthdayMessageTemplate = "Desejamos a você um aniversário repleto de alegria, saúde e momentos inesquecíveis! "
-                                           + "Que este novo ciclo seja cheio de realizações e felicidade. Obrigado por fazer parte da "
-                                           + "nossa comunidade no Centro Cultural Dom Maurício.";
-
-    public void updateBirthdayMessageTemplate(String newTemplate) {
-        this.birthdayMessageTemplate = newTemplate;
-    }
-
-    public String getBirthdayMessageTemplate() {
-        return this.birthdayMessageTemplate;
-    }
+    @Autowired
+    private MessageService messageService;
 
     public void sendPasswordResetEmail(String to, String token) {
         String subject = "Password Recovery - Associates System";
@@ -109,7 +101,7 @@ public class EmailService {
         String topoUrl = "https://lh3.googleusercontent.com/d/15NVc2eHIegUHcDhWdfM-hxvADdEII1JD"; 
         String rodapeUrl = "https://lh3.googleusercontent.com/d/1JMR_IIR0BbMJutuVQN8IB5yGVsHGDRJq"; 
 
-        String personalizedMessage = this.birthdayMessageTemplate.replace("{name}", name);
+        String personalizedMessage = messageService.getBirthdayMessage().replace("{name}", name);
 
         String body = "<!DOCTYPE html>"
                     + "<html lang=\"pt-BR\">"

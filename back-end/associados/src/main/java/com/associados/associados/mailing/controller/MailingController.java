@@ -10,13 +10,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.associados.associados.auth.service.EmailService;
 import com.associados.associados.mailing.dtos.request.BirthDayMessageDto;
 import com.associados.associados.mailing.dtos.request.SendMailingDto;
 import com.associados.associados.mailing.dtos.response.MailingRecipientResponseDto;
 import com.associados.associados.mailing.dtos.response.MailingSentResponseDto;
 import com.associados.associados.mailing.enums.MailingRecipientScope;
 import com.associados.associados.mailing.service.MailingService;
+import com.associados.associados.message.MessageService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 public class MailingController {
 
     private final MailingService mailingService;
-    private final EmailService emailService;
+    private final MessageService messageService;
 
     @GetMapping("/recipients")
     @SecurityRequirement(name = "bearerAuth")
@@ -67,10 +67,10 @@ public class MailingController {
         @ApiResponse(responseCode = "200", description = "Template updated successfully")
     })
     public ResponseEntity<String> updateBirthdayTemplate(@RequestBody @Valid BirthDayMessageDto data) {
-        emailService.updateBirthdayMessageTemplate(data.message());
-        
+        messageService.updateBirthdayMessage(data.message());
+
         return ResponseEntity.ok("Mensagem de aniversário atualizada com sucesso!");
-    }   
+    }
 
     @GetMapping("/birthday-template")
     @SecurityRequirement(name = "bearerAuth")   
@@ -79,8 +79,8 @@ public class MailingController {
         @ApiResponse(responseCode = "200", description = "Template retrieved successfully")
     })
     public ResponseEntity<BirthDayMessageDto> getBirthdayTemplate() {
-        String currentMessage = emailService.getBirthdayMessageTemplate();
-        
+        String currentMessage = messageService.getBirthdayMessage();
+
         return ResponseEntity.ok(new BirthDayMessageDto(currentMessage));
     }
 
