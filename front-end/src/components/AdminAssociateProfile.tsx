@@ -3,7 +3,7 @@ import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import DownloadIcon from '@mui/icons-material/Download';
 import EditIcon from '@mui/icons-material/Edit';
-import PersonIcon from '@mui/icons-material/Person';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SendIcon from '@mui/icons-material/Send';
 
@@ -916,11 +916,11 @@ const AssociateProfile = () => {
                 sx={{
                   width: { xs: 100, sm: 140 },
                   height: { xs: 100, sm: 140 },
-                  bgcolor: 'grey.500',
+                  bgcolor: 'primary.main',
                 }}
               >
-                <PersonIcon
-                  sx={{ fontSize: { xs: 64, sm: 90 }, color: 'grey.300' }}
+                <PersonOutlineIcon
+                  sx={{ fontSize: { xs: 64, sm: 90 }, color: '#ffffff' }}
                 />
               </Avatar>
 

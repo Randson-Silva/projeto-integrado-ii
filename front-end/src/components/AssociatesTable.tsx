@@ -1,7 +1,7 @@
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import PersonIcon from '@mui/icons-material/Person';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import {
   Avatar,
@@ -447,9 +447,9 @@ const AssociatesTable = () => {
                                 ? `${api_base_url}${u.user.avatarUrl}`
                                 : undefined
                             }
-                            sx={{ width: 52, height: 52, bgcolor: 'grey.500' }}
+                            sx={{ width: 52, height: 52, bgcolor: 'primary.main' }}
                           >
-                            <PersonIcon sx={{ color: '#fff', fontSize: 34 }} />
+                            <PersonOutlineIcon sx={{ color: '#ffffff', fontSize: 34 }} />
                           </Avatar>
 
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>

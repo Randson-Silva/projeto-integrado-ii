@@ -4,7 +4,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import DownloadIcon from '@mui/icons-material/Download';
 import EditIcon from '@mui/icons-material/Edit';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
-import PersonIcon from '@mui/icons-material/Person';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SendIcon from '@mui/icons-material/Send';
 import {
@@ -498,16 +498,16 @@ const AssociateProfile = () => {
                     xs: 100,
                     sm: 140,
                   },
-                  bgcolor: 'grey.500',
+                  bgcolor: 'primary.main',
                 }}
               >
-                <PersonIcon
+                <PersonOutlineIcon
                   sx={{
                     fontSize: {
                       xs: 64,
                       sm: 90,
                     },
-                    color: 'grey.300',
+                    color: '#ffffff',
                   }}
                 />
               </Avatar>
