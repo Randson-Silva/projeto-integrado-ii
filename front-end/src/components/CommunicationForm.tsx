@@ -26,6 +26,9 @@ import {
   getBirthdayTemplate,
   type MailingRecipientScope,
 } from '../services/mailing/mailingService';
+import { api_base_url } from '../services/api';
+import { getAvatar } from '../services/user/imageService';
+import { authGetProfile } from '../services/auth/authService';
 import TextEditor from './TextEditor';
 
 type Snack = { open: boolean; severity: 'success' | 'error'; msg: string };
@@ -151,11 +154,34 @@ const BIRTHDAY_INITIAL_HTML =
   '<p style="text-align:center"><em>Grupo Cultural de Dom Maurício</em></p>';
 
 const BirthdayTemplateTab = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [snack, setSnack] = useState<Snack>({ open: false, severity: 'success', msg: '' });
   const editorRef = useRef<HTMLDivElement>(null);
   const [previewHtml, setPreviewHtml] = useState(BIRTHDAY_INITIAL_HTML);
+  const [userAvatar, setUserAvatar] = useState<string>('');
+  const [displayName, setDisplayName] = useState<string>('Associado');
+
+  useEffect(() => {
+    const loadProfileAndAvatar = async () => {
+      if (token) {
+        try {
+          const profile = await authGetProfile({ token });
+          if (profile) {
+            setDisplayName(profile.name ?? 'Associado');
+            if (profile.id) {
+              const avatarUrl = await getAvatar({ token, id: profile.id });
+              setUserAvatar(avatarUrl ? `${api_base_url}${avatarUrl}` : '');
+            }
+          }
+        } catch {
+          setUserAvatar('');
+        }
+      }
+    };
+    loadProfileAndAvatar();
+  }, [token]);
+
   useEffect(() => {
     const fetchTemplate = async () => {
       if (!token) return;
@@ -180,7 +206,7 @@ const BirthdayTemplateTab = () => {
     setPreviewHtml(editorRef.current?.innerHTML ?? '');
   };
 
-  const previewHtmlWithName = previewHtml.replace(/\{name\}/gi, 'Maria Silva');
+  const previewHtmlWithName = previewHtml.replace(/\{name\}/gi, displayName);
 
   const handleSave = async () => {
     if (!token) return;
@@ -199,12 +225,6 @@ const BirthdayTemplateTab = () => {
     }
   };
 
-  const handleCancel = () => {
-    if (editorRef.current) {
-      editorRef.current.innerHTML = BIRTHDAY_INITIAL_HTML;
-      setPreviewHtml(BIRTHDAY_INITIAL_HTML);
-    }
-  };
 
   return (
     <>
@@ -221,16 +241,7 @@ const BirthdayTemplateTab = () => {
           />
 
           <Stack direction="row" spacing={1.5} sx={{ justifyContent: 'flex-end' }}>
-            <Button
-              variant="outlined"
-              onClick={handleCancel}
-              sx={{
-                borderRadius: 10, textTransform: 'none', fontWeight: 600,
-                borderColor: 'text.secondary', color: 'text.secondary',
-              }}
-            >
-              Restaurar padrão
-            </Button>
+
             <Button
               variant="contained"
               color="primary"
@@ -254,31 +265,32 @@ const BirthdayTemplateTab = () => {
               boxShadow: '0 4px 20px rgba(0,0,0,0.12)', overflow: 'hidden',
               backgroundImage: `url(${birthdayBg})`,
               backgroundSize: '100% 100%', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
-              aspectRatio: '1 / 1', width: '100%', position: 'relative',
+              aspectRatio: { xs: '4 / 5', sm: '1 / 1' }, width: '100%', position: 'relative',
             }}
           >
             <Box
               sx={{
                 position: 'absolute', inset: 0,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                p: 3, gap: 1.5, textAlign: 'center', overflow: 'hidden',
+                p: { xs: 2, sm: 3 }, gap: { xs: 1, sm: 1.5 }, textAlign: 'center', overflow: 'hidden',
               }}
             >
               <Avatar
                 sx={{
-                  width: 100, height: 100, bgcolor: 'primary.main',
-                  color: '#fff', fontWeight: 800, fontSize: 32,
+                  width: { xs: 70, sm: 100 }, height: { xs: 70, sm: 100 }, bgcolor: 'primary.main',
+                  color: '#fff', fontWeight: 800, fontSize: { xs: 28, sm: 32 },
                 }}
+                src={userAvatar}
               >
-                M
+                {displayName.charAt(0).toUpperCase()}
               </Avatar>
 
               <Box
                 sx={{
-                  maxWidth: '72%', textAlign: 'center', fontSize: 14, lineHeight: 1.8,
+                  maxWidth: { xs: '85%', sm: '72%' }, textAlign: 'center', fontSize: { xs: 12, sm: 14 }, lineHeight: { xs: 1.4, sm: 1.8 },
                   fontFamily: '"Open Sans", Arial, sans-serif',
                   wordBreak: 'break-word', overflow: 'hidden',
-                  '& p': { margin: '0 0 6px 0' },
+                  '& p': { margin: { xs: '0 0 4px 0', sm: '0 0 6px 0' } },
                   '& b, & strong': { fontWeight: 700 },
                 }}
                 dangerouslySetInnerHTML={{ __html: previewHtmlWithName }}
@@ -325,14 +337,17 @@ const CommunicationForm = () => {
         <Tabs
           value={tab}
           onChange={(_, v) => setTab(v)}
+          variant="fullWidth"
           sx={{
-            px: 2,
+            px: { xs: 0, sm: 2 },
             borderBottom: '1px solid',
             borderColor: 'divider',
             '& .MuiTab-root': {
               textTransform: 'none',
               fontWeight: 600,
-              fontSize: 13,
+              fontSize: { xs: 12, sm: 13 },
+              whiteSpace: 'normal',
+              lineHeight: 1.2,
             },
           }}
         >
