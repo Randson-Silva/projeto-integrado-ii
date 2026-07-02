@@ -36,12 +36,13 @@ const Header = () => {
 
   return (
     <AppBar
-      position="static"
+      position="sticky"
       elevation={0}
       sx={{
         bgcolor: 'background.paper',
-        borderBottom: '1px solid',
-        borderColor: 'divider',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+        top: 0,
+        zIndex: 1100,
       }}
     >
       <Container maxWidth="lg">
@@ -49,7 +50,7 @@ const Header = () => {
           disableGutters
           sx={{
             justifyContent: 'space-between',
-            py: 1,
+            py: { xs: 2, md: 3 },
           }}
         >
           {/* Logo */}
@@ -68,9 +69,9 @@ const Header = () => {
               alt="Grupo Cultural de Dom Maurício"
               sx={{
                 height: {
-                  xs: 42,
-                  sm: 48,
-                  md: 65,
+                  xs: 50,
+                  sm: 60,
+                  md: 80,
                 },
 
                 width: 'auto',
