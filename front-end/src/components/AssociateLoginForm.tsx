@@ -1,4 +1,5 @@
 import { ArrowBackIos } from '@mui/icons-material';
+import MailOutlineIcon from '@mui/icons-material/MailOutlined';
 import {
   Box,
   Button,
@@ -153,6 +154,7 @@ const AssociateLoginForm = () => {
             maxWidth: 430,
           }}
         >
+          <MailOutlineIcon color="primary" sx={{ fontSize: 48 }} />
           <Typography variant="h6" color="primary" sx={{ fontWeight: 700 }}>
             Token Enviado!
           </Typography>

@@ -162,7 +162,7 @@ const AssociateProfile = () => {
 
     return age < 18;
   })();
-  // const [isActive, setIsActive] = useState<boolean>();
+  const [isActive, setIsActive] = useState<boolean>();
 
   const [errors, setErrors] = useState<
     Partial<Record<keyof IAdminAssociateProfileForm, string>>
@@ -191,7 +191,7 @@ const AssociateProfile = () => {
 
         const res = await getAssociateById(token, id);
 
-        // setIsActive(res.user?.active ?? false);
+        setIsActive(res.user?.active ?? false);
 
         const data = mapAssociateResponseToForm(res);
 
@@ -789,13 +789,14 @@ const AssociateProfile = () => {
               </Avatar>
 
               <Chip
-                label="Ativo"
-                size="small"
-                color="success"
+                label={isActive ? 'Ativo' : 'Inativo'}
                 sx={{
-                  fontWeight: 700,
-                  fontSize: 12,
-                  borderRadius: 1,
+                  bgcolor: isActive ? '#8FA882' : '#9E9E9E',
+                  color: '#fff',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  height: 26,
+                  width: 80,
                 }}
               />
             </Stack>

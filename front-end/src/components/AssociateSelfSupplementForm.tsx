@@ -489,9 +489,14 @@ const AssociateSelfSupplementForm = () => {
             <Box sx={{ mt: 0.5 }}>
               <Chip
                 label={profile.status}
-                color={profile.status === 'Ativo' ? 'success' : 'error'}
-                size="small"
-                sx={{ fontWeight: 600 }}
+                sx={{
+                  bgcolor: profile.status === 'Ativo' ? '#8FA882' : '#9E9E9E',
+                  color: '#fff',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  height: 26,
+                  width: 80,
+                }}
               />
             </Box>
           )}

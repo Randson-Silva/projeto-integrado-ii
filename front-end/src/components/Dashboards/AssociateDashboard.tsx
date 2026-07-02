@@ -119,11 +119,11 @@ const AssociateDashboard = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      toast('success', 'Ficha baixada com sucesso.');
+      toast('success', 'Carteirinha baixada com sucesso.');
     } catch {
       toast(
         'error',
-        'Não foi possível gerar a ficha devido a um erro no servidor.'
+        'Não foi possível gerar a carteirinha devido a um erro no servidor.'
       );
     }
   };
@@ -198,7 +198,7 @@ const AssociateDashboard = () => {
             borderRadius: 3,
             px: 1,
             height: 40,
-            width: 'fit-content',
+            width: 100,
           }}
         />
       </Stack>
