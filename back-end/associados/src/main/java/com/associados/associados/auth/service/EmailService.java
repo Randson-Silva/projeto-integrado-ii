@@ -32,14 +32,14 @@ public class EmailService {
     private MessageService messageService;
 
     public void sendPasswordResetEmail(String to, String token) {
-        String subject = "Recuperação de Senha - Sistema de Associados";
+        String subject = "Recuperação de Senha - Grupo Cultural de Dom Maurício";
         String body = "Olá!\n\nSeu código para recuperação de senha é: " + token +
                     "\n\nEste código expira em 15 minutos.";
         sendEmail(to, subject, body);
     }
 
     public void sendAssociateLoginEmail(String email, String token) {
-        String subject = "Seu Código de Acesso - Portal de Associados";
+        String subject = "Seu Código de Acesso - Grupo Cultural de Dom Maurício";
         String body = "Utilize o código abaixo para acessar o sistema: " + token +
                     "\n\nEste código expira em 10 minutos.";
         sendEmail(email, subject, body);
