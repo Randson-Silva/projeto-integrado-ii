@@ -35,7 +35,11 @@ const Sidebar = ({ items }: SidebarProps) => {
     >
       <Toolbar sx={{ display: { xs: 'block', md: 'none' } }} />
       {/* Top Logo (Desktop Only) */}
-      <Box sx={{ pt: 4, pb: 3, pl: 2, pr: 1, display: { xs: 'none', md: 'block' } }}>
+      <Box 
+        component={Link}
+        to="/dashboard"
+        sx={{ pt: 4, pb: 3, pl: 2, pr: 1, display: { xs: 'none', md: 'block' }, textDecoration: 'none' }}
+      >
         <Box
           component="img"
           src={LogoCinza}
@@ -114,7 +118,11 @@ const Sidebar = ({ items }: SidebarProps) => {
       </List>
 
       {/* Bottom Logo*/}
-      <Box sx={{ mt: 'auto', p: 3, display: { xs: 'flex', md: 'none' }, justifyContent: 'center' }}>
+      <Box 
+        component={Link}
+        to="/dashboard"
+        sx={{ mt: 'auto', p: 3, display: { xs: 'flex', md: 'none' }, justifyContent: 'center', textDecoration: 'none' }}
+      >
         <Box
           component="img"
           src={LogoCinza}
