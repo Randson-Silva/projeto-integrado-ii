@@ -82,18 +82,21 @@ public class CardService {
                 .orElseThrow(() -> new BusinessException("Associate not found"));
         Card card = cardRepository.findByAssociateId(associate.getId())
                 .orElseThrow(() -> new BusinessException("Card not found"));
+        requirePhoto(card);
         return cardPdfService.generate(card);
     }
 
     public byte[] downloadAssociateCard(java.util.UUID associateId) {
         Card card = cardRepository.findByAssociateId(associateId)
                 .orElseThrow(() -> new BusinessException("Card not found for this associate"));
+        requirePhoto(card);
         return cardPdfService.generate(card);
     }
 
     public void sendCardByEmail(java.util.UUID associateId) {
         Card card = cardRepository.findByAssociateId(associateId)
                 .orElseThrow(() -> new BusinessException("Card not found for this associate"));
+        requirePhoto(card);
         byte[] pdf = cardPdfService.generate(card);
         String filename = "carteirinha-" + card.getNumber() + ".pdf";
         emailService.sendEmailWithAttachment(
@@ -155,6 +158,13 @@ public class CardService {
             return declaration.getSocialName();
         }
         return associate.getUser().getName();
+    }
+
+    private void requirePhoto(Card card) {
+        String avatarUrl = card.getUser() == null ? null : card.getUser().getAvatarUrl();
+        if (avatarUrl == null || avatarUrl.isBlank()) {
+            throw new BusinessException("A carteirinha não pode ser baixada ou enviada porque o associado não possui foto de perfil.");
+        }
     }
 
     public Card updateCardValidity(java.util.UUID associateId, LocalDate newValidity) {
