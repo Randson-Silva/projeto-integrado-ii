@@ -56,12 +56,14 @@ public class SecurityConfiguration {
                     req.requestMatchers(HttpMethod.GET, "/uploads/**").permitAll();
                     req.requestMatchers(HttpMethod.GET, "/terms/data-sharing").permitAll(); //temporário (depois revisar permissões)
                     req.requestMatchers(HttpMethod.GET, "/cards/validate").permitAll(); //pagina publica
-
+                    
                     req.requestMatchers(HttpMethod.POST, "/admins").hasRole("SUPER_ADMIN");
+                    req.requestMatchers(HttpMethod.PATCH, "/auth/access-manager/reset-password").hasRole("SUPER_ADMIN");
                     req.requestMatchers(HttpMethod.POST, "/associates").hasRole("ADMIN");
                     req.requestMatchers(HttpMethod.GET, "/associates/me").hasRole("ASSOCIATE");
                     req.requestMatchers(HttpMethod.GET, "/cards/me").hasRole("ASSOCIATE");
                     req.requestMatchers(HttpMethod.GET, "/cards/me/download").hasRole("ASSOCIATE");
+                    req.requestMatchers(HttpMethod.PUT, "/cards/me/renew").hasRole("ASSOCIATE");
                     req.requestMatchers(HttpMethod.POST, "/cards/*/send-email").hasRole("ADMIN");
                     req.requestMatchers(HttpMethod.GET, "/associates").hasAnyRole("ADMIN", "CONSULTANT");
                     req.requestMatchers(HttpMethod.GET, "/associates/**").hasAnyRole("ADMIN", "CONSULTANT");

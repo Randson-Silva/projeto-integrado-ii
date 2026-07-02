@@ -3,11 +3,14 @@ package com.associados.associados.auth.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.associados.associados.auth.dtos.request.AccessKeyLoginDto;
 import com.associados.associados.auth.dtos.request.LoginAdminDto;
+import com.associados.associados.auth.dtos.request.ResetAccessKeyDto;
 import com.associados.associados.auth.dtos.response.LoginResponseDto;
 import com.associados.associados.auth.infra.exceptions.BusinessException;
 import com.associados.associados.user.entity.User;
@@ -52,5 +55,21 @@ public class AuthService {
 
         var token = jwtService.generateToken(superAdmin);
         return new LoginResponseDto(token, "Login successful");
+    }
+
+    @Transactional
+    public void resetAccessKey(ResetAccessKeyDto data) {
+        User authenticatedUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if (authenticatedUser.getRole() != RoleEnum.SUPER_ADMIN) {
+            throw new BusinessException("Only SUPER_ADMIN can reset the access key");
+        }
+
+        if (!data.newAccessKey().equals(data.confirmAccessKey())) {
+            throw new BusinessException("Access key confirmation does not match");
+        }
+
+        authenticatedUser.setAccessKeyHash(passwordEncoder.encode(data.newAccessKey()));
+        userRepository.save(authenticatedUser);
     }
 }
