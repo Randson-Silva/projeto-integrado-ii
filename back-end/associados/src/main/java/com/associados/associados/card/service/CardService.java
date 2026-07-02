@@ -177,6 +177,10 @@ public class CardService {
         LocalDate configuredValidity = configurationService.getCardValidityConfiguration()
                 .orElseThrow(() -> new BusinessException("Card renewal is currently unavailable. A default validity date has not been set by an administrator."));
 
+        if (configuredValidity.isBefore(LocalDate.now())) {
+            throw new BusinessException("Card renewal is currently unavailable. The configured validity date is in the past and must be updated by an administrator.");
+        }
+
         card.setValidity(configuredValidity);
         return new CardResponseDto(cardRepository.save(card));
     }
