@@ -76,7 +76,11 @@ const UserMenu = () => {
           setUserAvatar(avatarUrl ? `${api_base_url}${avatarUrl}` : '');
         }
 
-        setDisplayName(user.name?.split(' ')[0] ?? 'Usuário');
+        setDisplayName(
+          rawRole === 'SUPER_ADMIN'
+            ? 'Grupo Cultural Dom Maurício'
+            : (user.name?.split(' ')[0] ?? 'Usuário')
+        );
         setRole(normalizeRoleView(user.role));
         setRawRole(user.role);
       } catch {
@@ -85,7 +89,7 @@ const UserMenu = () => {
     };
 
     loadUserInfo();
-  }, [token, logout]);
+  }, [token, logout, rawRole]);
 
   const handleLogout = () => {
     setAnchor(null);
