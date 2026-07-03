@@ -744,14 +744,22 @@ const AssociateProfile = () => {
 
       toast('success', 'Carteirinha baixada com sucesso.');
     } catch (error) {
-      let strError = '';
+      let strError = 'Erro desconhecido ao baixar carteirinha';
       if (axios.isAxiosError(error)) {
-        strError = error.response?.data?.message ?? error.message;
+        if (error.response?.data instanceof Blob) {
+          try {
+            const text = await error.response.data.text();
+            const json = JSON.parse(text);
+            strError = json.message || error.message;
+          } catch {
+            strError = error.message;
+          }
+        } else {
+          strError = error.response?.data?.message ?? error.message;
+        }
       } else if (error instanceof Error) {
         strError =
           'Não foi possível baixar devido a um erro do servidor, tente novamente.';
-      } else {
-        strError = 'Erro desconhecido';
       }
       toast('error', strError);
     }
